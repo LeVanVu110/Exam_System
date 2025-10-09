@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('exam_reports', function (Blueprint $table) {
-            $table->id();
+            $table->increments('report_id');
+            $table->unsignedInteger('exam_session_id');
+            $table->integer('expected_submissions')->default(0);
+            $table->integer('actual_submissions')->default(0);
+            $table->integer('empty_submissions')->default(0);
+            $table->tinyInteger('requires_attention')->default(0);
             $table->timestamps();
+
+            $table->foreign('exam_session_id')->references('exam_session_id')->on('exam_sessions')->onDelete('cascade');
         });
     }
 

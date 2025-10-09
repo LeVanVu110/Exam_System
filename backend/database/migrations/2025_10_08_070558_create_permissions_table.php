@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('permissions', function (Blueprint $table) {
-            $table->id();
+            $table->increments('permission_id');
+            $table->string('permission_name', 55);
+            $table->string('permission_description', 1000)->nullable();
+            $table->tinyInteger('permission_is_active')->default(1);
             $table->timestamps();
         });
     }

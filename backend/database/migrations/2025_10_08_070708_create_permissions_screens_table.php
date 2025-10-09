@@ -12,8 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('permissions_screens', function (Blueprint $table) {
-            $table->id();
+            $table->increments('permission_screen_id');
+            $table->unsignedInteger('permission_id');
+            $table->unsignedInteger('screen_id');
+            $table->tinyInteger('is_view')->default(0);
+            $table->tinyInteger('is_edit')->default(0);
+            $table->tinyInteger('is_add')->default(0);
+            $table->tinyInteger('is_delete')->default(0);
+            $table->tinyInteger('is_upload')->default(0);
+            $table->tinyInteger('is_download')->default(0);
+            $table->tinyInteger('is_all')->default(0);
             $table->timestamps();
+
+            $table->foreign('permission_id')->references('permission_id')->on('permissions')->onDelete('cascade');
+            $table->foreign('screen_id')->references('screen_id')->on('screens')->onDelete('cascade');
+
+            $table->unique(['permission_id', 'screen_id']);
         });
     }
 

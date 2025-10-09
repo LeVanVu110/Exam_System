@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('exam_import_log', function (Blueprint $table) {
-            $table->id();
+            $table->increments('import_id');
+            $table->string('file_name', 255)->nullable();
+            $table->unsignedInteger('imported_by')->nullable();
+            $table->integer('total_rows')->default(0);
+            $table->integer('success_rows')->default(0);
+            $table->string('import_status', 50)->nullable();
             $table->timestamps();
+
+            $table->foreign('imported_by')->references('user_id')->on('users')->onDelete('set null');
         });
     }
 

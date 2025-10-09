@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('network_drive_config', function (Blueprint $table) {
-            $table->id();
+            $table->increments('config_id');
+            $table->string('drive_letter', 5)->nullable();
+            $table->string('base_path', 500)->nullable();
+            $table->string('exam_path_template', 500)->nullable();
+            $table->tinyInteger('auto_detect_empty_files')->default(0);
             $table->timestamps();
         });
     }

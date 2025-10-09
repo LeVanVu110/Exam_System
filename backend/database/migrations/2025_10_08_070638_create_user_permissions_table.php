@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_permissions', function (Blueprint $table) {
-            $table->id();
+            $table->increments('user_permission_id');
+            $table->unsignedInteger('user_id');
+            $table->unsignedInteger('permission_id');
             $table->timestamps();
+
+            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
+            $table->foreign('permission_id')->references('permission_id')->on('permissions')->onDelete('cascade');
+
+            $table->unique(['user_id', 'permission_id']);
         });
     }
 

@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('category_user_type', function (Blueprint $table) {
-            $table->id();
+        Schema::create('category_user_types', function (Blueprint $table) {
+            $table->increments('category_user_type_id');
+            $table->string('user_type_code', 20)->nullable();
+            $table->string('user_type_name', 255);
             $table->timestamps();
         });
     }
@@ -22,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('category_user_type');
+        Schema::dropIfExists('category_user_types');
     }
 };

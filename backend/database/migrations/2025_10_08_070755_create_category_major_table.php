@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('category_major', function (Blueprint $table) {
-            $table->id();
+            $table->increments('category_major_id');
+            $table->string('major_code', 20)->nullable();
+            $table->string('major_name', 255);
+            $table->unsignedInteger('category_faculty_id')->nullable();
             $table->timestamps();
+
+             $table->foreign('category_faculty_id')->references('category_faculty_id')->on('category_faculty')->onDelete('set null');
         });
     }
 

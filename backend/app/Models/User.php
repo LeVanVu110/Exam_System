@@ -12,15 +12,25 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $table = 'users';
+    protected $primaryKey = 'user_id';
+
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'user_code',
+        'user_name',
+        'user_email',
+        'user_password',
+        'user_is_activated',
+        'user_is_banned',
+        'user_activate_at',
+        'user_banned_at',
+        'user_last_login',
+        'user_password_reset_code',
     ];
 
     /**
@@ -29,8 +39,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'user_password',
     ];
 
     /**
@@ -38,11 +47,31 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    // 🔗 Quan hệ
+    //Cho Auth::attempt() hiểu đúng cột password
+    public function getAuthPassword()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->user_password;
+    }
+    //Tự động mã hóa password khi lưu
+    public function setUserPasswordAttribute($value)
+    {
+        $this->attributes['user_password'] = bcrypt($value);
+    }
+
+
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class, 'user_id');
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'users_roles', 'user_id', 'role_id');
+    }
+
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions', 'user_id', 'permission_id');
     }
 }
