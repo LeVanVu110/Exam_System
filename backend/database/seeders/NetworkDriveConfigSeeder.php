@@ -1,23 +1,23 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\NetworkDriveConfig;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use App\Models\NetworkDriveConfig;
 
 class NetworkDriveConfigSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        Schema::disableForeignKeyConstraints();
+        NetworkDriveConfig::truncate();
+        Schema::enableForeignKeyConstraints();
+
         NetworkDriveConfig::create([
-            'server_name' => '10.0.0.12',
-            'shared_folder' => '\\\\Server\\ExamData',
-            'username' => 'admin',
-            'password' => bcrypt('123456'),
+            'drive_letter' => 'Z:',
+            'base_path' => '\\\\Server\\ExamData',
+            'exam_path_template' => '\\\\Server\\ExamData\\{exam_code}',
+            'auto_detect_empty_files' => 0,
         ]);
     }
 }

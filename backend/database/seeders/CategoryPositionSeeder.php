@@ -1,22 +1,22 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\CategoryPosition;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use App\Models\CategoryPosition;
 
 class CategoryPositionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        Schema::disableForeignKeyConstraints();
+        CategoryPosition::truncate();
+        Schema::enableForeignKeyConstraints();
+
         CategoryPosition::insert([
-            ['name' => 'Trưởng khoa'],
-            ['name' => 'Giảng viên chính'],
-            ['name' => 'Trợ giảng'],
+            ['position_code' => 'HEAD', 'position_name' => 'Trưởng khoa'],
+            ['position_code' => 'LECT', 'position_name' => 'Giảng viên chính'],
+            ['position_code' => 'ASST', 'position_name' => 'Trợ giảng'],
         ]);
     }
 }

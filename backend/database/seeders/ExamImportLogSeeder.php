@@ -1,22 +1,24 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\ExamImportLog;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use App\Models\ExamImportLog;
 
 class ExamImportLogSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        Schema::disableForeignKeyConstraints();
+        ExamImportLog::truncate();
+        Schema::enableForeignKeyConstraints();
+
         ExamImportLog::create([
             'file_name' => 'import_scores.xlsx',
-            'import_date' => now(),
-            'status' => 'Success',
+            'imported_by' => null,
+            'total_rows' => 100,
+            'success_rows' => 100,
+            'import_status' => 'Success',
         ]);
     }
 }

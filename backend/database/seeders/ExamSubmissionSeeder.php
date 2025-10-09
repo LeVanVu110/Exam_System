@@ -1,26 +1,33 @@
 <?php
-//file excel import
 namespace Database\Seeders;
 
-use App\Models\ExamSubmission;
-use App\Models\ExamStudent;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use App\Models\ExamSubmission;
+use App\Models\ExamSession;
+use App\Models\Student;
 
 class ExamSubmissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $examStudents = ExamStudent::all();
+        Schema::disableForeignKeyConstraints();
+        ExamSubmission::truncate();
+        Schema::enableForeignKeyConstraints();
 
-        foreach ($examStudents as $examStudent) {
+        $exam = ExamSession::first();
+        $examId = $exam ? $exam->exam_session_id : 1;
+
+        $students = Student::limit(3)->get();
+
+        foreach ($students as $student) {
             ExamSubmission::create([
-                'exam_student_id' => $examStudent->id,
-                'file_path' => 'submissions/' . uniqid() . '.pdf',
-                'submitted_at' => now(),
+                'exam_session_id' => $examId,
+                'student_id' => $student->student_id,
+                'network_file_path' => 'submissions/' . uniqid() . '.pdf',
+                'file_name' => 'submission_' . $student->student_id . '.pdf',
+                'file_size' => rand(1000, 50000),
+                'submission_status' => 'Submitted',
             ]);
         }
     }

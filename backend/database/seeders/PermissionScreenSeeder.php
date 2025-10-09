@@ -1,19 +1,17 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\PermissionScreen;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use App\Models\PermissionScreen;
 
 class PermissionScreenSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        Schema::disableForeignKeyConstraints();
         PermissionScreen::truncate();
+        Schema::enableForeignKeyConstraints();
 
         for ($p = 1; $p <= 4; $p++) {
             for ($s = 1; $s <= 3; $s++) {

@@ -1,24 +1,22 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\Screen;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use App\Models\Screen;
 
 class ScreenSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        Schema::disableForeignKeyConstraints();
         Screen::truncate();
+        Schema::enableForeignKeyConstraints();
 
         $screens = [
-            ['screen_code' => 'DASH', 'screen_name' => 'Dashboard'],
-            ['screen_code' => 'USER', 'screen_name' => 'Users'],
-            ['screen_code' => 'EXAM', 'screen_name' => 'Exams'],
+            ['screen_code' => 'DASH', 'screen_name' => 'Dashboard', 'screen_description' => null],
+            ['screen_code' => 'USER', 'screen_name' => 'Users', 'screen_description' => null],
+            ['screen_code' => 'EXAM', 'screen_name' => 'Exams', 'screen_description' => null],
         ];
 
         foreach ($screens as $s) {

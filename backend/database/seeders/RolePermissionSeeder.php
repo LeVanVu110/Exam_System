@@ -1,19 +1,17 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\RolePermission;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use App\Models\RolePermission;
 
 class RolePermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        Schema::disableForeignKeyConstraints();
         RolePermission::truncate();
+        Schema::enableForeignKeyConstraints();
 
         for ($r = 1; $r <= 3; $r++) {
             for ($p = 1; $p <= 4; $p++) {

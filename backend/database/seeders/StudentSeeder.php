@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\UserProfile;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 class StudentSeeder extends Seeder
 {
@@ -14,7 +15,9 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-       Student::truncate();
+       Schema::disableForeignKeyConstraints();
+        Student::truncate();
+        Schema::enableForeignKeyConstraints();
 
         $profiles = UserProfile::inRandomOrder()->take(5)->get();
         foreach ($profiles as $profile) {
@@ -22,8 +25,8 @@ class StudentSeeder extends Seeder
                 'user_profile_id' => $profile->user_profile_id,
                 'category_faculty_id' => rand(1, 3),
                 'category_major_id' => rand(1, 3),
-                'student_score' => rand(50, 100) / 10,
-                'student_cv' => fake()->url(),
+                'student_score' => rand(50, 100) / 10, // tương đương 5.0 - 10.0
+                'student_cv' => \Faker\Factory::create()->url(),
             ]);
         }
     }
