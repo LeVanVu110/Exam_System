@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class CategoryFaculty extends Model
+{
+   use HasFactory;
+
+    protected $table = 'category_faculty';
+    protected $fillable = ['name', 'description'];
+
+    public function teachers()
+    {
+        return $this->hasMany(Teacher::class, 'category_faculty_id');
+    }
+}
