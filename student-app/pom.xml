@@ -35,7 +35,7 @@
     <configuration>
         <mainClass>com.example.studentapp.Main</mainClass>
 
-        <launcher>start</launcher>
+        <launcher>com.example.studentapp.Main</launcher>
         
         <runtime>
             <modules>

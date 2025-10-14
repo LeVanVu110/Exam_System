@@ -6,7 +6,8 @@
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.example.studentapp.controller.LoginController"
+      fx:controller="com.example.studentapp.LoginController"
+
       alignment="CENTER" spacing="15" style="-fx-padding: 30; -fx-background-color: #f4f4f4;">
 
     <Label text="Đăng nhập Hệ thống Thi" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333;" />

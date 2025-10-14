@@ -42,7 +42,7 @@ services:
     container_name: laravel12_phpmyadmin_2
     restart: always
     ports:
-      - "8080:80"
+      - "8085:80"
     environment:
       PMA_HOST: mysql
       PMA_USER: laravel
@@ -61,6 +61,8 @@ services:
       - /app/node_modules
     command: >
       sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - CHOKIDAR_USEPOLLING=true 
 
 volumes:
   db_data:
