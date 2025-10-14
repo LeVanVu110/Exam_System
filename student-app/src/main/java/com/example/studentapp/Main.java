@@ -5,18 +5,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-
 public class Main extends Application {
-
     @Override
-    public void start(Stage stage) throws IOException {
-        
-        // Tải màn hình Đăng nhập (login.fxml)
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/login.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 400, 300); // Kích thước nhỏ hơn cho Login
-
-        stage.setTitle("Đăng nhập");
+    public void start(Stage stage) throws Exception {
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/Login.fxml"));
+        Scene scene = new Scene(fxmlLoader.load(), 400, 300);
+        stage.setTitle("Student App");
         stage.setScene(scene);
         stage.show();
     }

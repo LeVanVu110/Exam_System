@@ -1,36 +1,93 @@
 package com.example.studentapp.service;
 
-import java.io.*;
+import com.example.studentapp.util.HttpClientUtil;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Files;
+import java.net.URL;
+
+import org.json.JSONObject;
 
 public class ApiService {
-    private static final String UPLOAD_URL = "http://localhost:8080/api/exams/upload";
+    private static final String BASE_URL = "http://localhost:8000/api";
 
-    public static boolean uploadExamFile(File file) {
+    public boolean login(String email, String password) {
         try {
-            String boundary = Long.toHexString(System.currentTimeMillis());
-            HttpURLConnection conn = (HttpURLConnection) new URL(UPLOAD_URL).openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            JSONObject body = new JSONObject();
+            body.put("email", email);
+            body.put("password", password);
 
-            try (OutputStream output = conn.getOutputStream();
-                 PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"), true)) {
-                writer.append("--").append(boundary).append("\r\n");
-                writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
-                      .append(file.getName()).append("\"\r\n");
-                writer.append("Content-Type: ").append(Files.probeContentType(file.toPath())).append("\r\n\r\n").flush();
-                Files.copy(file.toPath(), output);
-                output.flush();
-                writer.append("\r\n--").append(boundary).append("--\r\n").flush();
-            }
+            String response = HttpClientUtil.post(BASE_URL + "/login", body.toString());
+            JSONObject json = new JSONObject(response);
 
-            return conn.getResponseCode() == HttpURLConnection.HTTP_OK;
+            return json.has("token");
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
+
+    // Phương thức nộp bài thi(upload)
+    public boolean uploadExamFile(File file) {
+        try {
+            String boundary = "===" + System.currentTimeMillis() + "===";
+            String LINE_FEED = "\r\n";
+
+            URL url = new URL(BASE_URL + "/upload");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setUseCaches(false);
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+            OutputStream outputStream = connection.getOutputStream();
+            PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"), true);
+
+            // Gửi file
+            String fileName = file.getName();
+            writer.append("--" + boundary).append(LINE_FEED);
+            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"" + fileName + "\"")
+                    .append(LINE_FEED);
+            writer.append("Content-Type: " + Files.probeContentType(file.toPath())).append(LINE_FEED);
+            writer.append(LINE_FEED);
+            writer.flush();
+
+            Files.copy(file.toPath(), outputStream);
+            outputStream.flush();
+
+            writer.append(LINE_FEED).flush();
+            writer.append("--" + boundary + "--").append(LINE_FEED);
+            writer.close();
+
+            // Nhận phản hồi từ server
+            int status = connection.getResponseCode();
+            if (status == HttpURLConnection.HTTP_OK) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String line;
+                StringBuilder response = new StringBuilder();
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+                connection.disconnect();
+
+                System.out.println("Response: " + response);
+                return true;
+            } else {
+                System.out.println("Upload failed, status: " + status);
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }

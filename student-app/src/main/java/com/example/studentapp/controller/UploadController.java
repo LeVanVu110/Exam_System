@@ -8,8 +8,10 @@ import javafx.stage.Stage;
 import java.io.File;
 
 public class UploadController {
-    @FXML private Label fileLabel;
-    @FXML private Label statusLabel;
+    @FXML
+    private Label fileLabel;
+    @FXML
+    private Label statusLabel;
 
     private File selectedFile;
 
@@ -23,13 +25,17 @@ public class UploadController {
         }
     }
 
+    private ApiService apiService = new ApiService();
+
     @FXML
     private void uploadFile() {
         if (selectedFile == null) {
             statusLabel.setText("Vui lòng chọn file trước!");
             return;
         }
-        boolean success = ApiService.uploadExamFile(selectedFile);
+
+        boolean success = apiService.uploadExamFile(selectedFile);
         statusLabel.setText(success ? "Nộp bài thành công!" : "Nộp bài thất bại!");
     }
+
 }

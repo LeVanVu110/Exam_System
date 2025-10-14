@@ -1,55 +1,27 @@
 package com.example.studentapp.controller;
 
+import com.example.studentapp.service.ApiService;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.stage.Stage;
-
-import java.io.IOException;
+import javafx.scene.control.*;
 
 public class LoginController {
+    @FXML private TextField txtEmail;
+    @FXML private PasswordField txtPassword;
+    @FXML private Label lblStatus;
 
-    @FXML private TextField usernameField;
-    @FXML private PasswordField passwordField;
-    @FXML private Label messageLabel;
+    private final ApiService apiService = new ApiService();
 
     @FXML
     private void handleLogin() {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
+        String email = txtEmail.getText();
+        String password = txtPassword.getText();
 
-        // ⚠️ LOGIC XÁC THỰC ĐƠN GIẢN (Cần thay thế bằng gọi API thực tế)
-        if ("student".equals(username) && "123456".equals(password)) {
-            messageLabel.setText("Đăng nhập thành công!");
-            messageLabel.setStyle("-fx-text-fill: green;");
-            
-            // Chuyển sang màn hình chính (ví dụ: màn hình upload)
-            loadMainView();
-            
+        boolean success = apiService.login(email, password);
+        if (success) {
+            lblStatus.setText("Đăng nhập thành công!");
+            // TODO: chuyển sang Dashboard
         } else {
-            messageLabel.setText("Tên đăng nhập hoặc mật khẩu không đúng.");
-            messageLabel.setStyle("-fx-text-fill: red;");
-        }
-    }
-
-    private void loadMainView() {
-        try {
-            // Lấy Stage hiện tại từ một trong các thành phần UI
-            Stage currentStage = (Stage) usernameField.getScene().getWindow();
-            
-            // Tải FXML của màn hình chính/màn hình tiếp theo (ví dụ: upload-view.fxml)
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/upload-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load(), 800, 600); // Kích thước mới
-            
-            currentStage.setTitle("Hệ thống nộp bài thi");
-            currentStage.setScene(scene);
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Không thể tải màn hình chính (upload-view.fxml).");
+            lblStatus.setText("Sai tài khoản hoặc mật khẩu.");
         }
     }
 }

@@ -14,6 +14,7 @@
     </properties>
 
     <dependencies>
+        <!-- JavaFX -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -24,32 +25,42 @@
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+
+        <!-- JSON Library -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20230227</version>
+        </dependency>
+
+        <!-- Apache HttpClient -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-    <groupId>org.openjfx</groupId>
-    <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.8</version>
-    <configuration>
-        <mainClass>com.example.studentapp.Main</mainClass>
-
-        <launcher>start</launcher>
-        
-        <runtime>
-            <modules>
-                <module>javafx.controls</module>
-                <module>javafx.fxml</module>
-                <module>javafx.graphics</module>
-                
-                <module>java.net.http</module>
-                
-                <module>java.base</module>
-            </modules>
-        </runtime>
-    </configuration>
-</plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>com.example.studentapp.Main</mainClass>
+                    <launcher>start</launcher>
+                    <runtime>
+                        <modules>
+                            <module>javafx.controls</module>
+                            <module>javafx.fxml</module>
+                            <module>javafx.graphics</module>
+                            <module>java.net.http</module>
+                            <module>java.base</module>
+                        </modules>
+                    </runtime>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

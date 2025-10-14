@@ -3,3 +3,4 @@ com\example\studentapp\controller\UploadController.class
 com\example\studentapp\Main.class
 com\example\studentapp\service\ApiService.class
 com\example\studentapp\model\UploadResponse.class
+com\example\studentapp\util\HttpClientUtil.class
