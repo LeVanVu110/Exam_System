@@ -2,30 +2,25 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
-
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * Define your route model bindings, pattern filters, and other route configuration.
      */
-    public function register(): void
+    public function boot(): void
     {
-        //
+        $this->routes(function () {
+            // ✅ Load routes/api.php
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/api.php'));
+
+            // ✅ Load routes/web.php
+            Route::middleware('web')
+                ->group(base_path('routes/web.php'));
+        });
     }
-
-    /**
-     * Bootstrap services.
-     */
-public function boot(): void
-{
-    Route::prefix('api')
-        ->middleware('api')
-        ->group(base_path('routes/api.php'));
-
-    Route::middleware('web')
-        ->group(base_path('routes/web.php'));
-}
 }
