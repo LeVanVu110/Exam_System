@@ -10,7 +10,9 @@ class Teacher extends Model
     use HasFactory;
 
     protected $table = 'teachers';
-
+    protected $primaryKey = 'teacher_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
     protected $fillable = [
         'user_id',
         'category_faculty_id',

@@ -10,6 +10,9 @@ class ExamImportLog extends Model
     use HasFactory;
 
     protected $table = 'exam_import_log';
+    protected $primaryKey = 'import_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
     protected $fillable = [
         'import_file',
         'import_status',
