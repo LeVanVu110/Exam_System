@@ -45,7 +45,7 @@ class ExamScheduleImport implements ToModel, WithHeadingRow
             }
 
             // Lấy tên giáo viên và tách theo dấu phẩy
-            $teacherNames = explode(',', $row['cbct']);
+            $teacherNames = explode(',', $row['exam_teacher']);
             $teacher1 = isset($teacherNames[0]) ? trim($teacherNames[0]) : null;
             $teacher2 = isset($teacherNames[1]) ? trim($teacherNames[1]) : null;
 
