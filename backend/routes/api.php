@@ -2,9 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
 Route::get('/exams', function () {
     $path = storage_path('app/mock/exams.json');
 
