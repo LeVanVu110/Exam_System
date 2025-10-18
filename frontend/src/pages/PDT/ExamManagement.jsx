@@ -1,223 +1,192 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+"use client"
 
-export default function ExamManagement() {
-    const [file, setFile] = useState(null);
-    const [data, setData] = useState([]); // luôn khởi tạo là []
-    const [from, setFrom] = useState("");
-    const [to, setTo] = useState("");
-    const [importStats, setImportStats] = useState(null); // 🆕 popup state
+import { useState, useEffect } from "react"
+import axios from "axios"
+import { Upload, Download, RotateCcw } from "lucide-react"
 
-    // 🔍 Hàm tìm kiếm
-    const handleSearch = async () => {
-        try {
-            const res = await axios.get("http://localhost:8000/api/exam-sessions", { params: { from, to } });
-            console.log("Dữ liệu nhận được:", res.data);
+export default function ExamSchedule() {
+  const [data, setData] = useState([])
+  const [file, setFile] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [date, setDate] = useState("")
+  const [room, setRoom] = useState("")
+  const [search, setSearch] = useState("")
 
-            // kiểm tra dữ liệu trả về có đúng định dạng không
-            const fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
-            setData(fetchedData);
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu:", error);
-            setData([]);
-        }
-    };
+  // Lấy dữ liệu từ API
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const res = await axios.get("http://localhost:8000/api/exam-sessions", {
+        params: { search, date, room },
+      })
+      setData(Array.isArray(res.data.data) ? res.data.data : [])
+    } catch (error) {
+      console.error("Lỗi tải dữ liệu:", error)
+      setData([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    // 📤 Import file Excel
-    const handleImport = async (e) => {
-        e.preventDefault();
-        if (!file) {
-            alert("Vui lòng chọn file trước khi import!");
-            return;
-        }
+  useEffect(() => {
+    fetchData()
+  }, [])
 
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            const res = await axios.post(
-                "http://localhost:8000/api/exam-sessions/import",
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
+  // Import file Excel
+  const handleImport = async (e) => {
+    e.preventDefault()
+    if (!file) return alert("Vui lòng chọn file trước khi import!")
 
-            // 🆕 lưu thống kê import để hiển thị popup
-            setImportStats(res.data);
+    try {
+      setLoading(true)
+      const formData = new FormData()
+      formData.append("file", file)
+      await axios.post("http://localhost:8000/api/exam-sessions/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      fetchData()
+      alert("Import thành công!")
+      setFile(null)
+    } catch (error) {
+      console.error("Lỗi import:", error)
+      alert("Import thất bại!")
+    } finally {
+      setLoading(false)
+    }
+  }
 
-            handleSearch();
-        } catch (error) {
-            console.error("🔥 Chi tiết lỗi import:", error.response?.data || error.message || error);
-            alert("Import thất bại! Xem console để biết chi tiết.");
-        }
-    };
+  const handleExport = () => {
+    window.location.href = "http://localhost:8000/api/exam-sessions/export"
+  }
 
-    const handleClosePopup = () => setImportStats(null);
+  const handleReset = () => {
+    setSearch("")
+    setDate("")
+    setRoom("")
+    fetchData()
+  }
 
-    // 📦 Xuất file Excel
-    const handleExport = () => {
-        window.location.href = `/api/exam-sessions/export?from=${from}&to=${to}`;
-    };
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Lịch Thi</h1>
+        <p className="text-gray-500 text-sm">Quản lý lớp học và hoạt động giảng dạy</p>
 
-    // 🔁 Gọi khi component mount
-    useEffect(() => {
-        handleSearch();
-    }, []);
+        {/* Bộ lọc */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 p-4 flex flex-col md:flex-row items-center gap-3">
+          <input
+            type="text"
+            placeholder="Tên môn học, lớp..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2"
+          />
+          <select
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2"
+          >
+            <option value="">Chọn phòng thi</option>
+            <option value="A101">A101</option>
+            <option value="B205">B205</option>
+            <option value="C301">C301</option>
+            <option value="A102">A102</option>
+          </select>
 
-    return (
-        <div className="p-8">
-            <h1 className="text-2xl font-bold mb-6">📘 Quản lý kỳ thi (Phòng Đào Tạo)</h1>
-
-            {/* 🔎 Bộ lọc tìm kiếm */}
-            <div className="flex gap-4 mb-4">
-                <input
-                    type="date"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    className="border p-2 rounded"
-                />
-                <input
-                    type="date"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    className="border p-2 rounded"
-                />
-                <button
-                    onClick={handleSearch}
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                    Tìm kiếm
-                </button>
-                <button
-                    onClick={handleExport}
-                    className="bg-green-500 text-white px-4 py-2 rounded"
-                >
-                    Xuất Excel
-                </button>
-            </div>
-
-            {/* 📂 Import Excel */}
-            <form onSubmit={handleImport} className="flex items-center gap-3 mb-6">
-                <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-                <button
-                    type="submit"
-                    className="bg-purple-500 text-white px-4 py-2 rounded"
-                >
-                    Import Excel
-                </button>
-            </form>
-
-            {/* 📋 Bảng dữ liệu */}
-            <table className="min-w-full border border-gray-300 shadow-sm rounded-lg overflow-hidden">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="p-3 border text-left">Mã ca thi</th>
-                        <th className="p-3 border text-left">Tên kỳ thi</th>
-                        <th className="p-3 border text-left">Mã lớp</th>
-                        <th className="p-3 border text-left">Môn học</th>
-                        <th className="p-3 border text-left">Ngày thi</th>
-                        {/* <th className="p-3 border text-left">Giờ bắt đầu</th>
-                        <th className="p-3 border text-left">Giờ kết thúc</th> */}
-                        <th className="p-3 border text-left">Phòng thi</th>
-                        {/* <th className="p-3 border text-left">Tổng SV</th> */}
-                        <th className="p-3 border text-left">Tổng máy</th>
-                        <th className="p-3 border text-left">GV phân công 1</th>
-                        <th className="p-3 border text-left">GV phân công 2</th>
-                        <th className="p-3 border text-left">GV thực tế 1</th>
-                        <th className="p-3 border text-left">GV thực tế 2</th>
-                        <th className="p-3 border text-left">Tình trạng</th>
-                        <th className="p-3 border text-left">Số tín chỉ</th>
-                        {/* <th className="p-3 border text-left">Lớp sinh viên</th> */}
-                        <th className="p-3 border text-left">Giờ thi</th>
-                        <th className="p-3 border text-left">Số lượng SV</th>
-                        <th className="p-3 border text-left">Thời lượng (phút)</th>
-                        {/* <th className="p-3 border text-left">Hình thức thi</th> */}
-                        {/* <th className="p-3 border text-left">Khoa</th>
-                        <th className="p-3 border text-left">Bậc đào tạo</th>
-                        <th className="p-3 border text-left">Hệ đào tạo</th>
-                        <th className="p-3 border text-left">Đợt thi</th> */}
-                        {/* <th className="p-3 border text-left">Giảng viên</th> */}
-                        <th className="p-3 border text-left">Khoa coi thi</th>
-                        <th className="p-3 border text-left">Ngày tạo</th>
-                        <th className="p-3 border text-left">Kết quả</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {Array.isArray(data) && data.length > 0 ? (
-                        data.map((item) => (
-                            <tr key={item.exam_session_id} className="hover:bg-gray-50">
-                                <td className="border p-2">{item.exam_code}</td>
-                                <td className="border p-2">{item.exam_name}</td>
-                                <td className="border p-2">{item.class_code}</td>
-                                <td className="border p-2">{item.subject_name}</td>
-                                <td className="border p-2">{item.exam_date}</td>
-                                {/* <td className="border p-2">{item.exam_start_time}</td>
-                                <td className="border p-2">{item.exam_end_time}</td> */}
-                                <td className="border p-2">{item.exam_room}</td>
-                                {/* <td className="border p-2 text-center">{item.total_students}</td> */}
-                                <td className="border p-2 text-center">{item.total_computers}</td>
-                                <td className="border p-2">{item.teacher1_name}</td>
-                                <td className="border p-2">{item.teacher2_name}</td>
-                                <td className="border p-2">{item.actual_teacher1_id}</td>
-                                <td className="border p-2">{item.actual_teacher2_id}</td>
-                                <td className="border p-2">{item.status}</td>
-                                <td className="border p-2">{item.credits}</td>
-                                <td className="border p-2">{item.student_class}</td>
-                                <td className="border p-2">{item.exam_time}</td>
-                                <td className="border p-2 text-center">{item.student_count}</td>
-                                <td className="border p-2 text-center">{item.exam_duration}</td>
-                                {/* <td className="border p-2">{item.exam_method}</td> */}
-                                <td className="border p-2">{item.exam_faculty}</td>
-                                {/* <td className="border p-2">{item.education_level}</td> */}
-                                {/* <td className="border p-2">{item.training_system}</td> */}
-                                {/* <td className="border p-2">{item.exam_batch}</td> */}
-                                {/* <td className="border p-2">
-                                    {item.exam_teacher
-                                        ? item.exam_teacher.split(",")[0]?.trim()
-                                        : item.assigned_teacher1_id || ""}
-                                </td>
-                                <td className="border p-2">
-                                    {item.exam_teacher
-                                        ? item.exam_teacher.split(",")[1]?.trim()
-                                        : item.assigned_teacher2_id || ""}
-                                </td> */}
-
-                                <td className="border p-2">{item.created_at}</td>
-                                <td className="border p-2">
-                                    <a
-                                        href={`/api/exam-sessions/${item.exam_session_id}/report`}
-                                        className="text-blue-600 underline"
-                                    >
-                                        Xuất PDF
-                                    </a>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="28" className="text-center p-4 text-gray-500">
-                                Không có dữ liệu
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-             {/* 🟢 Popup thống kê import */}
-            {importStats && (
-                <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded shadow-lg w-96 text-center">
-                        <h2 className="text-xl font-bold mb-4">📊 Import hoàn tất</h2>
-                        <p>Tổng số dòng: {importStats.total_rows}</p>
-                        <p>Dòng thành công: {importStats.success_rows}</p>
-                        <p>Giáo viên mới tạo: {importStats.new_teachers}</p>
-                        <button
-                            onClick={handleClosePopup}
-                            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-                        >
-                            Đóng
-                        </button>
-                    </div>
-                </div>
-            )}
+          {/* Buttons */}
+          <div className="flex gap-2 mt-3 md:mt-0">
+            <button
+              onClick={handleImport}
+              disabled={loading}
+              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+            >
+              <Upload size={16} />
+              Import File Excel
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+            >
+              <Download size={16} />
+              Xuất File Excel
+            </button>
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+            >
+              <RotateCcw size={16} />
+              Reset
+            </button>
+          </div>
         </div>
-    );
+
+        {/* Bảng danh sách */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <h2 className="font-semibold text-gray-800">
+              Danh sách lịch thi{" "}
+              <span className="text-sm text-gray-500">(Hiển thị {data.length} buổi thi)</span>
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-700">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3">STT</th>
+                  <th className="px-6 py-3">LỚP HỌC PHẦN</th>
+                  <th className="px-6 py-3">TÊN HỌC PHẦN</th>
+                  <th className="px-6 py-3">TÍN CHỈ</th>
+                  <th className="px-6 py-3">NGÀY THI - GIỜ THI</th>
+                  <th className="px-6 py-3">PHÒNG THI</th>
+                  <th className="px-6 py-3">SV DỰ THI</th>
+                  <th className="px-6 py-3">THỜI GIAN (PHÚT)</th>
+                  <th className="px-6 py-3">CBCT 1</th>
+                  <th className="px-6 py-3">CBCT 2</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.length > 0 ? (
+                  data.map((item, index) => (
+                    <tr
+                      key={item.exam_session_id || index}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-3">{index + 1}</td>
+                      <td className="px-6 py-3">{item.class_code}</td>
+                      <td className="px-6 py-3">{item.subject_name}</td>
+                      <td className="px-6 py-3">{item.credits}</td>
+                      <td className="px-6 py-3">{item.exam_date} - {item.exam_time}</td>
+                      <td className="px-6 py-3">
+                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+                          {item.exam_room}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-center">{item.student_count}</td>
+                      <td className="px-6 py-3 text-center">{item.exam_duration}</td>
+                      <td className="px-6 py-3">{item.teacher1_name}</td>
+                      <td className="px-6 py-3">{item.teacher2_name}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
+                      Không có dữ liệu
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
