@@ -6,6 +6,7 @@ export default function ExamManagement() {
     const [data, setData] = useState([]); // luôn khởi tạo là []
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
+    const [importStats, setImportStats] = useState(null); // 🆕 popup state
 
     // 🔍 Hàm tìm kiếm
     const handleSearch = async () => {
@@ -33,16 +34,23 @@ export default function ExamManagement() {
         try {
             const formData = new FormData();
             formData.append("file", file);
-            await axios.post("http://localhost:8000/api/exam-sessions/import", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            alert("Import thành công!");
-            handleSearch(); // load lại dữ liệu
+            const res = await axios.post(
+                "http://localhost:8000/api/exam-sessions/import",
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+            );
+
+            // 🆕 lưu thống kê import để hiển thị popup
+            setImportStats(res.data);
+
+            handleSearch();
         } catch (error) {
             console.error("🔥 Chi tiết lỗi import:", error.response?.data || error.message || error);
             alert("Import thất bại! Xem console để biết chi tiết.");
         }
     };
+
+    const handleClosePopup = () => setImportStats(null);
 
     // 📦 Xuất file Excel
     const handleExport = () => {
@@ -106,10 +114,10 @@ export default function ExamManagement() {
                         <th className="p-3 border text-left">Mã lớp</th>
                         <th className="p-3 border text-left">Môn học</th>
                         <th className="p-3 border text-left">Ngày thi</th>
-                        <th className="p-3 border text-left">Giờ bắt đầu</th>
-                        <th className="p-3 border text-left">Giờ kết thúc</th>
+                        {/* <th className="p-3 border text-left">Giờ bắt đầu</th>
+                        <th className="p-3 border text-left">Giờ kết thúc</th> */}
                         <th className="p-3 border text-left">Phòng thi</th>
-                        <th className="p-3 border text-left">Tổng SV</th>
+                        {/* <th className="p-3 border text-left">Tổng SV</th> */}
                         <th className="p-3 border text-left">Tổng máy</th>
                         <th className="p-3 border text-left">GV phân công 1</th>
                         <th className="p-3 border text-left">GV phân công 2</th>
@@ -117,16 +125,17 @@ export default function ExamManagement() {
                         <th className="p-3 border text-left">GV thực tế 2</th>
                         <th className="p-3 border text-left">Tình trạng</th>
                         <th className="p-3 border text-left">Số tín chỉ</th>
-                        <th className="p-3 border text-left">Lớp sinh viên</th>
-                        <th className="p-3 border text-left">Ca thi</th>
+                        {/* <th className="p-3 border text-left">Lớp sinh viên</th> */}
+                        <th className="p-3 border text-left">Giờ thi</th>
                         <th className="p-3 border text-left">Số lượng SV</th>
                         <th className="p-3 border text-left">Thời lượng (phút)</th>
-                        <th className="p-3 border text-left">Hình thức thi</th>
-                        <th className="p-3 border text-left">Khoa</th>
+                        {/* <th className="p-3 border text-left">Hình thức thi</th> */}
+                        {/* <th className="p-3 border text-left">Khoa</th>
                         <th className="p-3 border text-left">Bậc đào tạo</th>
                         <th className="p-3 border text-left">Hệ đào tạo</th>
-                        <th className="p-3 border text-left">Đợt thi</th>
-                        <th className="p-3 border text-left">Giảng viên</th>
+                        <th className="p-3 border text-left">Đợt thi</th> */}
+                        {/* <th className="p-3 border text-left">Giảng viên</th> */}
+                        <th className="p-3 border text-left">Khoa coi thi</th>
                         <th className="p-3 border text-left">Ngày tạo</th>
                         <th className="p-3 border text-left">Kết quả</th>
                     </tr>
@@ -141,10 +150,10 @@ export default function ExamManagement() {
                                 <td className="border p-2">{item.class_code}</td>
                                 <td className="border p-2">{item.subject_name}</td>
                                 <td className="border p-2">{item.exam_date}</td>
-                                <td className="border p-2">{item.exam_start_time}</td>
-                                <td className="border p-2">{item.exam_end_time}</td>
+                                {/* <td className="border p-2">{item.exam_start_time}</td>
+                                <td className="border p-2">{item.exam_end_time}</td> */}
                                 <td className="border p-2">{item.exam_room}</td>
-                                <td className="border p-2 text-center">{item.total_students}</td>
+                                {/* <td className="border p-2 text-center">{item.total_students}</td> */}
                                 <td className="border p-2 text-center">{item.total_computers}</td>
                                 <td className="border p-2">{item.teacher1_name}</td>
                                 <td className="border p-2">{item.teacher2_name}</td>
@@ -156,12 +165,12 @@ export default function ExamManagement() {
                                 <td className="border p-2">{item.exam_time}</td>
                                 <td className="border p-2 text-center">{item.student_count}</td>
                                 <td className="border p-2 text-center">{item.exam_duration}</td>
-                                <td className="border p-2">{item.exam_method}</td>
+                                {/* <td className="border p-2">{item.exam_method}</td> */}
                                 <td className="border p-2">{item.exam_faculty}</td>
-                                <td className="border p-2">{item.education_level}</td>
-                                <td className="border p-2">{item.training_system}</td>
-                                <td className="border p-2">{item.exam_batch}</td>
-                                <td className="border p-2">
+                                {/* <td className="border p-2">{item.education_level}</td> */}
+                                {/* <td className="border p-2">{item.training_system}</td> */}
+                                {/* <td className="border p-2">{item.exam_batch}</td> */}
+                                {/* <td className="border p-2">
                                     {item.exam_teacher
                                         ? item.exam_teacher.split(",")[0]?.trim()
                                         : item.assigned_teacher1_id || ""}
@@ -170,7 +179,7 @@ export default function ExamManagement() {
                                     {item.exam_teacher
                                         ? item.exam_teacher.split(",")[1]?.trim()
                                         : item.assigned_teacher2_id || ""}
-                                </td>
+                                </td> */}
 
                                 <td className="border p-2">{item.created_at}</td>
                                 <td className="border p-2">
@@ -192,6 +201,23 @@ export default function ExamManagement() {
                     )}
                 </tbody>
             </table>
+             {/* 🟢 Popup thống kê import */}
+            {importStats && (
+                <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded shadow-lg w-96 text-center">
+                        <h2 className="text-xl font-bold mb-4">📊 Import hoàn tất</h2>
+                        <p>Tổng số dòng: {importStats.total_rows}</p>
+                        <p>Dòng thành công: {importStats.success_rows}</p>
+                        <p>Giáo viên mới tạo: {importStats.new_teachers}</p>
+                        <button
+                            onClick={handleClosePopup}
+                            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

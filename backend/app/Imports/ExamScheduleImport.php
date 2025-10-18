@@ -5,15 +5,20 @@ namespace App\Imports;
 use App\Models\ExamSession;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterImport;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Illuminate\Support\Facades\Log;
 use App\Models\Teacher;
+use App\Models\UserProfile;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
-
-class ExamScheduleImport implements ToModel, WithHeadingRow
+class ExamScheduleImport implements ToModel, WithHeadingRow, WithEvents
 {
     private $totalRows = 0;
     private $successRows = 0;
+    private $newTeachers = 0;
 
     public function __construct(private $importLogId = null) {}
 
@@ -22,53 +27,69 @@ class ExamScheduleImport implements ToModel, WithHeadingRow
         $this->totalRows++;
 
         try {
-            // ✅ Xử lý định dạng ngày
+            // ✅ Ngày thi
             $examDate = null;
             if (!empty($row['ngay_thi'])) {
                 if (is_numeric($row['ngay_thi'])) {
-                    // Nếu là dạng số Excel
                     $examDate = Date::excelToDateTimeObject($row['ngay_thi'])->format('Y-m-d');
                 } else {
-                    // Nếu là chuỗi (vd: 15/5/2023)
                     $examDate = date('Y-m-d', strtotime(str_replace('/', '-', $row['ngay_thi'])));
                 }
             }
 
-            // ✅ Xử lý định dạng giờ
+            if (empty($examDate)) {
+                Log::warning("❌ Bỏ qua dòng vì thiếu exam_date", $row);
+                return null;
+            }
+
+            // ✅ Exam code: nếu trống, tự sinh Lớp HP: 22211CNC12128001
+            // Ngày thi: 6/10/2023 → 231006
+            // STT: 1
+            // => exam_code: 22211CNC12128001-231006-01
+            $examCode = $row['ma_lt'] ?? null;
+            if (empty($examCode)) {
+                $stt = str_pad($row['stt'] ?? 1, 2, '0', STR_PAD_LEFT);
+                $classCode = strtoupper($row['lop_hp'] ?? 'XXX');
+                $dateCode = !empty($examDate) ? date('ymd', strtotime($examDate)) : '000000';
+                $examCode = "{$classCode}-{$dateCode}-{$stt}";
+                Log::info("⚡ Tự tạo exam_code: $examCode", $row);
+            }
+
+
+            // ✅ Giờ thi
             $examTime = null;
             if (!empty($row['gio_thi'])) {
                 $examTime = str_replace(['h', 'H', '.', ' '], ':', $row['gio_thi']);
-                // thêm :00 nếu thiếu giây
                 if (preg_match('/^\d{1,2}:\d{2}$/', $examTime)) {
                     $examTime .= ':00';
                 }
             }
 
-            // Lấy tên giáo viên và tách theo dấu phẩy
-            $teacherNames = explode(',', $row['exam_teacher']);
-            $teacher1 = isset($teacherNames[0]) ? trim($teacherNames[0]) : null;
-            $teacher2 = isset($teacherNames[1]) ? trim($teacherNames[1]) : null;
+            // ✅ Giáo viên coi thi
+            $teacherNames = [];
+            if (!empty($row['cbct'])) {
+                $teacherNames = array_map('trim', explode(',', $row['cbct']));
+            }
 
-            // Tìm ID giáo viên trong bảng teachers
-            $teacher1Id = Teacher::where('teacher_name', $teacher1)->value('teacher_id');
-            $teacher2Id = Teacher::where('teacher_name', $teacher2)->value('teacher_id');
+            $teacher1 = $teacherNames[0] ?? null;
+            $teacher2 = $teacherNames[1] ?? null;
 
+            // ✅ Tìm hoặc tạo giáo viên
+            $teacher1Id = $this->findTeacherIdByFullName($teacher1);
+            $teacher2Id = $this->findTeacherIdByFullName($teacher2);
+
+            // ✅ Tạo bản ghi exam session
             $session = new ExamSession([
-                'exam_code'       => $row['ma_lt'] ?? null,
+                'exam_code' => $examCode,
                 'class_code'      => $row['lop_hp'] ?? null,
                 'subject_name'    => $row['ten_hp'] ?? null,
                 'credits'         => $row['so_tc'] ?? null,
-                'student_class'   => $row['lop_sv'] ?? null,
                 'exam_time'       => $examTime,
                 'exam_date'       => $examDate,
                 'exam_room'       => $row['phong_thi'] ?? null,
                 'student_count'   => $row['so_sv'] ?? null,
                 'exam_duration'   => $row['tg_thi'] ?? null,
-                'exam_method'     => $row['ht_thi'] ?? null,
                 'exam_faculty'    => $row['khoa_coi_thi'] ?? null,
-                'education_level' => $row['bac_dt'] ?? null,
-                'training_system' => $row['he_dt'] ?? null,
-                'exam_batch'      => $row['dot_thi'] ?? null,
                 'exam_teacher'    => $row['cbct'] ?? null,
                 'assigned_teacher1_id' => $teacher1Id,
                 'assigned_teacher2_id' => $teacher2Id,
@@ -77,10 +98,62 @@ class ExamScheduleImport implements ToModel, WithHeadingRow
             $this->successRows++;
             return $session;
         } catch (\Exception $e) {
-            // 👉 Ghi log chi tiết nếu muốn debug
-            Log::error('Import error row: ' . $e->getMessage());
-            return null; // bỏ qua dòng lỗi
+            Log::error("❌ Lỗi dòng import: " . json_encode($row) . " - " . $e->getMessage());
+            return null;
         }
+    }
+
+    private function findTeacherIdByFullName($fullName)
+    {
+        if (empty($fullName)) return null;
+
+        $teacher = Teacher::whereHas('userProfile', function ($query) use ($fullName) {
+            $query->whereRaw("TRIM(CONCAT(user_lastname, ' ', user_firstname)) = ?", [trim($fullName)]);
+        })->first();
+
+        if ($teacher) return $teacher->teacher_id;
+
+        return DB::transaction(function () use ($fullName) {
+            $nameParts = explode(' ', $fullName);
+            $firstName = array_pop($nameParts);
+            $lastName = implode(' ', $nameParts);
+
+            $emailSlug = strtolower(str_replace(' ', '.', $fullName)) . '.' . uniqid() . '@tdc.edu.vn';
+
+            $user = User::create([
+                'user_name' => $fullName,
+                'user_email' => $emailSlug,
+                'user_password' => bcrypt('12345678'),
+                'user_is_activated' => 1,
+            ]);
+
+            $profile = UserProfile::create([
+                'user_id' => $user->user_id,
+                'user_firstname' => $firstName,
+                'user_lastname' => $lastName,
+            ]);
+
+            $teacher = Teacher::create([
+                'user_profile_id' => $profile->user_profile_id,
+            ]);
+
+            $this->newTeachers++;
+            Log::info("Tạo giáo viên mới: $fullName");
+            return $teacher->teacher_id;
+        });
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterImport::class => function () {
+                Log::info('✅ Import hoàn tất.', [
+                    'Tổng số dòng' => $this->totalRows,
+                    'Dòng thành công' => $this->successRows,
+                    'Giáo viên mới tạo' => $this->newTeachers,
+                ]);
+            },
+        ];
     }
 
     public function getTotalRows()
@@ -90,5 +163,9 @@ class ExamScheduleImport implements ToModel, WithHeadingRow
     public function getSuccessRows()
     {
         return $this->successRows;
+    }
+    public function getNewTeachers()
+    {
+        return $this->newTeachers;
     }
 }

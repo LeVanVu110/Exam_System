@@ -6,28 +6,27 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ExamSession;
 use App\Models\ExamImportLog;
-use App\Models\ExamImportData;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ExamScheduleExport;
 use App\Imports\ExamScheduleImport;
 use Illuminate\Support\Facades\Auth;
-use Barryvdh\DomPDF\Facade\Pdf; //đã tải thư viện barryvdh/laravel-dompdf
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ExamSessionController extends Controller
 {
-    // 📄 1. Import file Excel kỳ thi
+    // 📄 Import file Excel
     public function importExcel(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls'
         ]);
 
-        $file = $request->file('file');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-
         DB::beginTransaction();
         try {
+            $file = $request->file('file');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+
             $importLog = ExamImportLog::create([
                 'file_name' => $fileName,
                 'imported_by' => Auth::id(),
@@ -46,54 +45,52 @@ class ExamSessionController extends Controller
             ]);
 
             DB::commit();
-            return response()->json(['message' => 'Import thành công', 'log' => $importLog]);
+            return response()->json([
+                'message' => 'Import thành công',
+                'total_rows' => $import->getTotalRows(),
+                'success_rows' => $import->getSuccessRows(),
+                'new_teachers' => $import->getNewTeachers(),
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    // 📅 2. Danh sách tất cả kỳ thi
+    // 📅 Danh sách kỳ thi
     public function index(Request $request)
-{
-    $query = ExamSession::with([
-        'assignedTeacher1.user',
-        'assignedTeacher2.user'
-    ]);
+    {
+        $query = ExamSession::query()
+            ->leftJoin('teachers as t1', 'exam_sessions.assigned_teacher1_id', '=', 't1.teacher_id')
+            ->leftJoin('user_profiles as up1', 't1.user_profile_id', '=', 'up1.user_profile_id')
+            ->leftJoin('teachers as t2', 'exam_sessions.assigned_teacher2_id', '=', 't2.teacher_id')
+            ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
+            ->select(
+                'exam_sessions.*',
+                DB::raw("CONCAT(up1.user_lastname, ' ', up1.user_firstname) as teacher1_name"),
+                DB::raw("CONCAT(up2.user_lastname, ' ', up2.user_firstname) as teacher2_name")
+            );
 
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('exam_date', [$request->from, $request->to]);
+        if ($request->from && $request->to) {
+            $query->whereBetween('exam_date', [$request->from, $request->to]);
+        }
+
+        $sessions = $query->orderBy('exam_date', 'desc')->get();
+
+        return response()->json(['data' => $sessions]);
     }
 
-    $sessions = $query->orderBy('exam_date', 'desc')->paginate(10);
-
-    // Thêm tên giáo viên
-    $sessions->getCollection()->transform(function ($item) {
-        $item->teacher1_name = $item->assignedTeacher1?->user?->name ?? null;
-        $item->teacher2_name = $item->assignedTeacher2?->user?->name ?? null;
-        return $item;
-    });
-
-    return response()->json($sessions);
-}
-
-
-
-
-    // 🔍 3. Tìm kiếm form - to (đã gộp trong index)
-    // chỉ cần truyền query param: ?from=2025-10-01&to=2025-10-31
-
-    // 📤 4. Export lịch thi
+    // 📤 Xuất file Excel
     public function exportExcel(Request $request)
     {
         return Excel::download(new ExamScheduleExport($request->from, $request->to), 'lich_thi.xlsx');
     }
 
-    // 🧾 5. Xuất kết quả thi (PDF có ký tên)
+    // 🧾 Xuất báo cáo PDF
     public function exportReport($exam_session_id)
     {
         $exam = ExamSession::with(['course', 'assignedTeacher1', 'assignedTeacher2'])->findOrFail($exam_session_id);
-        $pdf = PDF::loadView('reports.exam_result', compact('exam'));
+        $pdf = Pdf::loadView('reports.exam_result', compact('exam'));
         return $pdf->download('bao_cao_ky_thi_' . $exam->exam_code . '.pdf');
     }
 }
