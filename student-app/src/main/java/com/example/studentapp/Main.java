@@ -13,10 +13,10 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         
         // Tải màn hình Đăng nhập (login.fxml)
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/login.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/TongHopQuanLyView.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 400, 300); // Kích thước nhỏ hơn cho Login
 
-        stage.setTitle("Đăng nhập");
+        stage.setTitle("Hệ Thống Thu Bài Thi TDC");
         stage.setScene(scene);
         stage.show();
     }
