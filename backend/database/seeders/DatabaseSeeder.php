@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +11,43 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Gọi toàn bộ các Seeder cần thiết
+        $this->call([
+            // Bảng danh mục
+            CategoryUserTypeSeeder::class,
+            CategoryFacultySeeder::class,
+            CategoryMajorSeeder::class,
+            CategoryPositionSeeder::class,
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            // Bảng người dùng
+            UserSeeder::class,
+            UserProfileSeeder::class,
+            TeacherSeeder::class,
+            // StudentSeeder::class,
+
+            // Bảng khóa học
+            CourseSeeder::class,
+
+            
+
+            // Bảng quyền & vai trò
+            RoleSeeder::class,
+            PermissionSeeder::class,
+            UserRoleSeeder::class,
+            RolePermissionSeeder::class,
+            UserPermissionSeeder::class,
+
+            // Bảng kỳ thi
+            ExamSessionSeeder::class,
+            // ExamStudentSeeder::class,
+            // ExamAttendanceSeeder::class,
+            // ExamSubmissionSeeder::class,
+            // ExamReportSeeder::class,
+
+            // Bảng cấu hình & import
+            // ExamImportLogSeeder::class,
+            // ExamImportDataSeeder::class,
+            // NetworkDriveConfigSeeder::class,
         ]);
     }
 }

@@ -6,9 +6,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: laravel12_backend_2
+    container_name: laravel12_backend_5
     ports:
-      - "8000:8000"
+      - "8006:8000"
     volumes:
       - ./backend:/var/www/html
     depends_on:
@@ -20,7 +20,7 @@ services:
   # MySQL Database
   mysql:
     image: mysql:8.0
-    container_name: laravel12_mysql-db_2
+    container_name: laravel12_mysql-db_5
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: laravel
@@ -39,7 +39,7 @@ services:
   # phpMyAdmin
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: laravel12_phpmyadmin_2
+    container_name: laravel12_phpmyadmin_5
     restart: always
     ports:
       - "8080:80"
@@ -53,7 +53,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: laravel12_react-frontend
+    container_name: laravel12_react-frontend1
     ports:
       - "5173:5173"
     volumes:
