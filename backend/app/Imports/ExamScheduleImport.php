@@ -93,6 +93,7 @@ class ExamScheduleImport implements ToModel, WithHeadingRow, WithEvents
                 'exam_teacher'    => $row['cbct'] ?? null,
                 'assigned_teacher1_id' => $teacher1Id,
                 'assigned_teacher2_id' => $teacher2Id,
+                'status' => 'Scheduled',
             ]);
 
             $this->successRows++;

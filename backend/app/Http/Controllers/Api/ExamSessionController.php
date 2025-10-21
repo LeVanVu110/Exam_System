@@ -71,8 +71,17 @@ class ExamSessionController extends Controller
                 DB::raw("CONCAT(up2.user_lastname, ' ', up2.user_firstname) as teacher2_name")
             );
 
-        if ($request->from && $request->to) {
-            $query->whereBetween('exam_date', [$request->from, $request->to]);
+        // ✅ Lọc theo khoảng ngày
+        if ($request->from) {
+            $query->whereDate('exam_date', '>=', $request->from);
+        }
+        if ($request->to) {
+            $query->whereDate('exam_date', '<=', $request->to);
+        }
+
+        // ✅ Lọc theo mã lớp (cho phép tìm gần đúng)
+        if ($request->class_code) {
+            $query->where('class_code', 'LIKE', '%' . $request->class_code . '%');
         }
 
         $sessions = $query->orderBy('exam_date', 'desc')->get();

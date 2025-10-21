@@ -1,184 +1,311 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import axios from "axios"
-import { Upload, Download, RotateCcw } from "lucide-react"
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { Upload, Download, Search, ChevronDown, ChevronUp } from "lucide-react";
+import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 
-export default function ExamSchedule() {
-  const [data, setData] = useState([])
-  const [file, setFile] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [date, setDate] = useState("")
-  const [room, setRoom] = useState("")
-  const [search, setSearch] = useState("")
+export default function ExamManagement() {
+  const [file, setFile] = useState(null);
+  const [data, setData] = useState([]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [classCode, setClassCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
-  // Lấy dữ liệu từ API
-  const fetchData = async () => {
+  // ✅ Tìm kiếm + Popup khi không có dữ liệu
+  const handleSearch = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
+
+      const params = {};
+      if (from) params.from = from;
+      if (to) params.to = to;
+      if (classCode) params.class_code = classCode;
+
       const res = await axios.get("http://localhost:8000/api/exam-sessions", {
-        params: { search, date, room },
-      })
-      setData(Array.isArray(res.data.data) ? res.data.data : [])
+        params,
+      });
+
+      const fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
+      setData(fetchedData);
+
+      if (fetchedData.length === 0) {
+        Swal.fire({
+          icon: "info",
+          title: "Không có dữ liệu!",
+          text: `Không có kết quả nào cho mã lớp "${classCode}".`,
+          confirmButtonColor: "#3085d6",
+        });
+      }
+      else {
+        toast.success(`✅ Tìm thấy ${fetchedData.length} kết quả phù hợp!`);
+      }
     } catch (error) {
-      console.error("Lỗi tải dữ liệu:", error)
-      setData([])
+      console.error("Lỗi khi tải dữ liệu:", error);
+      toast.error("❌ Lỗi khi tải dữ liệu!");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  // Import file Excel
+  // ✅ Import Excel + Toastify
   const handleImport = async (e) => {
-    e.preventDefault()
-    if (!file) return alert("Vui lòng chọn file trước khi import!")
+    e.preventDefault();
+    if (!file) {
+      toast.warning("⚠️ Vui lòng chọn file trước khi import!");
+      return;
+    }
 
     try {
-      setLoading(true)
-      const formData = new FormData()
-      formData.append("file", file)
-      await axios.post("http://localhost:8000/api/exam-sessions/import", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-      fetchData()
-      alert("Import thành công!")
-      setFile(null)
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await axios.post(
+        "http://localhost:8000/api/exam-sessions/import",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      toast.success(
+        `✅ Import thành công! (${res.data.success_rows} / ${res.data.total_rows})`
+      );
+      setFile(null);
+      handleSearch();
     } catch (error) {
-      console.error("Lỗi import:", error)
-      alert("Import thất bại!")
+      console.error("🔥 Chi tiết lỗi import:", error.response?.data || error);
+      toast.error("❌ Import thất bại! Kiểm tra lại file.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleExport = () => {
-    window.location.href = "http://localhost:8000/api/exam-sessions/export"
-  }
+  // ✅ Export Excel - Có xác nhận SweetAlert
+  const handleExport = async () => {
+    const confirm = await Swal.fire({
+      title: "Xuất file Excel?",
+      text: "Bạn có muốn xuất danh sách kỳ thi theo bộ lọc hiện tại không?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Có, xuất ngay",
+      cancelButtonText: "Hủy",
+    });
 
-  const handleReset = () => {
-    setSearch("")
-    setDate("")
-    setRoom("")
-    fetchData()
+    if (confirm.isConfirmed) {
+      window.location.href = `/api/exam-sessions/export?from=${from}&to=${to}`;
+      toast.info("📁 Đang xuất file Excel...");
+    }
+  };
+
+  // 🔁 Tải dữ liệu khi load trang
+  useEffect(() => {
+    handleSearch();
+  }, []);
+
+  const toggleRowExpand = (examSessionId) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(examSessionId)) {
+      newExpanded.delete(examSessionId);
+    } else {
+      newExpanded.add(examSessionId);
+    }
+    setExpandedRows(newExpanded);
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Lịch Thi</h1>
-        <p className="text-gray-500 text-sm">Quản lý lớp học và hoạt động giảng dạy</p>
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="w-full px-6 py-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">📘</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Quản lý Kỳ Thi</h1>
+              <p className="text-sm text-slate-500 mt-1">Phòng Đào Tạo - Hệ thống quản lý kỳ thi</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Bộ lọc */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 p-4 flex flex-col md:flex-row items-center gap-3">
-          <input
-            type="text"
-            placeholder="Tên môn học, lớp..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2"
-          />
-          <select
-            value={room}
-            onChange={(e) => setRoom(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2"
-          >
-            <option value="">Chọn phòng thi</option>
-            <option value="A101">A101</option>
-            <option value="B205">B205</option>
-            <option value="C301">C301</option>
-            <option value="A102">A102</option>
-          </select>
+      <div className="w-full px-6 py-8">
+        {/* Filter Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Search className="w-5 h-5 text-blue-600" />
+            Tìm kiếm và Lọc
+          </h2>
 
-          {/* Buttons */}
-          <div className="flex gap-2 mt-3 md:mt-0">
-            <button
-              onClick={handleImport}
-              disabled={loading}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-            >
-              <Upload size={16} />
-              Import File Excel
-            </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
-            >
-              <Download size={16} />
-              Xuất File Excel
-            </button>
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
-            >
-              <RotateCcw size={16} />
-              Reset
-            </button>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Từ ngày</label>
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Đến ngày</label>
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Mã lớp</label>
+                <input
+                  type="text"
+                  value={classCode}
+                  onChange={(e) => setClassCode(e.target.value)}
+                  placeholder="Nhập mã lớp..."
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-medium px-6 py-2 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                Tìm kiếm
+              </button>
+              <button
+                onClick={handleExport}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Xuất Excel
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Bảng danh sách */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-800">
-              Danh sách lịch thi{" "}
-              <span className="text-sm text-gray-500">(Hiển thị {data.length} buổi thi)</span>
+        {/* Import Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Upload className="w-5 h-5 text-purple-600" />
+            Import Dữ Liệu
+          </h2>
+
+          <form onSubmit={handleImport} className="flex flex-col md:flex-row items-end gap-4">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Chọn file Excel</label>
+              <input
+                type="file"
+                onChange={(e) => setFile(e.target.files[0])}
+                accept=".xlsx,.xls,.csv"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+              />
+              {file && <p className="text-xs text-slate-500 mt-1">📄 {file.name}</p>}
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !file}
+              className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white font-medium px-6 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap w-full md:w-auto"
+            >
+              <Upload className="w-4 h-4" />
+              Import
+            </button>
+          </form>
+        </div>
+
+        {/* Data Table Section */}
+        {/* ✅ Bảng dữ liệu */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Danh sách Kỳ Thi ({data.length} bản ghi)
             </h2>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-700">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="min-w-full table-fixed">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3">STT</th>
-                  <th className="px-6 py-3">LỚP HỌC PHẦN</th>
-                  <th className="px-6 py-3">TÊN HỌC PHẦN</th>
-                  <th className="px-6 py-3">TÍN CHỈ</th>
-                  <th className="px-6 py-3">NGÀY THI - GIỜ THI</th>
-                  <th className="px-6 py-3">PHÒNG THI</th>
-                  <th className="px-6 py-3">SV DỰ THI</th>
-                  <th className="px-6 py-3">THỜI GIAN (PHÚT)</th>
-                  <th className="px-6 py-3">CBCT 1</th>
-                  <th className="px-6 py-3">CBCT 2</th>
+                  <th className="w-6 px-2 py-2"></th>
+                  <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Mã ca thi</th>
+                  <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Mã lớp</th>
+                  <th className="w-40 px-2 py-2 text-xs font-bold text-slate-700">Môn học</th>
+                  <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Ngày thi</th>
+                  <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Tình trạng</th>
+                  <th className="w-40 px-2 py-2 text-xs font-bold text-slate-700">Giáo viên 1</th>
+                  <th className="w-40 px-2 py-2 text-xs font-bold text-slate-700">Giáo viên 2</th>
+                  <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Kết quả</th>
                 </tr>
               </thead>
-              <tbody>
+
+              <tbody className="divide-y divide-slate-200">
                 {data.length > 0 ? (
-                  data.map((item, index) => (
-                    <tr
-                      key={item.exam_session_id || index}
-                      className="border-b border-gray-100 hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-3">{index + 1}</td>
-                      <td className="px-6 py-3">{item.class_code}</td>
-                      <td className="px-6 py-3">{item.subject_name}</td>
-                      <td className="px-6 py-3">{item.credits}</td>
-                      <td className="px-6 py-3">{item.exam_date} - {item.exam_time}</td>
-                      <td className="px-6 py-3">
-                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-                          {item.exam_room}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-center">{item.student_count}</td>
-                      <td className="px-6 py-3 text-center">{item.exam_duration}</td>
-                      <td className="px-6 py-3">{item.teacher1_name}</td>
-                      <td className="px-6 py-3">{item.teacher2_name}</td>
-                    </tr>
+                  data.map((item) => (
+                    <>
+                      <tr key={item.exam_session_id} className="hover:bg-slate-50">
+                        <td className="text-center">
+                          <button
+                            onClick={() => toggleRowExpand(item.exam_session_id)}
+                            className="text-slate-500 hover:text-slate-800"
+                          >
+                            {expandedRows.has(item.exam_session_id) ?
+                              <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </td>
+                        <td className="text-xs px-2 py-2 font-medium">{item.exam_code}</td>
+                        <td className="text-xs px-2 py-2">{item.class_code}</td>
+                        <td className="text-xs px-2 py-2">{item.subject_name}</td>
+                        <td className="text-xs px-2 py-2">{item.exam_date}</td>
+                        <td className="text-xs px-2 py-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${item.status === "Hoàn thành"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : item.status === "Đang diễn ra"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-slate-100 text-slate-800"
+                            }`}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="text-xs px-2 py-2">{item.teacher1_name || "—"}</td>
+                        <td className="text-xs px-2 py-2">{item.teacher2_name || "—"}</td>
+                        <td className="text-xs px-2 py-2">
+                          <a href={`/api/exam-sessions/${item.exam_session_id}/report`} className="text-blue-600">
+                            Xuất PDF
+                          </a>
+                        </td>
+                      </tr>
+
+                      {expandedRows.has(item.exam_session_id) && (
+                        <tr className="bg-slate-50">
+                          <td colSpan="9" className="px-6 py-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+                              <p><strong>Phòng thi:</strong> {item.exam_room}</p>
+                              <p><strong>Tổng máy:</strong> {item.total_computers}</p>
+                              <p><strong>Số lượng SV:</strong> {item.student_count}</p>
+                              <p><strong>Giờ thi:</strong> {item.exam_time}</p>
+                              <p><strong>Thời lượng:</strong> {item.exam_duration} phút</p>
+                              <p><strong>Khoa coi thi:</strong> {item.exam_faculty}</p>
+                              <p><strong>Ngày tạo:</strong> {item.created_at}</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
-                      Không có dữ liệu
+                    <td colSpan="9" className="text-center py-8 text-slate-500">
+                      📭 Không có dữ liệu
                     </td>
                   </tr>
                 )}
