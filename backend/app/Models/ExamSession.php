@@ -29,10 +29,13 @@ class ExamSession extends Model
     }
 
     public function teacher1() {
-        return $this->belongsTo(Teacher::class, 'assigned_teacher1_id', 'teacher_id');
+    return $this->belongsTo(Teacher::class, 'assigned_teacher1_id', 'teacher_id')
+                ->with('userProfile');
     }
 
     public function teacher2() {
-        return $this->belongsTo(Teacher::class, 'assigned_teacher2_id', 'teacher_id');
+    return $this->belongsTo(Teacher::class, 'assigned_teacher2_id', 'teacher_id')
+                ->with('userProfile');
     }
+
 }

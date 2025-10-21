@@ -4,11 +4,17 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class RoleSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::table('role')->truncate();
+        DB::table('roles_permissions')->truncate();
+        DB::table('users_roles')->truncate();
+        DB::table('permissions')->truncate();
+
         Role::insert([
             [
                 'role_name' => 'Admin',

@@ -20,10 +20,11 @@ class Teacher extends Model
     ];
 
     // Quan hệ với UserProfile
-    public function userProfile()
+    public function userProfile() 
     {
-        return $this->belongsTo(UserProfile::class, 'user_profile_id');
+        return $this->belongsTo(UserProfile::class, 'user_profile_id', 'user_profile_id');
     }
+
 
     // Quan hệ với CategoryFaculty
     public function faculty()
