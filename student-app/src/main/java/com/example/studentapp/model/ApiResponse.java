@@ -2,7 +2,7 @@ package com.example.studentapp.model;
 
 import java.util.List;
 
-public class ApiRespone {
+public class ApiResponse {
     private String message;
     private int count;
 

@@ -4,14 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ExamController extends Controller
 {
     public function index(Request $request)
     {
-        $json = Storage::get('mock/exams.json');
-        $exams = json_decode($json, true);
+        $path = storage_path('app/mock/exams.json');
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'Mock file not found', 'path' => $path], 404);
+        };
+        $exams = json_decode(file_get_contents($path), true);
 
         $room = $request->query('room');
         if ($room) {
