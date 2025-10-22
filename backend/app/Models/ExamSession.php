@@ -64,4 +64,33 @@ class ExamSession extends Model
     {
         return $this->belongsTo(Teacher::class, 'assigned_teacher2_id', 'teacher_id');
     }
+
+    // Lấy thông tin hồ sơ giáo viên qua quan hệ trung gian
+    // ExamSession.assigned_teacher1_id → teachers.teacher_id  
+    //teachers.user_profile_id → user_profiles.user_profile_id 
+    //user_profiles.user_firstname + user_profiles.user_lastname
+
+    public function teacher1Profile()
+    {
+        return $this->hasOneThrough(
+            UserProfile::class,
+            Teacher::class,
+            'teacher_id',          // khóa chính của bảng teachers
+            'user_profile_id',     // khóa chính của bảng user_profiles
+            'assigned_teacher1_id', // khóa ngoại trong bảng exam_sessions
+            'user_profile_id'      // khóa ngoại trong bảng teachers
+        );
+    }
+
+    public function teacher2Profile()
+    {
+        return $this->hasOneThrough(
+            UserProfile::class,
+            Teacher::class,
+            'teacher_id',
+            'user_profile_id',
+            'assigned_teacher2_id',
+            'user_profile_id'
+        );
+    }
 }

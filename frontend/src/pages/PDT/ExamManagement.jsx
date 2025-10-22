@@ -166,7 +166,7 @@ export default function ExamManagement() {
     }
   }
 
-  // ✅ Export Excel - Có xác nhận SweetAlert
+  // ✅ Export Excel - Có xác nhận SweetAlert + thông báo rõ ràng
   const handleExport = async () => {
     const confirm = await Swal.fire({
       title: "Xuất file Excel?",
@@ -175,13 +175,24 @@ export default function ExamManagement() {
       showCancelButton: true,
       confirmButtonText: "Có, xuất ngay",
       cancelButtonText: "Hủy",
-    })
+    });
 
     if (confirm.isConfirmed) {
-      window.location.href = `/api/exam-sessions/export?from=${from}&to=${to}`
-      toast.info("📁 Đang xuất file Excel...")
+      toast.info("📁 Đang tạo file Excel...");
+
+      // Dùng window.open thay vì window.location.href 
+      // để không tải trực tiếp mà mở tab tải (tránh chặn toast)
+      window.open(`http://localhost:8000/api/exam-sessions/export?from=${from}&to=${to}`, "_blank");
     }
-  }
+  };
+
+
+  // ✅ Xuất PDF từng kỳ thi
+  const handleExportPDF = (id) => {
+    toast.info("📄 Đang tạo file PDF...");
+    window.open(`http://localhost:8000/api/exam-sessions/${id}/report`, "_blank");
+  };
+
 
   // 🔁 Tải dữ liệu khi load trang
   useEffect(() => {
@@ -386,13 +397,12 @@ export default function ExamManagement() {
                         <td className="text-xs px-2 py-2">{item.exam_date}</td>
                         <td className="text-xs px-2 py-2">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              item.status === "Hoàn thành"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : item.status === "Đang diễn ra"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-slate-100 text-slate-800"
-                            }`}
+                            className={`px-2 py-1 rounded-full text-xs ${item.status === "Hoàn thành"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : item.status === "Đang diễn ra"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-slate-100 text-slate-800"
+                              }`}
                           >
                             {item.status}
                           </span>
@@ -400,10 +410,14 @@ export default function ExamManagement() {
                         <td className="text-xs px-2 py-2">{item.teacher1_name || "—"}</td>
                         <td className="text-xs px-2 py-2">{item.teacher2_name || "—"}</td>
                         <td className="text-xs px-2 py-2">
-                          <a href={`/api/exam-sessions/${item.exam_session_id}/report`} className="text-blue-600">
+                          <button
+                            onClick={() => handleExportPDF(item.exam_session_id)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
                             Xuất PDF
-                          </a>
+                          </button>
                         </td>
+
                         <td className="text-xs px-2 py-2">
                           <button
                             onClick={() => handleDeleteSingle(item.exam_session_id)}

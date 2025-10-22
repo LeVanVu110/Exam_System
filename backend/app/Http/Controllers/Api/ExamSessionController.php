@@ -92,8 +92,25 @@ class ExamSessionController extends Controller
     // 📤 Xuất file Excel
     public function exportExcel(Request $request)
     {
-        return Excel::download(new ExamScheduleExport($request->from, $request->to), 'lich_thi.xlsx');
+        // Kiểm tra ngày nhập hợp lệ
+        $request->validate([
+            'from' => 'nullable|date',
+            'to'   => 'nullable|date|after_or_equal:from',
+        ]);
+
+        $from = $request->query('from');
+        $to = $request->query('to');
+
+        // Tạo tên file có ngày giờ xuất cho dễ quản lý
+        $filename = 'lich_thi_' . now()->format('Ymd_His') . '.xlsx';
+
+        // Xuất file Excel
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ExamScheduleExport($from, $to),
+            $filename
+        );
     }
+
 
     // 🧾 Xuất báo cáo PDF
     public function exportReport($exam_session_id)
