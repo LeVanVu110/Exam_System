@@ -13,7 +13,7 @@ function App() {
     <Router>
       <Routes>
         {/* phòng đào tạo */}
-        <Route path="/PDT/ExamManagement" element={<ExamManagement />} />
+        <Route path="/" element={<ExamManagement />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={2000} />
     </Router>
