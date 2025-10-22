@@ -2,7 +2,6 @@ package com.example.studentapp.controller;
 
 import com.example.studentapp.model.ApiResponse;
 import com.example.studentapp.model.RoomModel;
-import com.fasterxml.jackson.core.type.TypeReference; // Cần thiết để parse List
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -19,13 +18,16 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 
-public class RoomController {
+public class ExamRoomController {
 
-    @FXML private TextField txtRoom;
-    @FXML private Button btnRoom;
-    @FXML private Label lblShowRoom;
-    @FXML private VBox vbox;
-    @FXML private HeaderController headerController;
+    @FXML
+    private TextField txtRoom;
+    @FXML
+    private Button btnRoom;
+    @FXML
+    private Label lblShowRoom;
+    @FXML
+    private VBox vbox;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -33,8 +35,6 @@ public class RoomController {
     @FXML
     public void initialize() {
         // Gán sự kiện click cho button
-        String teacherNameFromLogin = "Đặng Thị Thu Hoài Rất Rất Dài";
-        headerController.setTeacherInfo(teacherNameFromLogin);
         btnRoom.setOnAction(this::handleSubmitButton);
     }
 

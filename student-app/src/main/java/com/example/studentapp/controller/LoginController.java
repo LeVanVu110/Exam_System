@@ -41,7 +41,7 @@ public class LoginController {
             Stage currentStage = (Stage) usernameField.getScene().getWindow();
             
             // Tải FXML của màn hình chính/màn hình tiếp theo (ví dụ: upload-view.fxml)
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/upload-view.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/upload-view.fxml"));
             Scene scene = new Scene(fxmlLoader.load(), 800, 600); // Kích thước mới
             
             currentStage.setTitle("Hệ thống nộp bài thi");
