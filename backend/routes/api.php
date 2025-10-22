@@ -40,3 +40,4 @@ Route::apiResources([
     'exam-schedule' => ExamSessionController::class,
 
 ]);
+Route::post('exam-schedule/save', [ExamSessionController::class, 'saveImported']);

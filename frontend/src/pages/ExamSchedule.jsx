@@ -22,6 +22,12 @@ export default function ExamSchedule() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
   const fileInputRef = useRef(null);
+  //Chọn Phòng Thi
+  const [selectedRoom, setSelectedRoom] = useState("");
+  const [showRoomDropdown, setShowRoomDropdown] = useState(false);
+  //  Chọn Ngày Thi
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Import Excel state
   const [importResult, setImportResult] = useState({
@@ -52,11 +58,32 @@ export default function ExamSchedule() {
   }, [BASE_URL]);
 
   // Filter theo ô tìm kiếm
-  const filteredData = scheduleData.filter(
-    (item) =>
+  // const filteredData = scheduleData.filter(
+  //   (item) =>
+  //     item.exam_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     item.course?.course_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  // );
+  //
+  const uniqueRooms = [
+    ...new Set(scheduleData.map((item) => item.exam_room).filter(Boolean)),
+  ];
+
+  const filteredData = scheduleData.filter((item) => {
+    const matchesSearch =
       item.exam_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.course?.course_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      item.course?.course_name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+    const matchesRoom = selectedRoom ? item.exam_room === selectedRoom : true;
+
+    const itemDate = new Date(item.exam_date);
+    const isAfterStart = !startDate || itemDate >= new Date(startDate);
+    const isBeforeEnd = !endDate || itemDate <= new Date(endDate);
+    const matchesDate = isAfterStart && isBeforeEnd;
+
+    return matchesSearch && matchesRoom && matchesDate;
+  });
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -123,15 +150,16 @@ export default function ExamSchedule() {
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const data = evt.target.result;
       const workbook = XLSX.read(data, { type: "binary" });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      // 🧩 Chuẩn hóa dữ liệu để React hiểu đúng
+      // Chuẩn hóa dữ liệu
       const normalizedData = jsonData.map((item, index) => ({
         exam_session_id: item.exam_session_id || index + 1,
         course: {
@@ -142,18 +170,18 @@ export default function ExamSchedule() {
         exam_start_time: item.exam_start_time,
         exam_end_time: item.exam_end_time,
         exam_room: item.exam_room,
-        teacher1: item["Tên GV1"]
+        teacher1: item.teacher1
           ? {
               user_profile: {
-                user_firstname: item["Tên GV1"],
+                user_firstname: item.teacher1,
                 user_lastname: "",
               },
             }
           : null,
-        teacher2: item["Tên GV2"]
+        teacher2: item.teacher2
           ? {
               user_profile: {
-                user_firstname: item["Tên GV2"],
+                user_firstname: item.teacher2,
                 user_lastname: "",
               },
             }
@@ -163,10 +191,29 @@ export default function ExamSchedule() {
         status: item.status || "Sắp tới",
       }));
 
-      console.log("✅ Chuẩn hóa dữ liệu import:", normalizedData);
-
+      // Ghi vào state ngay để table hiển thị
       setScheduleData(normalizedData);
+
+      // 🔥 Gửi dữ liệu lên API luôn
+      try {
+        setLoading(true);
+        const res = await fetch(`${BASE_URL}/api/exam-schedule/save`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(normalizedData),
+        });
+
+        if (!res.ok) throw new Error("Lưu dữ liệu thất bại");
+        alert("✅ Dữ liệu import đã được lưu thành công!");
+      } catch (err) {
+        alert("❌ Lỗi khi lưu dữ liệu: " + err.message);
+      } finally {
+        setLoading(false);
+      }
     };
+
     reader.readAsBinaryString(file);
   };
 
@@ -175,38 +222,49 @@ export default function ExamSchedule() {
   };
 
   // 📥 Xuất Excel
- const handleExportExcel = () => {
-  const exportData = scheduleData.map((item, index) => ({
-    STT: index + 1,
-    "Mã học phần": item.course?.course_code || "",
-    "Tên học phần": item.course?.course_name || "",
-    "Ngày thi": item.exam_date || "",
-    "Giờ bắt đầu": item.exam_start_time || "",
-    "Giờ kết thúc": item.exam_end_time || "",
-    "Phòng": item.exam_room || "",
-    "Cán bộ coi thi 1":
-      item.teacher1
-        ? `${item.teacher1.user_profile?.user_firstname || ""} ${item.teacher1.user_profile?.user_lastname || ""}`.trim()
+  const handleExportExcel = () => {
+    const exportData = scheduleData.map((item) => ({
+      STT: item.exam_session_id || "",
+      "Mã môn": item.course?.course_code || "",
+      "Tên môn": item.course?.course_name || "",
+      "Ngày thi": item.exam_date || "",
+      "Giờ bắt đầu": item.exam_start_time || "",
+      "Giờ kết thúc": item.exam_end_time || "",
+      "Phòng thi": item.exam_room || "",
+      "Trạng thái": item.status || "",
+      "Môn học": item.course
+        ? `${item.course.course_code} - ${item.course.course_name}`
+        : "",
+      "Giảng viên 1": item.teacher1
+        ? `${item.teacher1.user_profile?.user_firstname || ""} ${
+            item.teacher1.user_profile?.user_lastname || ""
+          }`.trim()
         : `GV#${item.assigned_teacher1_id || "-"}`,
-    "Cán bộ coi thi 2":
-      item.teacher2
-        ? `${item.teacher2.user_profile?.user_firstname || ""} ${item.teacher2.user_profile?.user_lastname || ""}`.trim()
+      "Giảng viên 2": item.teacher2
+        ? `${item.teacher2.user_profile?.user_firstname || ""} ${
+            item.teacher2.user_profile?.user_lastname || ""
+          }`.trim()
         : `GV#${item.assigned_teacher2_id || "-"}`,
-    "Thời gian thi (phút)": (() => {
-      if (!item.exam_start_time || !item.exam_end_time) return "";
-      const start = new Date(`1970-01-01T${item.exam_start_time}`);
-      const end = new Date(`1970-01-01T${item.exam_end_time}`);
-      return (end - start) / 60000;
-    })(),
-    "Ghi chú": item.status || "",
-  }));
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(exportData);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "ExamSchedule");
-  XLSX.writeFile(workbook, "exam_schedule.xlsx");
-};
-
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    // Tự động đặt độ rộng cột dựa trên dữ liệu
+    const colWidths = exportData.length
+      ? Object.keys(exportData[0]).map((key) => {
+          const maxLength = Math.max(
+            key.length, // chiều dài tiêu đề
+            ...exportData.map((row) =>
+              row[key] ? row[key].toString().length : 0
+            )
+          );
+          return { wch: maxLength + 2 }; // +2 để thêm chút khoảng cách
+        })
+      : [];
+    worksheet["!cols"] = colWidths;
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "ExamSchedule");
+    XLSX.writeFile(workbook, "exam_schedule.xlsx");
+  };
 
   // Loading/Error
   if (loading)
@@ -256,36 +314,93 @@ export default function ExamSchedule() {
         <div className="flex items-center gap-4">
           <div className="flex-1 relative">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground px-3"
               size={18}
             />
             <Input
               placeholder="Tìm môn học, lớp..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
+          {/* nút chọn ngày thi  */}
           <div className="flex items-center gap-2 border border-border rounded-lg px-3 py-2 bg-background">
             <input
-              type="text"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="bg-transparent text-sm outline-none w-24"
-              placeholder="mm/dd/yyyy"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-transparent text-sm outline-none w-32 text-muted-foreground"
             />
-            <ChevronDown size={16} className="text-muted-foreground" />
+            <span className="text-muted-foreground">–</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-transparent text-sm outline-none w-32 text-muted-foreground"
+            />
           </div>
-          <Button variant="outline" size="sm">
-            Chọn phòng thi
-          </Button>
+
+          {/* End Nút Chọn Ngày Thi */}
+          {/* Nút Chọn Phòng Thi */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRoomDropdown(!showRoomDropdown)}
+              className="flex items-center justify-between gap-2 px-4 py-2 text-sm min-w-[160px]"
+            >
+              <span className="text-sm text-foreground truncate">
+                {selectedRoom ? `Phòng: ${selectedRoom}` : "Chọn phòng thi"}
+              </span>
+              <ChevronDown
+                size={16}
+                className={`text-muted-foreground transition-transform duration-200 ${
+                  showRoomDropdown ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+
+            {showRoomDropdown && (
+              <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <button
+                  className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                  onClick={() => {
+                    setSelectedRoom("");
+                    setShowRoomDropdown(false);
+                  }}
+                >
+                  Tất cả phòng
+                </button>
+                {uniqueRooms.map((room) => (
+                  <button
+                    key={room}
+                    className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                    onClick={() => {
+                      setSelectedRoom(room);
+                      setShowRoomDropdown(false);
+                    }}
+                  >
+                    {room}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* End Nút Chọn Phòng Thi */}
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+          {/* Nút Sao lưu dữ liệu */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-transparent"
+            onClick={handleExportExcel} // <-- gắn hàm xuất Excel
+          >
             <Download size={16} />
             Sao lưu dữ liệu
           </Button>

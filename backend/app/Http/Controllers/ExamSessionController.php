@@ -48,4 +48,30 @@ class ExamSessionController extends Controller
         ExamSession::findOrFail($id)->delete();
         return response()->json(['message' => 'Exam session deleted']);
     }
+    public function saveImported(Request $request)
+{
+    $data = $request->all();
+
+    // Xóa dữ liệu cũ nếu cần
+    ExamSchedule::truncate();
+
+    // Lưu dữ liệu mới
+    foreach ($data as $item) {
+        ExamSchedule::create([
+            'exam_session_id' => $item['exam_session_id'],
+            'course_code' => $item['course']['course_code'],
+            'course_name' => $item['course']['course_name'],
+            'exam_date' => $item['exam_date'],
+            'exam_start_time' => $item['exam_start_time'],
+            'exam_end_time' => $item['exam_end_time'],
+            'exam_room' => $item['exam_room'],
+            'teacher1' => $item['teacher1'] ? $item['teacher1']['user_profile']['user_firstname'] : null,
+            'teacher2' => $item['teacher2'] ? $item['teacher2']['user_profile']['user_firstname'] : null,
+            'status' => $item['status'],
+        ]);
+    }
+
+    return response()->json(['message' => 'Saved successfully']);
+}
+
 }
