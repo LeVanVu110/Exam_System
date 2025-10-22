@@ -20,14 +20,12 @@ import java.net.http.HttpResponse;
 import java.util.List;
 
 public class RoomController {
-    @FXML
-    private TextField txtRoom;
-    @FXML
-    private Button btnRoom;
-    @FXML
-    private Label lblShowRoom;
-    @FXML
-    private VBox vbox;
+
+    @FXML private TextField txtRoom;
+    @FXML private Button btnRoom;
+    @FXML private Label lblShowRoom;
+    @FXML private VBox vbox;
+    @FXML private HeaderController headerController;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -35,6 +33,8 @@ public class RoomController {
     @FXML
     public void initialize() {
         // Gán sự kiện click cho button
+        String teacherNameFromLogin = "Đặng Thị Thu Hoài Rất Rất Dài";
+        headerController.setTeacherInfo(teacherNameFromLogin);
         btnRoom.setOnAction(this::handleSubmitButton);
     }
 
