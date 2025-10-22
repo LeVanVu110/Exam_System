@@ -1,36 +1,38 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { Upload, Download, Search, ChevronDown, ChevronUp } from "lucide-react";
-import Swal from "sweetalert2";
-import { toast } from "react-toastify";
+import { useState, useEffect } from "react"
+import axios from "axios"
+import { Upload, Download, Search, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
+import Swal from "sweetalert2"
+import { toast } from "react-toastify"
 
 export default function ExamManagement() {
-  const [file, setFile] = useState(null);
-  const [data, setData] = useState([]);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [classCode, setClassCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [expandedRows, setExpandedRows] = useState(new Set());
+  const [file, setFile] = useState(null)
+  const [data, setData] = useState([])
+  const [from, setFrom] = useState("")
+  const [to, setTo] = useState("")
+  const [classCode, setClassCode] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [expandedRows, setExpandedRows] = useState(new Set())
+  const [selectedRows, setSelectedRows] = useState(new Set())
 
   // ✅ Tìm kiếm + Popup khi không có dữ liệu
   const handleSearch = async () => {
     try {
-      setLoading(true);
+      setLoading(true)
 
-      const params = {};
-      if (from) params.from = from;
-      if (to) params.to = to;
-      if (classCode) params.class_code = classCode;
+      const params = {}
+      if (from) params.from = from
+      if (to) params.to = to
+      if (classCode) params.class_code = classCode
 
       const res = await axios.get("http://localhost:8000/api/exam-sessions", {
         params,
-      });
+      })
 
-      const fetchedData = Array.isArray(res.data.data) ? res.data.data : [];
-      setData(fetchedData);
+      const fetchedData = Array.isArray(res.data.data) ? res.data.data : []
+      setData(fetchedData)
+      setSelectedRows(new Set())
 
       if (fetchedData.length === 0) {
         Swal.fire({
@@ -38,52 +40,131 @@ export default function ExamManagement() {
           title: "Không có dữ liệu!",
           text: `Không có kết quả nào cho mã lớp "${classCode}".`,
           confirmButtonColor: "#3085d6",
-        });
-      }
-      else {
-        toast.success(`✅ Tìm thấy ${fetchedData.length} kết quả phù hợp!`);
+        })
+      } else {
+        toast.success(`✅ Tìm thấy ${fetchedData.length} kết quả phù hợp!`)
       }
     } catch (error) {
-      console.error("Lỗi khi tải dữ liệu:", error);
-      toast.error("❌ Lỗi khi tải dữ liệu!");
+      console.error("Lỗi khi tải dữ liệu:", error)
+      toast.error("❌ Lỗi khi tải dữ liệu!")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const handleClearClassCode = () => {
+    setClassCode("")
+    setSelectedRows(new Set())
+  }
+
+  const handleDeleteSingle = async (examSessionId) => {
+    const confirm = await Swal.fire({
+      title: "Xóa kỳ thi?",
+      text: "Bạn có chắc chắn muốn xóa kỳ thi này không?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Xóa",
+      cancelButtonText: "Hủy",
+    })
+
+    if (confirm.isConfirmed) {
+      try {
+        setLoading(true)
+        await axios.delete(`http://localhost:8000/api/exam-sessions/${examSessionId}`)
+        toast.success("✅ Xóa kỳ thi thành công!")
+        handleSearch()
+      } catch (error) {
+        console.error("Lỗi khi xóa:", error)
+        toast.error("❌ Lỗi khi xóa kỳ thi!")
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  const handleDeleteBulk = async () => {
+    if (selectedRows.size === 0) {
+      toast.warning("⚠️ Vui lòng chọn ít nhất một kỳ thi để xóa!")
+      return
+    }
+
+    const confirm = await Swal.fire({
+      title: "Xóa hàng loạt?",
+      text: `Bạn có chắc chắn muốn xóa ${selectedRows.size} kỳ thi đã chọn không?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Xóa tất cả",
+      cancelButtonText: "Hủy",
+    })
+
+    if (confirm.isConfirmed) {
+      try {
+        setLoading(true)
+        const idsToDelete = Array.from(selectedRows)
+        await axios.post("http://localhost:8000/api/exam-sessions/delete-bulk", {
+          ids: idsToDelete,
+        })
+        toast.success(`✅ Xóa ${selectedRows.size} kỳ thi thành công!`)
+        setSelectedRows(new Set())
+        handleSearch()
+      } catch (error) {
+        console.error("Lỗi khi xóa hàng loạt:", error)
+        toast.error("❌ Lỗi khi xóa hàng loạt!")
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  const toggleRowSelection = (examSessionId) => {
+    const newSelected = new Set(selectedRows)
+    if (newSelected.has(examSessionId)) {
+      newSelected.delete(examSessionId)
+    } else {
+      newSelected.add(examSessionId)
+    }
+    setSelectedRows(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedRows.size === data.length) {
+      setSelectedRows(new Set())
+    } else {
+      setSelectedRows(new Set(data.map((item) => item.exam_session_id)))
+    }
+  }
 
   // ✅ Import Excel + Toastify
   const handleImport = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!file) {
-      toast.warning("⚠️ Vui lòng chọn file trước khi import!");
-      return;
+      toast.warning("⚠️ Vui lòng chọn file trước khi import!")
+      return
     }
 
     try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("file", file);
+      setLoading(true)
+      const formData = new FormData()
+      formData.append("file", file)
 
-      const res = await axios.post(
-        "http://localhost:8000/api/exam-sessions/import",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      const res = await axios.post("http://localhost:8000/api/exam-sessions/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
 
-      toast.success(
-        `✅ Import thành công! (${res.data.success_rows} / ${res.data.total_rows})`
-      );
-      setFile(null);
-      handleSearch();
+      toast.success(`✅ Import thành công! (${res.data.success_rows} / ${res.data.total_rows})`)
+      setFile(null)
+      handleSearch()
     } catch (error) {
-      console.error("🔥 Chi tiết lỗi import:", error.response?.data || error);
-      toast.error("❌ Import thất bại! Kiểm tra lại file.");
+      console.error("🔥 Chi tiết lỗi import:", error.response?.data || error)
+      toast.error("❌ Import thất bại! Kiểm tra lại file.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // ✅ Export Excel - Có xác nhận SweetAlert
   const handleExport = async () => {
@@ -94,27 +175,27 @@ export default function ExamManagement() {
       showCancelButton: true,
       confirmButtonText: "Có, xuất ngay",
       cancelButtonText: "Hủy",
-    });
+    })
 
     if (confirm.isConfirmed) {
-      window.location.href = `/api/exam-sessions/export?from=${from}&to=${to}`;
-      toast.info("📁 Đang xuất file Excel...");
+      window.location.href = `/api/exam-sessions/export?from=${from}&to=${to}`
+      toast.info("📁 Đang xuất file Excel...")
     }
-  };
+  }
 
   // 🔁 Tải dữ liệu khi load trang
   useEffect(() => {
-    handleSearch();
-  }, []);
+    handleSearch()
+  }, [])
 
   const toggleRowExpand = (examSessionId) => {
-    const newExpanded = new Set(expandedRows);
+    const newExpanded = new Set(expandedRows)
     if (newExpanded.has(examSessionId)) {
-      newExpanded.delete(examSessionId);
+      newExpanded.delete(examSessionId)
     } else {
-      newExpanded.add(examSessionId);
+      newExpanded.add(examSessionId)
     }
-    setExpandedRows(newExpanded);
+    setExpandedRows(newExpanded)
   }
 
   return (
@@ -164,13 +245,24 @@ export default function ExamManagement() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Mã lớp</label>
-                <input
-                  type="text"
-                  value={classCode}
-                  onChange={(e) => setClassCode(e.target.value)}
-                  placeholder="Nhập mã lớp..."
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={classCode}
+                    onChange={(e) => setClassCode(e.target.value)}
+                    placeholder="Nhập mã lớp..."
+                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                  {classCode && (
+                    <button
+                      onClick={handleClearClassCode}
+                      className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition"
+                      title="Xóa mã lớp"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -226,16 +318,30 @@ export default function ExamManagement() {
         {/* Data Table Section */}
         {/* ✅ Bảng dữ liệu */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Danh sách Kỳ Thi ({data.length} bản ghi)
-            </h2>
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Danh sách Kỳ Thi ({data.length} bản ghi)</h2>
+            <button
+              onClick={handleDeleteBulk}
+              disabled={loading || selectedRows.size === 0}
+              className="bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white font-medium px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm"
+            >
+              <Trash2 className="w-4 h-4" />
+              Xóa ({selectedRows.size})
+            </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-full table-fixed">
               <thead className="bg-slate-50">
                 <tr>
+                  <th className="w-8 px-2 py-2">
+                    <input
+                      type="checkbox"
+                      checked={data.length > 0 && selectedRows.size === data.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  </th>
                   <th className="w-6 px-2 py-2"></th>
                   <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Mã ca thi</th>
                   <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Mã lớp</th>
@@ -245,6 +351,7 @@ export default function ExamManagement() {
                   <th className="w-40 px-2 py-2 text-xs font-bold text-slate-700">Giáo viên 1</th>
                   <th className="w-40 px-2 py-2 text-xs font-bold text-slate-700">Giáo viên 2</th>
                   <th className="w-32 px-2 py-2 text-xs font-bold text-slate-700">Kết quả</th>
+                  <th className="w-24 px-2 py-2 text-xs font-bold text-slate-700">Hành động</th>
                 </tr>
               </thead>
 
@@ -253,13 +360,24 @@ export default function ExamManagement() {
                   data.map((item) => (
                     <>
                       <tr key={item.exam_session_id} className="hover:bg-slate-50">
+                        <td className="text-center px-2 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedRows.has(item.exam_session_id)}
+                            onChange={() => toggleRowSelection(item.exam_session_id)}
+                            className="w-4 h-4 cursor-pointer"
+                          />
+                        </td>
                         <td className="text-center">
                           <button
                             onClick={() => toggleRowExpand(item.exam_session_id)}
                             className="text-slate-500 hover:text-slate-800"
                           >
-                            {expandedRows.has(item.exam_session_id) ?
-                              <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            {expandedRows.has(item.exam_session_id) ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            )}
                           </button>
                         </td>
                         <td className="text-xs px-2 py-2 font-medium">{item.exam_code}</td>
@@ -267,12 +385,15 @@ export default function ExamManagement() {
                         <td className="text-xs px-2 py-2">{item.subject_name}</td>
                         <td className="text-xs px-2 py-2">{item.exam_date}</td>
                         <td className="text-xs px-2 py-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${item.status === "Hoàn thành"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : item.status === "Đang diễn ra"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-slate-100 text-slate-800"
-                            }`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              item.status === "Hoàn thành"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : item.status === "Đang diễn ra"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-slate-100 text-slate-800"
+                            }`}
+                          >
                             {item.status}
                           </span>
                         </td>
@@ -283,19 +404,43 @@ export default function ExamManagement() {
                             Xuất PDF
                           </a>
                         </td>
+                        <td className="text-xs px-2 py-2">
+                          <button
+                            onClick={() => handleDeleteSingle(item.exam_session_id)}
+                            disabled={loading}
+                            className="bg-red-500 hover:bg-red-600 disabled:bg-slate-400 text-white px-3 py-1 rounded text-xs transition flex items-center gap-1"
+                          >
+                            <Trash2 size={14} />
+                            Xóa
+                          </button>
+                        </td>
                       </tr>
 
                       {expandedRows.has(item.exam_session_id) && (
                         <tr className="bg-slate-50">
-                          <td colSpan="9" className="px-6 py-4">
+                          <td colSpan="11" className="px-6 py-4">
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
-                              <p><strong>Phòng thi:</strong> {item.exam_room}</p>
-                              <p><strong>Tổng máy:</strong> {item.total_computers}</p>
-                              <p><strong>Số lượng SV:</strong> {item.student_count}</p>
-                              <p><strong>Giờ thi:</strong> {item.exam_time}</p>
-                              <p><strong>Thời lượng:</strong> {item.exam_duration} phút</p>
-                              <p><strong>Khoa coi thi:</strong> {item.exam_faculty}</p>
-                              <p><strong>Ngày tạo:</strong> {item.created_at}</p>
+                              <p>
+                                <strong>Phòng thi:</strong> {item.exam_room}
+                              </p>
+                              <p>
+                                <strong>Tổng máy:</strong> {item.total_computers}
+                              </p>
+                              <p>
+                                <strong>Số lượng SV:</strong> {item.student_count}
+                              </p>
+                              <p>
+                                <strong>Giờ thi:</strong> {item.exam_time}
+                              </p>
+                              <p>
+                                <strong>Thời lượng:</strong> {item.exam_duration} phút
+                              </p>
+                              <p>
+                                <strong>Khoa coi thi:</strong> {item.exam_faculty}
+                              </p>
+                              <p>
+                                <strong>Ngày tạo:</strong> {item.created_at}
+                              </p>
                             </div>
                           </td>
                         </tr>
@@ -304,7 +449,7 @@ export default function ExamManagement() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="9" className="text-center py-8 text-slate-500">
+                    <td colSpan="11" className="text-center py-8 text-slate-500">
                       📭 Không có dữ liệu
                     </td>
                   </tr>

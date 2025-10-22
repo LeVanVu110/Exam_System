@@ -102,4 +102,64 @@ class ExamSessionController extends Controller
         $pdf = Pdf::loadView('reports.exam_result', compact('exam'));
         return $pdf->download('bao_cao_ky_thi_' . $exam->exam_code . '.pdf');
     }
+
+    // 🗑️ Xóa 1 kỳ thi
+    public function destroy($id)
+    {
+        try {
+            $exam = ExamSession::find($id);
+
+            if (!$exam) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy kỳ thi cần xóa.'
+                ], 404);
+            }
+
+            $exam->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa kỳ thi thành công.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi xóa kỳ thi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // 🧹 Xóa hàng loạt kỳ thi
+    public function deleteBulk(Request $request)
+    {
+        try {
+            $ids = $request->input('ids', []);
+
+            if (empty($ids)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không có ID nào được gửi lên.'
+                ], 400);
+            }
+
+            DB::beginTransaction();
+            $deleted = ExamSession::whereIn('exam_session_id', $ids)->delete();
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Đã xóa {$deleted} kỳ thi thành công.",
+                'deleted_count' => $deleted
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi xóa hàng loạt kỳ thi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
