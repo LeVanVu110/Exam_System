@@ -28,6 +28,7 @@ use App\Http\Controllers\{
 // ✅ Kiểm tra API hoạt động
 Route::get('/ping', function () {
     return response()->json(['message' => 'API đang hoạt động!']);
+
 });
 
 // ✅ Các route CRUD cho hệ thống phân quyền

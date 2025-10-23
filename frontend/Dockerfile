@@ -9,7 +9,9 @@ COPY package*.json ./
 
 # Cập nhật npm và cài dependencies
 RUN npm install -g npm@latest \
-    && npm install
+    && npm install esbuild --save-dev --unsafe-perm \
+    && npm install --unsafe-perm
+
 
 # Copy toàn bộ mã nguồn vào container
 COPY . .
