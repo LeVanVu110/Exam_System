@@ -8,15 +8,20 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class Main extends Application {
-
     @Override
     public void start(Stage stage) throws IOException {
         
-        // Tải màn hình Đăng nhập (login.fxml)
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/login.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 400, 300); // Kích thước nhỏ hơn cho Login
-
-        stage.setTitle("Đăng nhập");
+        // SỬA DÒNG NÀY:
+        // CŨ: new FXMLLoader(Main.class.getResource("LichThiView.fxml"));
+        // MỚI: Thêm dấu "/" ở đầu để tìm từ thư mục gốc
+        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/LichThiView.fxml"));
+        
+        Scene scene = new Scene(fxmlLoader.load(), 1200, 750); 
+        
+        // Dòng này cũng cần dấu "/"
+        scene.getStylesheets().add(getClass().getResource("/application.css").toExternalForm());
+        
+        stage.setTitle("Quản lý Lịch thi");
         stage.setScene(scene);
         stage.show();
     }
@@ -25,3 +30,4 @@ public class Main extends Application {
         launch();
     }
 }
+

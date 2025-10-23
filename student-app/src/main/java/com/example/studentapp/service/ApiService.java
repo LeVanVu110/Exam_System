@@ -6,7 +6,7 @@ import java.net.URL;
 import java.nio.file.Files;
 
 public class ApiService {
-    private static final String UPLOAD_URL = "http://localhost:8080/api/exams/upload";
+    private static final String UPLOAD_URL = "http://localhost:3001/api/exams/schedule";
 
     public static boolean uploadExamFile(File file) {
         try {
