@@ -1,0 +1,105 @@
+/* --- Global Styles --- */
+
+/* Áp dụng font chữ và màu nền chung */
+.root {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-background-color: #f4f8fa; /* Màu nền xám rất nhạt */
+}
+
+/* --- Tiêu đề --- */
+.title-label {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50; /* Màu xanh đen */
+}
+
+.section-title-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #34495e; /* Màu xám đậm */
+}
+
+/* --- Nút Bấm (Button) --- */
+.button {
+    -fx-background-color: #ffffff; /* Nền trắng */
+    -fx-border-color: #bdc3c7; /* Viền xám nhạt */
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-text-fill: #34495e;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-border-color: #3498db;
+    -fx-background-color: #fdfdfd;
+}
+
+/* Nút "Thêm" (Nút chính) */
+.primary-button {
+    -fx-background-color: #3498db; /* Màu xanh dương */
+    -fx-border-color: #3498db;
+    -fx-text-fill: white;
+}
+.primary-button:hover {
+    -fx-background-color: #2980b9; /* Xanh dương đậm hơn */
+    -fx-border-color: #2980b9;
+}
+
+/* Nút "Xóa" */
+.danger-button {
+    -fx-background-color: #e74c3c; /* Màu đỏ */
+    -fx-border-color: #e74c3c;
+    -fx-text-fill: white;
+}
+.danger-button:hover {
+    -fx-background-color: #c0392b; /* Đỏ đậm hơn */
+    -fx-border-color: #c0392b;
+}
+
+/* --- Ô nhập liệu --- */
+.text-field, .date-picker {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dfe6e9;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-font-size: 13px;
+}
+.text-field:focused, .date-picker:focused {
+    -fx-border-color: #3498db; /* Hiệu ứng focus màu xanh */
+    -fx-background-color: #ffffff;
+}
+.date-picker .text-field {
+    -fx-border-color: transparent; /* Bỏ viền kép của DatePicker */
+}
+
+/* --- Bảng (TableView) --- */
+.table-view {
+    -fx-border-color: #dfe6e9;
+    -fx-border-radius: 4px;
+}
+
+/* Tiêu đề cột của bảng */
+.table-view .column-header-background {
+    -fx-background-color: #ecf0f1; /* Nền xám nhạt cho header */
+    -fx-background-radius: 4px 4px 0 0;
+    -fx-background-insets: 0;
+}
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-font-weight: bold;
+    -fx-text-fill: #34495e;
+    -fx-size: 35px; /* Tăng chiều cao header */
+}
+
+/* Tắt hiệu ứng hover của header (tùy chọn) */
+.table-view .column-header:hover {
+    -fx-background-color: #e0e6e8;
+}
+
+/* Ô tìm kiếm */
+#searchField { /* Dùng ID để style riêng nếu muốn */
+    -fx-font-style: italic;
+    -fx-background-radius: 15px; /* Bo tròn ô tìm kiếm */
+    -fx-border-radius: 15px;
+}

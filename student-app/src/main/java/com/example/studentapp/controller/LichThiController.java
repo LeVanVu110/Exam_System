@@ -3,6 +3,7 @@ package com.example.studentapp.controller;
 import com.example.studentapp.model.LichThi;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList; // THÊM MỚI IMPORT
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -33,8 +34,15 @@ public class LichThiController {
     @FXML private TextField soSVField;
     @FXML private TextField htThiField;
     @FXML private TextField cbctField;
+    
+    // THÊM MỚI: Ô tìm kiếm
+    @FXML private TextField searchField; 
 
-    private ObservableList<LichThi> lichThiData = FXCollections.observableArrayList();
+    // THAY ĐỔI: Đổi tên 'lichThiData' thành 'masterData' (danh sách gốc)
+    private ObservableList<LichThi> masterData = FXCollections.observableArrayList();
+    
+    // THÊM MỚI: Danh sách đã lọc để hiển thị
+    private FilteredList<LichThi> filteredData;
 
     @FXML
     public void initialize() {
@@ -49,8 +57,40 @@ public class LichThiController {
         htThiColumn.setCellValueFactory(new PropertyValueFactory<>("htThi"));
         cbctColumn.setCellValueFactory(new PropertyValueFactory<>("cbct"));
 
-        // Gán danh sách (rỗng) cho TableView. Dữ liệu sẽ không có sẵn.
-        lichThiTable.setItems(lichThiData);
+        // --- THAY ĐỔI LOGIC LỌC ---
+        
+        // 1. (Tùy chọn) Thêm data giả để test
+        loadMockData(); 
+        
+        // 2. Bọc masterData (danh sách gốc) bằng FilteredList
+        filteredData = new FilteredList<>(masterData, p -> true); // p -> true là hiển thị tất cả ban đầu
+
+        // 3. Gán danh sách ĐÃ LỌC (filteredData) cho TableView
+        lichThiTable.setItems(filteredData);
+
+        // 4. THÊM MỚI: Thêm listener (theo dõi) cho ô tìm kiếm
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(lichThi -> {
+                // Nếu ô tìm kiếm trống, hiển thị tất cả
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+
+                // Chuẩn hóa từ khóa tìm kiếm (cho không phân biệt hoa thường)
+                String lowerCaseFilter = newValue.toLowerCase();
+
+                // Logic lọc: kiểm tra nhiều trường
+                if (lichThi.getMaHP().toLowerCase().contains(lowerCaseFilter)) {
+                    return true; // Lọc theo Mã HP
+                } else if (lichThi.getTenHP().toLowerCase().contains(lowerCaseFilter)) {
+                    return true; // Lọc theo Tên HP
+                } else if (lichThi.getLopSV().toLowerCase().contains(lowerCaseFilter)) {
+                    return true; // Lọc theo Lớp SV
+                }
+                
+                return false; // Không tìm thấy
+            });
+        });
     }
 
     @FXML
@@ -72,7 +112,8 @@ public class LichThiController {
                 cbctField.getText()
         );
 
-        lichThiData.add(newLichThi);
+        // THAY ĐỔI: Thêm vào danh sách GỐC (masterData)
+        masterData.add(newLichThi);
         handleClearButton(null);
     }
 
@@ -93,7 +134,8 @@ public class LichThiController {
     void handleDeleteButton(ActionEvent event) {
         LichThi selected = lichThiTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            lichThiData.remove(selected);
+            // THAY ĐỔI: Xóa khỏi danh sách GỐC (masterData)
+            masterData.remove(selected);
         } else {
             showAlert(Alert.AlertType.WARNING, "Chưa chọn", "Vui lòng chọn một dòng trong bảng để xóa.");
         }
@@ -102,6 +144,8 @@ public class LichThiController {
     @FXML
     void handleUpdateButton(ActionEvent event) {
         showAlert(Alert.AlertType.INFORMATION, "Thông báo", "Chức năng cập nhật đang được phát triển.");
+        // Ghi chú: Khi làm chức năng Sửa, bạn chỉ cần Sửa đối tượng 'selected'
+        // trong 'masterData'. Bảng sẽ tự cập nhật.
     }
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
@@ -110,5 +154,12 @@ public class LichThiController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+    
+    // (Tùy chọn) Hàm này để thêm data giả, giúp bạn test chức năng lọc ngay
+    private void loadMockData() {
+        masterData.add(new LichThi("IT101", "Lập trình Java", "DH22IT", LocalDate.now(), "07:30", "A1.101", "120", "Trắc nghiệm", "Nguyễn Văn A"));
+        masterData.add(new LichThi("IT102", "Cơ sở dữ liệu", "DH22IT", LocalDate.now().plusDays(1), "09:30", "A1.102", "120", "Tự luận", "Trần Thị B"));
+        masterData.add(new LichThi("EN003", "Tiếng Anh 3", "DH22NN", LocalDate.now().plusDays(2), "07:30", "B2.205", "50", "Vấn đáp", "Lê Văn C"));
     }
 }
