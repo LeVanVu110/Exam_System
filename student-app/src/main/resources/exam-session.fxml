@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.studentapp.controller.ExamSessionController"
+            prefWidth="1100" prefHeight="600">
+    <TableView fx:id="tableExam" layoutX="20" layoutY="20" prefWidth="1060" prefHeight="560">
+        <columns>
+            <TableColumn fx:id="colCode" text="Mã ca thi" prefWidth="150"/>
+            <TableColumn fx:id="colClass" text="Lớp HP" prefWidth="120"/>
+            <TableColumn fx:id="colSubject" text="Tên học phần" prefWidth="200"/>
+            <TableColumn fx:id="colDate" text="Ngày thi" prefWidth="100"/>
+            <TableColumn fx:id="colTime" text="Giờ thi" prefWidth="100"/>
+            <TableColumn fx:id="colRoom" text="Phòng thi" prefWidth="100"/>
+            <TableColumn fx:id="colFaculty" text="Khoa coi thi" prefWidth="150"/>
+            <TableColumn fx:id="colTeacher" text="Giảng viên coi thi" prefWidth="200"/>
+        </columns>
+    </TableView>
+</AnchorPane>
