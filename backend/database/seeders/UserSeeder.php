@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
         User::create([
             'user_code' => 'U001',
             'user_name' => 'admin',
-            'user_email' => 'admin@example.com',
+            'user_email' => 'admin@gmail.com',
             'user_password' => Hash::make('123456'),
             'user_is_activated' => 1,
             'user_is_banned' => 0,

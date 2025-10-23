@@ -11,6 +11,8 @@ return new class extends Migration {
             $table->id('user_role_id');
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('role_id');
+            $table->index('user_id');
+            $table->index('role_id');
             $table->timestamps();
         });
     }

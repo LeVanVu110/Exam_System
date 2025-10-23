@@ -12,6 +12,7 @@ use App\Http\Controllers\{
     UserPermissionController,
     CategoryUserTypeController,
     ExamSessionController,
+    AuthLoginController
 };
 
 /*
@@ -41,3 +42,4 @@ Route::apiResources([
 
 ]);
 Route::post('exam-schedule/save', [ExamSessionController::class, 'saveImported']);
+Route::post('login', [AuthLoginController::class, 'login']);
