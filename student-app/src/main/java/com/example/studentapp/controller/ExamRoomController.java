@@ -1,24 +1,23 @@
 package com.example.studentapp.controller;
 
+import com.example.studentapp.service.ApiService;
 import com.example.studentapp.model.ApiResponse;
 import com.example.studentapp.model.RoomModel;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.AnchorPane;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.URL;
 import java.util.List;
+import java.util.ResourceBundle;
 
-public class ExamRoomController {
+public class ExamRoomController implements Initializable {
 
     @FXML
     private TextField txtRoom;
@@ -29,71 +28,73 @@ public class ExamRoomController {
     @FXML
     private VBox vbox;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ApiService apiService = new ApiService();
 
-    @FXML
-    public void initialize() {
-        // Gán sự kiện click cho button
-        btnRoom.setOnAction(this::handleSubmitButton);
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        btnRoom.setOnAction(this::handleSearch);
+        txtRoom.setOnAction(this::handleSearch);
+        loadInitialData();
     }
 
-    private void handleSubmitButton(ActionEvent event) {
-        String roomName = txtRoom.getText();
-        if (roomName == null || roomName.trim().isEmpty()) {
-            lblShowRoom.setText("Vui lòng nhập số phòng");
-            return;
-        }
-
-        lblShowRoom.setText("Đang tải dữ liệu cho phòng: " + roomName.toUpperCase());
+    private void loadInitialData() {
+        lblShowRoom.setText("Đang tải tất cả lịch thi...");
         vbox.getChildren().clear();
-        fetchExamScheduleForRoom(roomName);
-    }
 
-    private void fetchExamScheduleForRoom(String roomName) {
-        String apiUri = "http://localhost:8000/api/exams?room=" + roomName.trim();
-
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
-
-        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(this::processApiResponse).exceptionally(e -> {
-            Platform.runLater(() -> {
-                lblShowRoom.setText("Lỗi khi gọi API" + e.getMessage());
-            });
+        apiService.fetchAllExams().thenAccept(response -> {
+            Platform.runLater(() -> updateUiWithResponse(response, "tất cả"));
+        }).exceptionally(e -> {
+            Platform.runLater(() -> showError("Lỗi tải dữ liệu ban đầu: " + e.getMessage()));
             return null;
         });
     }
 
-    //    Xử lý chuổi JSON nhận về từ API
-    private void processApiResponse(String jsonBody) {
-
+    private void updateUiWithResponse(ApiResponse response, String context) {
         try {
-
-            ApiResponse response = objectMapper.readValue(jsonBody, ApiResponse.class);
             List<RoomModel> roomList = response.getData();
+            int countRoom = response.getCount();
 
+            if (roomList == null || roomList.isEmpty()) {
+                lblShowRoom.setText("Không có phòng " + context.toUpperCase());
+                return;
+            }
 
-            Platform.runLater(() -> {
-                if (roomList.isEmpty()) {
-                    lblShowRoom.setText("Không tìm thấy lịch thi cho phòng: " + txtRoom.getText().toUpperCase());
-                    return;
-                }
-                lblShowRoom.setText("Kết quả cho phòng: " + txtRoom.getText().toUpperCase());
+            lblShowRoom.setText("Có " + countRoom + " ca thi cho " + context.toUpperCase());
 
-                // Lặp qua danh sách kết quả
-                for (RoomModel room : roomList) {
-                    // Tạo một AnchorPane mới cho mỗi lịch thi
-                    AnchorPane itemPane = createRoomExams(room);
-                    // Thêm Pane đó vào VBox
-                    vbox.getChildren().add(itemPane);
-                }
-            });
+            for (RoomModel room : roomList) {
+                AnchorPane itemPane = createRoomExams(room);
+                vbox.getChildren().add(itemPane);
+            }
         } catch (Exception e) {
-            e.printStackTrace();
-
-            Platform.runLater(() -> {
-                lblShowRoom.setText("Lỗi: Không thể đọc dữ liệu (JSON) trả về");
-            });
+            showError("Lỗi hiễn thị dữ liệu: " + e.getMessage());
         }
+    }
+
+    private void showError(String message) {
+        System.out.println(message);
+        lblShowRoom.setText(message);
+    }
+
+    @FXML
+    private void handleSearch(ActionEvent event) {
+        String roomName = txtRoom.getText();
+
+        // Nếu ô tìm kiếm trống, ta tải lại toàn bộ dữ liệu
+        if (roomName == null || roomName.trim().isEmpty()) {
+            loadInitialData(); //
+            return;
+        }
+
+        // Nếu có nhập, thì tìm kiếm
+        vbox.getChildren().clear();
+        lblShowRoom.setText("Đang tìm phòng " + roomName.toUpperCase() + "...");
+
+        apiService.fetchExamsByRoom(roomName.trim()).thenAccept(response -> {
+            Platform.runLater(() -> updateUiWithResponse(response, roomName.trim()));
+        }).exceptionally(e -> {
+            Platform.runLater(() -> showError("Lỗi khi tìm phòng: " + e.getMessage()));
+            return null;
+        });
     }
 
     private AnchorPane createRoomExams(RoomModel room) {

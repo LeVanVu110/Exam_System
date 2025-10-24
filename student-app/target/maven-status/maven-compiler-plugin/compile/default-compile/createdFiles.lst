@@ -1,3 +1,8 @@
+com\example\studentapp\controller\HeaderController.class
 com\example\studentapp\controller\LoginController.class
 com\example\studentapp\Main.class
+com\example\studentapp\model\ApiResponse.class
+com\example\studentapp\model\RoomModel.class
 com\example\studentapp\service\ApiService.class
+com\example\studentapp\controller\MainViewController.class
+com\example\studentapp\controller\ExamRoomController.class

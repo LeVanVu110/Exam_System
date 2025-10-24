@@ -10,7 +10,7 @@
     </top>
 
     <center>
-        <fx:include fx:id="header" source="pages/ExamRoom.fxml"/>
+        <fx:include fx:id="" source="pages/ExamRoom.fxml"/>
     </center>
 
 </BorderPane>

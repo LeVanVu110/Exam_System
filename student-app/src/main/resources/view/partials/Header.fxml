@@ -44,7 +44,7 @@
                         <Label text="Chào," textFill="WHITE"/>
 
                         <Label fx:id="lblNameTeacher" maxWidth="155.0" prefHeight="19.0" prefWidth="155.0"
-                               text="Tên Giảng Viên Rất Rất Dài" textFill="WHITE" textOverrun="ELLIPSIS">
+                               text="Đặng Thị Thu Hoài" textFill="WHITE" textOverrun="ELLIPSIS">
                             <font>
                                 <Font name="System Bold Italic" size="13.0"/>
                             </font>

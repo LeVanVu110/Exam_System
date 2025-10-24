@@ -1,6 +1,5 @@
-package com.example.studentapp.service;
+package com.example.studentapp.model;
 
-import com.example.studentapp.model.RoomModel;
 import java.util.List;
 
 public class ApiResponse {
