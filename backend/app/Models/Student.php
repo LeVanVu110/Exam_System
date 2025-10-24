@@ -9,16 +9,29 @@ class Student extends Model
 {
     use HasFactory;
 
-    protected $table = 'students';
+    protected $primaryKey = 'student_id';
+    public $timestamps = true;
 
     protected $fillable = [
-        'user_id',
+        'user_profile_id',
+        'category_faculty_id',
         'category_major_id',
-        'student_code',
+        'student_score',
+        'student_cv',
     ];
 
-    public function user()
+    public function userProfile()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(UserProfile::class, 'user_profile_id', 'user_profile_id');
+    }
+
+    public function faculty()
+    {
+        return $this->belongsTo(CategoryFaculty::class, 'category_faculty_id', 'category_faculty_id');
+    }
+
+    public function major()
+    {
+        return $this->belongsTo(CategoryMajor::class, 'category_major_id', 'category_major_id');
     }
 }

@@ -29,6 +29,18 @@ return new class extends Migration
             $table->unsignedInteger('actual_teacher1_id')->nullable();
             $table->unsignedInteger('actual_teacher2_id')->nullable();
             $table->string('status', 50)->nullable();
+            //thêm sau khi lỗi import
+            $table->integer('credits')->nullable();
+            $table->string('student_class', 100)->nullable();
+            $table->string('exam_time', 50)->nullable();
+            $table->integer('student_count')->nullable();
+            $table->integer('exam_duration')->nullable();
+            $table->string('exam_method', 100)->nullable();
+            $table->string('exam_faculty', 100)->nullable();
+            $table->string('education_level', 100)->nullable();
+            $table->string('training_system', 100)->nullable();
+            $table->string('exam_batch', 100)->nullable();
+            $table->string('exam_teacher', 255)->nullable();
             $table->timestamps();
 
             $table->foreign('course_id')->references('course_id')->on('courses')->onDelete('set null');

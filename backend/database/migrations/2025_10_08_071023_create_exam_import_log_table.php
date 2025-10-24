@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('exam_import_log', function (Blueprint $table) {
-            $table->increments('import_id');
+            $table->increments('import_id');//key chính
             $table->string('file_name', 255)->nullable();
             $table->unsignedInteger('imported_by')->nullable();
             $table->integer('total_rows')->default(0);
