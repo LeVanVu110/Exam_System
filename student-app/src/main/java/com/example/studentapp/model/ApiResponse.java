@@ -1,16 +1,14 @@
-package com.example.studentapp.model;
+package com.example.studentapp.service;
 
+import com.example.studentapp.model.RoomModel;
 import java.util.List;
 
 public class ApiResponse {
     private String message;
     private int count;
 
-    // Tên biến "data" này PHẢI KHỚP với key "data" trong JSON
     private List<RoomModel> data;
 
-    // --- Bắt buộc phải có Getters và Setters
-    // (Jackson/Gson sẽ dùng chúng để gán giá trị)
 
     public String getMessage() {
         return message;
