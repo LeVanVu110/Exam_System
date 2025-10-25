@@ -1,36 +1,52 @@
-# =====================
-# Java & JavaFX project
-# =====================
+--- File .gitignore cho dự án Java / JavaFX ---
 
-# Build output
-/target/
-/out/
-/build/
+*.class
+*.jar
+*.war
+*.ear
 
-# IDE files
+Maven
+
+target/
+
+Gradle
+
+build/
+.gradle/
+out/
+
+IntelliJ (Bao gồm các file trong ảnh của bạn như compiler.xml, misc.xml)
+
 .idea/
 *.iml
-*.ipr
-*.iws
-*.class
-*.log
 
-# Eclipse
+Eclipse
+
 .project
 .classpath
 .settings/
 
-# VS Code
+VS Code
+
 .vscode/
 
-# OS-specific files
-.DS_Store
-Thumbs.db
+NetBeans
 
-# Java temporary files
-*.swp
-*.bak
+nbproject/
+nbactions.xml
+
+*.log
 *.tmp
+*.temp
 
-# Maven wrapper
-.mvn/wrapper/maven-wrapper.jar
+
+*.lst
+createdFiles.txt
+InputFiles.lst
+
+.DS_Store
+
+Windows
+
+Thumbs.db
+desktop.ini
