@@ -1,0 +1,36 @@
+# =====================
+# Java & JavaFX project
+# =====================
+
+# Build output
+/target/
+/out/
+/build/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+*.class
+*.log
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Java temporary files
+*.swp
+*.bak
+*.tmp
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar

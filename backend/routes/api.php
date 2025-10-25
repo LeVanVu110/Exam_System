@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\ExamController;
 
 // kì thi(phát)
 use App\Http\Controllers\Api\ExamSessionController;
@@ -27,6 +28,9 @@ Route::prefix('exam-sessions')->group(function () {
     Route::post('/import', [ExamSessionController::class, 'importExcel']); // Import file Excel
     Route::get('/export', [ExamSessionController::class, 'exportExcel']);  // Export Excel
     Route::get('/{id}/report', [ExamSessionController::class, 'exportReport']); // Xuất PDF kết quả
-    Route::delete('/{id}', [ExamSessionController::class, 'destroy']);// xóa 1
+    Route::delete('/{id}', [ExamSessionController::class, 'destroy']); // xóa 1
     Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']); //xóa hàng loạt
 });
+
+// mock-data-exams
+Route::get('/exams', [ExamController::class, 'index']);
