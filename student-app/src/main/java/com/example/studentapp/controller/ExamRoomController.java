@@ -98,69 +98,159 @@ public class ExamRoomController implements Initializable {
     }
 
     private AnchorPane createRoomExams(RoomModel room) {
-        // Tạo AnchorPane cha
+        // Tăng chiều cao để chứa thêm thông tin
         AnchorPane pane = new AnchorPane();
-        pane.setPrefHeight(75.0);
-        pane.setPrefWidth(760.0); // Kích thước này nên khớp với VBox
-        pane.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-border-color: #ddd; -fx-border-radius: 8;");
+        pane.setPrefHeight(140.0); // Tăng chiều cao (trước đây là 75.0)
+        pane.setPrefWidth(760.0);
+        pane.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 10;");
 
-        // --- Tạo các Label tĩnh (tiêu đề) ---
-        Label labelPhong = new Label("Phòng: ");
-        labelPhong.setLayoutX(20.0);
-        labelPhong.setLayoutY(10.0);
+        // --- CỘT 1 (Thông tin Lớp/Phòng) ---
+        double col1X_Title = 20.0;
+        double col1X_Data = 110.0;
+        double col1Y = 10.0;
+        double col2Y = 40.0;
+        double col3Y = 70.0;
+        double col4Y = 100.0;
+
+        // Phòng
+        Label labelPhong = new Label("Phòng thi:");
+        labelPhong.setLayoutX(col1X_Title);
+        labelPhong.setLayoutY(col1Y);
         labelPhong.setStyle("-fx-font-weight: bold;");
 
-        Label labelLopHP = new Label("Lớp HP:");
-        labelLopHP.setLayoutX(20.0);
-        labelLopHP.setLayoutY(40.0);
-
-        Label labelTenHP = new Label("Tên Học Phần:");
-        labelTenHP.setLayoutX(200.0);
-        labelTenHP.setLayoutY(10.0);
-
-        Label labelGioThi = new Label("Giờ thi:");
-        labelGioThi.setLayoutX(200.0);
-        labelGioThi.setLayoutY(40.0);
-
-        Label labelNgayThi = new Label("Ngày thi:");
-        labelNgayThi.setLayoutX(400.0);
-        labelNgayThi.setLayoutY(40.0);
-
-        // --- Tạo các Label động (dữ liệu) ---
-
-        // Label cho Phòng (dùng property `roomProperty` từ model)
         Label lblRoom = new Label();
-        lblRoom.setLayoutX(63.0);
-        lblRoom.setLayoutY(10.0);
-        lblRoom.setStyle("-fx-font-weight: bold;");
-        lblRoom.textProperty().bind(room.roomProperty()); // Binding dữ liệu
+        lblRoom.setLayoutX(col1X_Data);
+        lblRoom.setLayoutY(col1Y);
+        lblRoom.setStyle("-fx-font-weight: bold; -fx-text-fill: #D32F2F;"); // Tô đậm màu đỏ
+        lblRoom.textProperty().bind(room.roomProperty());
 
-        // Label cho Lớp HP
+        // Lớp HP
+        Label labelLopHP = new Label("Lớp HP:");
+        labelLopHP.setLayoutX(col1X_Title);
+        labelLopHP.setLayoutY(col2Y);
+
         Label lblClass = new Label();
-        lblClass.setLayoutX(63.0);
-        lblClass.setLayoutY(40.0);
-        lblClass.textProperty().bind(room.lopHPProperty()); // Binding dữ liệu
+        lblClass.setLayoutX(col1X_Data);
+        lblClass.setLayoutY(col2Y);
+        lblClass.textProperty().bind(room.lopHPProperty());
 
-        // Label cho Tên HP
+        // Tên HP
+        Label labelTenHP = new Label("Tên Học Phần:");
+        labelTenHP.setLayoutX(col1X_Title);
+        labelTenHP.setLayoutY(col3Y);
+
         Label lblName = new Label();
-        lblName.setLayoutX(285.0);
-        lblName.setLayoutY(10.0);
-        lblName.textProperty().bind(room.tenHPProperty()); // Binding dữ liệu
+        lblName.setLayoutX(col1X_Data);
+        lblName.setLayoutY(col3Y);
+        lblName.textProperty().bind(room.tenHPProperty());
 
-        // Label cho Giờ thi
-        Label lblTime = new Label();
-        lblTime.setLayoutX(246.0);
-        lblTime.setLayoutY(40.0);
-        lblTime.textProperty().bind(room.gioThiProperty()); // Binding dữ liệu
+        // Khoa
+        Label labelKhoa = new Label("Khoa coi thi:");
+        labelKhoa.setLayoutX(col1X_Title);
+        labelKhoa.setLayoutY(col4Y);
 
-        // Label cho Ngày thi
+        Label lblKhoa = new Label();
+        lblKhoa.setLayoutX(col1X_Data);
+        lblKhoa.setLayoutY(col4Y);
+        lblKhoa.textProperty().bind(room.khoaCoiThiProperty());
+
+
+        // --- CỘT 2 (Thời gian & Giám thị) ---
+        double col2X_Title = 350.0;
+        double col2X_Data = 420.0;
+
+        // Ngày thi
+        Label labelNgayThi = new Label("Ngày thi:");
+        labelNgayThi.setLayoutX(col2X_Title);
+        labelNgayThi.setLayoutY(col1Y);
+
         Label lblDate = new Label();
-        lblDate.setLayoutX(454.0);
-        lblDate.setLayoutY(40.0);
-        lblDate.textProperty().bind(room.ngayThiProperty()); // Binding dữ liệu
+        lblDate.setLayoutX(col2X_Data);
+        lblDate.setLayoutY(col1Y);
+        lblDate.textProperty().bind(room.ngayThiProperty());
+
+        // Giờ thi
+        Label labelGioThi = new Label("Giờ thi:");
+        labelGioThi.setLayoutX(col2X_Title);
+        labelGioThi.setLayoutY(col2Y);
+
+        Label lblTime = new Label();
+        lblTime.setLayoutX(col2X_Data);
+        lblTime.setLayoutY(col2Y);
+        lblTime.textProperty().bind(room.gioThiProperty());
+
+        // CBCT 1
+        Label labelCbct1 = new Label("CBCT 1:");
+        labelCbct1.setLayoutX(col2X_Title);
+        labelCbct1.setLayoutY(col3Y);
+
+        Label lblCbct1 = new Label();
+        lblCbct1.setLayoutX(col2X_Data);
+        lblCbct1.setLayoutY(col3Y);
+        lblCbct1.textProperty().bind(room.cbct1Property());
+
+        // CBCT 2
+        Label labelCbct2 = new Label("CBCT 2:");
+        labelCbct2.setLayoutX(col2X_Title);
+        labelCbct2.setLayoutY(col4Y);
+
+        Label lblCbct2 = new Label();
+        lblCbct2.setLayoutX(col2X_Data);
+        lblCbct2.setLayoutY(col4Y);
+        lblCbct2.textProperty().bind(room.cbct2Property());
+
+
+        // --- CỘT 3 (Thông số) ---
+        double col3X_Title = 630.0;
+        double col3X_Data = 690.0;
+
+        // STT
+        Label labelSTT = new Label("STT:");
+        labelSTT.setLayoutX(col3X_Title);
+        labelSTT.setLayoutY(col1Y);
+
+        Label lblSTT = new Label();
+        lblSTT.setLayoutX(col3X_Data);
+        lblSTT.setLayoutY(col1Y);
+        lblSTT.textProperty().bind(room.sttProperty());
+
+        // Số SV
+        Label labelSoSV = new Label("Số SV:");
+        labelSoSV.setLayoutX(col3X_Title);
+        labelSoSV.setLayoutY(col2Y);
+
+        Label lblSoSV = new Label();
+        lblSoSV.setLayoutX(col3X_Data);
+        lblSoSV.setLayoutY(col2Y);
+        lblSoSV.textProperty().bind(room.soSVProperty());
+
+        // Số TC
+        Label labelSoTC = new Label("Số TC:");
+        labelSoTC.setLayoutX(col3X_Title);
+        labelSoTC.setLayoutY(col3Y);
+
+        Label lblSoTC = new Label();
+        lblSoTC.setLayoutX(col3X_Data);
+        lblSoTC.setLayoutY(col3Y);
+        lblSoTC.textProperty().bind(room.soTCProperty());
+
+        // TG Thi
+        Label labelTgThi = new Label("TG Thi:");
+        labelTgThi.setLayoutX(col3X_Title);
+        labelTgThi.setLayoutY(col4Y);
+
+        Label lblTgThi = new Label();
+        lblTgThi.setLayoutX(col3X_Data);
+        lblTgThi.setLayoutY(col4Y);
+        lblTgThi.textProperty().bind(room.tgThiProperty());
+
 
         // Thêm tất cả các Label vào AnchorPane
-        pane.getChildren().addAll(labelPhong, labelLopHP, labelTenHP, labelGioThi, labelNgayThi, lblRoom, lblClass, lblName, lblTime, lblDate);
+        pane.getChildren().addAll(
+                labelPhong, lblRoom, labelLopHP, lblClass, labelTenHP, lblName, labelKhoa, lblKhoa,
+                labelNgayThi, lblDate, labelGioThi, lblTime, labelCbct1, lblCbct1, labelCbct2, lblCbct2,
+                labelSTT, lblSTT, labelSoSV, lblSoSV, labelSoTC, lblSoTC, labelTgThi, lblTgThi
+        );
 
         return pane;
     }
