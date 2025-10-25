@@ -8,7 +8,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
+
 import com.example.studentapp.util.HttpClientUtil;
 
 import java.io.BufferedReader;
@@ -36,18 +39,29 @@ public class ApiService {
         this.objectMapper = new ObjectMapper();
     }
 
-    public CompletableFuture<ApiResponse> fetchAllExams() {
-        String apiUri = BASE_URL + "/exams";
+    public CompletableFuture<ApiResponse> fetchAllExamsForToday() {
+
+        LocalDate today = LocalDate.now();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formatterDate = formatter.format(today);
+
+        String apiUri = BASE_URL + "/exams?date=" + formatterDate;
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
 
         return sendRequestAndParseResponse(request);
     }
 
-    public CompletableFuture<ApiResponse> fetchExamsByRoom(String roomName) {
+    public CompletableFuture<ApiResponse> fetchExamsByRoomForToday(String roomName) {
+
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formatterDate = formatter.format(today);
+
         String encodedRoomName = roomName.trim();
 
-        String apiUri = BASE_URL + "/exams?room=" + encodedRoomName;
+        String apiUri = BASE_URL + "/exams?date=" + formatterDate + "&room=" + encodedRoomName;
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
 
@@ -62,80 +76,6 @@ public class ApiService {
                 throw new RuntimeException("Lỗi phân tích JSON", e);
             }
         });
-    }
-        
-        
-    public boolean login(String email, String password) {
-        try {
-            JSONObject body = new JSONObject();
-            body.put("email", email);
-            body.put("password", password);
-
-            String response = HttpClientUtil.post(BASE_URL + "/login", body.toString());
-            JSONObject json = new JSONObject(response);
-
-            return json.has("token");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // Phương thức nộp bài thi(upload)
-    public boolean uploadExamFile(File file) {
-        try {
-            String boundary = "===" + System.currentTimeMillis() + "===";
-            String LINE_FEED = "\r\n";
-
-            URL url = new URL(BASE_URL + "/upload");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setUseCaches(false);
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-
-            OutputStream outputStream = connection.getOutputStream();
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"), true);
-
-            // Gửi file
-            String fileName = file.getName();
-            writer.append("--" + boundary).append(LINE_FEED);
-            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"" + fileName + "\"")
-                    .append(LINE_FEED);
-            writer.append("Content-Type: " + Files.probeContentType(file.toPath())).append(LINE_FEED);
-            writer.append(LINE_FEED);
-            writer.flush();
-
-            Files.copy(file.toPath(), outputStream);
-            outputStream.flush();
-
-            writer.append(LINE_FEED).flush();
-            writer.append("--" + boundary + "--").append(LINE_FEED);
-            writer.close();
-
-            // Nhận phản hồi từ server
-            int status = connection.getResponseCode();
-            if (status == HttpURLConnection.HTTP_OK) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String line;
-                StringBuilder response = new StringBuilder();
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
-                connection.disconnect();
-
-                System.out.println("Response: " + response);
-                return true;
-            } else {
-                System.out.println("Upload failed, status: " + status);
-                return false;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
     }
 
 }

@@ -23,9 +23,6 @@
 
             <Label text="CBCT 1:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight: bold;"/>
             <Label fx:id="lblDetailCBCT1" text="..." GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-            
-            <!-- (Thêm các Label chi tiết khác của bạn ở đây) -->
-            
         </GridPane>
     </children>
 </AnchorPane>

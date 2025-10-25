@@ -28,9 +28,9 @@ public class HeaderController implements Initializable {
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
-    private MainViewController mainController;
+    private MainController mainController;
 
-    public void setMainController(MainViewController mainController) {
+    public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
 

@@ -15,10 +15,10 @@ public class ExamDetailController {
     // (Thêm các @FXML Label chi tiết khác)
 
     // 1. Biến để giữ tham chiếu đến "cha" (MainViewController)
-    private MainViewController mainController;
+    private MainController mainController;
 
     // 2. Hàm để "cha" (MainViewController) truyền chính nó vào
-    public void setMainController(MainViewController mainController) {
+    public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
 

@@ -1,6 +1,5 @@
 package com.example.studentapp.controller;
 
-import com.example.studentapp.Main;
 import com.example.studentapp.service.ApiService;
 import com.example.studentapp.model.ApiResponse;
 import com.example.studentapp.model.RoomModel;
@@ -18,20 +17,14 @@ import java.util.ResourceBundle;
 
 public class ExamRoomController implements Initializable {
 
-    @FXML
-    private TextField txtRoom;
-    @FXML
-    private Button btnRoom;
-    @FXML
-    private Label lblShowRoom;
-    @FXML
-    private VBox vbox;
-
+    @FXML private TextField txtRoom;
+    @FXML private Button btnRoom;
+    @FXML private Label lblShowRoom;
+    @FXML private VBox vbox;
     private final ApiService apiService = new ApiService();
+    private MainController mainController;
 
-    private MainViewController mainController;
-
-    public void setMainController(MainViewController mainController) {
+    public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
 
@@ -43,11 +36,10 @@ public class ExamRoomController implements Initializable {
     }
 
     private void loadInitialData() {
-        lblShowRoom.setText("Đang tải tất cả lịch thi...");
         vbox.getChildren().clear();
 
-        apiService.fetchAllExams().thenAccept(response -> {
-            Platform.runLater(() -> updateUiWithResponse(response, "tất cả"));
+        apiService.fetchAllExamsForToday().thenAccept(response -> {
+            Platform.runLater(() -> updateUiWithResponse(response, ""));
         }).exceptionally(e -> {
             Platform.runLater(() -> showError("Lỗi tải dữ liệu ban đầu: " + e.getMessage()));
             return null;
@@ -84,17 +76,15 @@ public class ExamRoomController implements Initializable {
     private void handleSearch(ActionEvent event) {
         String roomName = txtRoom.getText();
 
-        // Nếu ô tìm kiếm trống, ta tải lại toàn bộ dữ liệu
         if (roomName == null || roomName.trim().isEmpty()) {
             loadInitialData(); //
             return;
         }
 
-        // Nếu có nhập, thì tìm kiếm
         vbox.getChildren().clear();
         lblShowRoom.setText("Đang tìm phòng " + roomName.toUpperCase() + "...");
 
-        apiService.fetchExamsByRoom(roomName.trim()).thenAccept(response -> {
+        apiService.fetchExamsByRoomForToday(roomName.trim()).thenAccept(response -> {
             Platform.runLater(() -> updateUiWithResponse(response, roomName.trim()));
         }).exceptionally(e -> {
             Platform.runLater(() -> showError("Lỗi khi tìm phòng: " + e.getMessage()));
@@ -102,7 +92,7 @@ public class ExamRoomController implements Initializable {
         });
     }
 
-    private AnchorPane createRoomExams(RoomModel room)  {
+    private AnchorPane createRoomExams(RoomModel room) {
         // Tăng chiều cao để chứa thêm thông tin
         AnchorPane pane = new AnchorPane();
         pane.setPrefHeight(140.0);
@@ -216,16 +206,6 @@ public class ExamRoomController implements Initializable {
         double col3X_Title = 630.0;
         double col3X_Data = 690.0;
 
-        // STT
-        Label labelSTT = new Label("STT:");
-        labelSTT.setLayoutX(col3X_Title);
-        labelSTT.setLayoutY(col1Y);
-
-        Label lblSTT = new Label();
-        lblSTT.setLayoutX(col3X_Data);
-        lblSTT.setLayoutY(col1Y);
-        lblSTT.textProperty().bind(room.sttProperty());
-
         // Số SV
         Label labelSoSV = new Label("Số SV:");
         labelSoSV.setLayoutX(col3X_Title);
@@ -264,16 +244,13 @@ public class ExamRoomController implements Initializable {
         );
 
         pane.setOnMouseClicked(event -> {
-            // Kiểm tra xem "cha" (mainController) có tồn tại không
             if (mainController != null) {
-                // "Nhờ" cha chuyển sang trang chi tiết và gửi dữ liệu "room"
                 mainController.showExamDetailPage(room);
             } else {
                 System.err.println("Lỗi: MainController chưa được set cho ExamRoomController.");
             }
         });
 
-        // (Tùy chọn) Thêm hiệu ứng hover
         pane.setOnMouseEntered(e -> {
             pane.setStyle(pane.getStyle() + "-fx-border-color: #0078D4; -fx-cursor: hand;");
         });
