@@ -1,5 +1,14 @@
 package com.example.studentapp.service;
 
+
+import com.example.studentapp.model.ApiResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.concurrent.CompletableFuture;
 import com.example.studentapp.util.HttpClientUtil;
 
 import java.io.BufferedReader;
@@ -14,9 +23,48 @@ import java.net.URL;
 
 import org.json.JSONObject;
 
+
 public class ApiService {
     private static final String BASE_URL = "http://localhost:8000/api";
 
+
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+
+    public ApiService() {
+        this.httpClient = HttpClient.newHttpClient();
+        this.objectMapper = new ObjectMapper();
+    }
+
+    public CompletableFuture<ApiResponse> fetchAllExams() {
+        String apiUri = BASE_URL + "/exams";
+
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
+
+        return sendRequestAndParseResponse(request);
+    }
+
+    public CompletableFuture<ApiResponse> fetchExamsByRoom(String roomName) {
+        String encodedRoomName = roomName.trim();
+
+        String apiUri = BASE_URL + "/exams?room=" + encodedRoomName;
+
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
+
+        return sendRequestAndParseResponse(request);
+    }
+
+    private CompletableFuture<ApiResponse> sendRequestAndParseResponse(HttpRequest request) {
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenApply(jsonBody -> {
+            try {
+                return objectMapper.readValue(jsonBody, ApiResponse.class);
+            } catch (Exception e) {
+                throw new RuntimeException("Lỗi phân tích JSON", e);
+            }
+        });
+    }
+        
+        
     public boolean login(String email, String password) {
         try {
             JSONObject body = new JSONObject();
