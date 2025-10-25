@@ -1,4 +1,4 @@
-package com.example.studentapp.model; // (Hoặc package model của bạn)
+package com.example.studentapp.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -6,7 +6,6 @@ import javafx.beans.property.StringProperty;
 
 public class RoomModel {
 
-    // 1. Khai báo các thuộc tính (Properties) cho JavaFX
     // Chúng ta dùng StringProperty cho tất cả để binding cho Label dễ dàng
     private final StringProperty stt = new SimpleStringProperty();
     private final StringProperty lopHP = new SimpleStringProperty();
@@ -19,13 +18,10 @@ public class RoomModel {
     private final StringProperty tgThi = new SimpleStringProperty();
     private final StringProperty khoaCoiThi = new SimpleStringProperty();
 
-    // Các thuộc tính "dẫn xuất" (được tách ra)
     private final StringProperty cbct1 = new SimpleStringProperty("N/A");
     private final StringProperty cbct2 = new SimpleStringProperty("N/A");
 
-    // 2. Định nghĩa các hàm @JsonProperty để Jackson "ánh xạ" JSON
     // Lưu ý: Tên hàm phải khớp với tên JSON key
-
     @JsonProperty("STT")
     public void setStt(int stt) { this.stt.set(String.valueOf(stt)); }
 
@@ -56,10 +52,8 @@ public class RoomModel {
     @JsonProperty("Khoa coi thi")
     public void setKhoaCoiThi(String khoaCoiThi) { this.khoaCoiThi.set(khoaCoiThi); }
 
-    /**
-     * 3. Đây là logic chính để tách CBCT
-     * Jackson sẽ gọi hàm này khi thấy key "CBCT"
-     */
+
+    // Jackson sẽ gọi hàm này khi thấy key "CBCT"
     @JsonProperty("CBCT")
     public void setCbct(String rawCbct) {
         if (rawCbct == null || rawCbct.trim().isEmpty()) {
@@ -68,16 +62,13 @@ public class RoomModel {
             return;
         }
 
-        // Tách chuỗi bằng dấu phẩy
         String[] names = rawCbct.split(",");
 
-        // Xử lý tên thứ nhất (làm sạch dấu cách thừa)
         if (names.length > 0) {
             String name1 = names[0].trim().replaceAll("\\s+", " ");
             this.cbct1.set(name1);
         }
 
-        // Xử lý tên thứ hai (nếu có)
         if (names.length > 1) {
             String name2 = names[1].trim().replaceAll("\\s+", " ");
             this.cbct2.set(name2);
@@ -86,9 +77,7 @@ public class RoomModel {
         }
     }
 
-    // 4. Các hàm "getter" cho Property (để binding)
     // Tên hàm phải là tenBienProperty()
-
     public StringProperty sttProperty() { return stt; }
     public StringProperty lopHPProperty() { return lopHP; }
     public StringProperty tenHPProperty() { return tenHP; }

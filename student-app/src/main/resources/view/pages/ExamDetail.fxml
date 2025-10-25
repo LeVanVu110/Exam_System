@@ -1,14 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+<!-- Đây là View chi tiết (nội dung sẽ thay thế ExamRoom.fxml) -->
+<AnchorPane style="-fx-background-color: #FFFFFF; -fx-padding: 20;"
+            xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.studentapp.controller.ExamDetailController">
+    <children>
+        <!-- Nút Quay Lại -->
+        <Button fx:id="btnBack" text="← Quay lại" layoutX="20" layoutY="20" onAction="#handleBack"/>
+        
+        <Label text="CHI TIẾT CA THI" layoutX="350" layoutY="25" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        
+        <GridPane hgap="10" vgap="10" layoutX="30" layoutY="80">
+            <!-- Tôi chỉ để vài ví dụ, bạn có thể copy từ code cũ -->
+            <Label text="Phòng thi:" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblDetailRoom" text="..." GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            
+            <Label text="Tên Học Phần:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblDetailTenHP" text="..." GridPane.rowIndex="1" GridPane.columnIndex="1" wrapText="true" maxWidth="400"/>
 
+            <Label text="CBCT 1:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblDetailCBCT1" text="..." GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+            
+            <!-- (Thêm các Label chi tiết khác của bạn ở đây) -->
+            
+        </GridPane>
+    </children>
 </AnchorPane>

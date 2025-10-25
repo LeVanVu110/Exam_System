@@ -2,6 +2,7 @@
 
 <?import javafx.scene.layout.BorderPane?>
 
+<?import javafx.scene.layout.AnchorPane?>
 <BorderPane prefHeight="763.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.studentapp.controller.MainViewController">
 
@@ -10,7 +11,7 @@
     </top>
 
     <center>
-        <fx:include fx:id="" source="pages/ExamRoom.fxml"/>
+        <AnchorPane fx:id="mainContentPane"/>
     </center>
 
 </BorderPane>

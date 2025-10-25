@@ -1,5 +1,6 @@
 package com.example.studentapp.controller;
 
+import com.example.studentapp.Main;
 import com.example.studentapp.service.ApiService;
 import com.example.studentapp.model.ApiResponse;
 import com.example.studentapp.model.RoomModel;
@@ -7,9 +8,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.AnchorPane;
 
@@ -29,6 +28,12 @@ public class ExamRoomController implements Initializable {
     private VBox vbox;
 
     private final ApiService apiService = new ApiService();
+
+    private MainViewController mainController;
+
+    public void setMainController(MainViewController mainController) {
+        this.mainController = mainController;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -97,16 +102,17 @@ public class ExamRoomController implements Initializable {
         });
     }
 
-    private AnchorPane createRoomExams(RoomModel room) {
+    private AnchorPane createRoomExams(RoomModel room)  {
         // Tăng chiều cao để chứa thêm thông tin
         AnchorPane pane = new AnchorPane();
-        pane.setPrefHeight(140.0); // Tăng chiều cao (trước đây là 75.0)
+        pane.setPrefHeight(140.0);
         pane.setPrefWidth(760.0);
         pane.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 10;");
 
         // --- CỘT 1 (Thông tin Lớp/Phòng) ---
         double col1X_Title = 20.0;
         double col1X_Data = 110.0;
+        double col1_DataWidth = 230.0;
         double col1Y = 10.0;
         double col2Y = 40.0;
         double col3Y = 70.0;
@@ -143,6 +149,12 @@ public class ExamRoomController implements Initializable {
         lblName.setLayoutX(col1X_Data);
         lblName.setLayoutY(col3Y);
         lblName.textProperty().bind(room.tenHPProperty());
+
+        lblName.setPrefWidth(col1_DataWidth);
+        lblName.setTextOverrun(OverrunStyle.ELLIPSIS);
+        Tooltip nameTooltip = new Tooltip();
+        nameTooltip.textProperty().bind(room.tenHPProperty());
+        lblName.setTooltip(nameTooltip);
 
         // Khoa
         Label labelKhoa = new Label("Khoa coi thi:");
@@ -244,7 +256,6 @@ public class ExamRoomController implements Initializable {
         lblTgThi.setLayoutY(col4Y);
         lblTgThi.textProperty().bind(room.tgThiProperty());
 
-
         // Thêm tất cả các Label vào AnchorPane
         pane.getChildren().addAll(
                 labelPhong, lblRoom, labelLopHP, lblClass, labelTenHP, lblName, labelKhoa, lblKhoa,
@@ -252,6 +263,23 @@ public class ExamRoomController implements Initializable {
                 labelSTT, lblSTT, labelSoSV, lblSoSV, labelSoTC, lblSoTC, labelTgThi, lblTgThi
         );
 
+        pane.setOnMouseClicked(event -> {
+            // Kiểm tra xem "cha" (mainController) có tồn tại không
+            if (mainController != null) {
+                // "Nhờ" cha chuyển sang trang chi tiết và gửi dữ liệu "room"
+                mainController.showExamDetailPage(room);
+            } else {
+                System.err.println("Lỗi: MainController chưa được set cho ExamRoomController.");
+            }
+        });
+
+        // (Tùy chọn) Thêm hiệu ứng hover
+        pane.setOnMouseEntered(e -> {
+            pane.setStyle(pane.getStyle() + "-fx-border-color: #0078D4; -fx-cursor: hand;");
+        });
+        pane.setOnMouseExited(e -> {
+            pane.setStyle(pane.getStyle().replace("-fx-border-color: #0078D4; -fx-cursor: hand;", ""));
+        });
         return pane;
     }
 }
