@@ -40,10 +40,10 @@ public class LoginController {
                     try {
                         if (response.getBoolean("success")) {
                             JSONObject user = response.getJSONObject("user");
-                            String role = user.getString("role");
+                            String role = user.getString("user_role");
 
                             switch (role) {
-                                case "admin":
+                                case "Admin":
                                     loadView("/upload-view.fxml", "Trang quản trị");
                                     break;
                                 case "teacher":
