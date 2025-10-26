@@ -10,7 +10,7 @@ class Role extends Model
     use HasFactory;
 
     // Tên bảng
-    protected $table = 'role';
+    protected $table = 'roles';
 
     // Khóa chính
     protected $primaryKey = 'role_id';

@@ -21,9 +21,6 @@ return new class extends Migration
             $table->integer('credits')->default(0);
             $table->timestamps();
 
-            $table->foreign('category_faculty_id')->references('category_faculty_id')->on('category_faculty')->onDelete('set null');
-            $table->foreign('category_major_id')->references('category_major_id')->on('category_major')->onDelete('set null');
-            $table->foreign('teacher_id')->references('teacher_id')->on('teachers')->onDelete('set null');
         });
     }
 

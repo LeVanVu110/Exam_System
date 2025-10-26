@@ -10,7 +10,7 @@ class CategoryPosition extends Model
     use HasFactory;
 
     protected $primaryKey = 'category_position_id';
-    protected $table = 'category_positions';
+    protected $table = 'category_position';
 
     protected $fillable = [
         'position_code',

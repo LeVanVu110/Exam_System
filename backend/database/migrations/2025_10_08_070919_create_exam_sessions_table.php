@@ -43,11 +43,6 @@ return new class extends Migration
             $table->string('exam_teacher', 255)->nullable();
             $table->timestamps();
 
-            $table->foreign('course_id')->references('course_id')->on('courses')->onDelete('set null');
-            $table->foreign('assigned_teacher1_id')->references('teacher_id')->on('teachers')->onDelete('set null');
-            $table->foreign('assigned_teacher2_id')->references('teacher_id')->on('teachers')->onDelete('set null');
-            $table->foreign('actual_teacher1_id')->references('teacher_id')->on('teachers')->onDelete('set null');
-            $table->foreign('actual_teacher2_id')->references('teacher_id')->on('teachers')->onDelete('set null');
         });
     }
 

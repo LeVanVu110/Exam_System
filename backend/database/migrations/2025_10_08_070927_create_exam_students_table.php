@@ -20,8 +20,6 @@ return new class extends Migration
             $table->string('submission_status', 50)->nullable();
             $table->timestamps();
 
-            $table->foreign('exam_session_id')->references('exam_session_id')->on('exam_sessions')->onDelete('cascade');
-            $table->foreign('student_id')->references('student_id')->on('students')->onDelete('cascade');
         });
     }
 

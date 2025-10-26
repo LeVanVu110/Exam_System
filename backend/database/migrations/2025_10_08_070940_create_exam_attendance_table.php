@@ -21,8 +21,6 @@ return new class extends Migration
             $table->integer('used_computers')->default(0);
             $table->timestamps();
 
-            $table->foreign('exam_session_id')->references('exam_session_id')->on('exam_sessions')->onDelete('cascade');
-            $table->foreign('teacher_id')->references('teacher_id')->on('teachers')->onDelete('set null');
         });
     }
 

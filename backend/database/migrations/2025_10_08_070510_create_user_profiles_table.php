@@ -27,8 +27,6 @@ return new class extends Migration
             $table->string('address', 255)->nullable();
             $table->timestamps();
 
-            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
-            $table->foreign('category_user_type_id')->references('category_user_type_id')->on('category_user_types')->onDelete('set null');
         });
     }
 
