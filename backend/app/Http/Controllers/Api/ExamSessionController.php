@@ -179,4 +179,86 @@ class ExamSessionController extends Controller
             ], 500);
         }
     }
+
+
+    // vu_one_test
+    
+    public function saveImported(Request $request)
+    {
+        $data = $request->all();
+
+        ExamSession::truncate(); 
+
+        // Lưu dữ liệu mới
+        foreach ($data as $item) {
+            // 1. Lấy ID trực tiếp (từ cột ẩn khi Export, nếu có)
+            $teacher1Id = $item['assigned_teacher1_id'] ?? null;
+            $teacher2Id = $item['assigned_teacher2_id'] ?? null;
+            
+            // 2. Nếu ID bị null, tìm kiếm bằng tên (dùng hàm đã tạo)
+            if (is_null($teacher1Id) || empty($teacher1Id)) {
+                $teacher1Name = $item['teacher1_name'] ?? null;
+                $teacher1Id = $this->findTeacherIdByName($teacher1Name);
+            }
+            
+            if (is_null($teacher2Id) || empty($teacher2Id)) {
+                $teacher2Name = $item['teacher2_name'] ?? null;
+                $teacher2Id = $this->findTeacherIdByName($teacher2Name);
+            }
+            
+            // Ánh xạ các trường
+            $courseCode = $item['course']['course_code'] ?? ($item['exam_code'] ?? null);
+            $subjectName = $item['course']['course_name'] ?? ($item['subject_name'] ?? null);
+
+            ExamSession::create([
+                'exam_session_id' => $item['exam_session_id'] ?? null,
+                'exam_code' => $courseCode, 
+                'exam_name' => $item['exam_name'] ?? $subjectName,
+                'subject_name' => $subjectName, 
+                'exam_date' => $item['exam_date'],
+                'exam_start_time' => $item['exam_start_time'],
+                'exam_end_time' => $item['exam_end_time'],
+                'exam_room' => $item['exam_room'],
+                
+                // 🔥 LƯU ID GIẢNG VIÊN ĐÃ XỬ LÝ (Có thể là ID cũ hoặc ID mới tìm được)
+                'assigned_teacher1_id' => $teacher1Id,
+                'assigned_teacher2_id' => $teacher2Id,
+                
+                'status' => $item['status'] ?? 'Scheduled',
+                
+                // Các trường khác
+                'class_code' => $item['class_code'] ?? null,
+                'credits' => $item['credits'] ?? null,
+                // ...
+            ]);
+        }
+
+        return response()->json(['message' => 'Data saved successfully']);
+    }
+    private function findTeacherIdByName($fullName)
+    {
+        if (empty($fullName)) {
+            return null;
+        }
+
+        // Bước 1: Phân tích Tên và Họ
+        // Giả định format tên trong file Excel là: [Họ] [Tên] (Ví dụ: Rosenbaum Raphaelle)
+        $parts = explode(' ', trim($fullName));
+        
+        // Lấy tên (phần tử cuối cùng)
+        $firstName = array_pop($parts); 
+        
+        // Lấy họ (các phần còn lại)
+        $lastName = implode(' ', $parts); 
+
+        // Bước 2: Tìm kiếm trong DB bằng cách JOIN UserProfile và Teacher
+        $teacher = DB::table('user_profiles as up')
+            ->join('teachers as t', 'up.user_profile_id', '=', 't.user_profile_id')
+            ->where('up.user_firstname', $firstName)
+            ->where('up.user_lastname', $lastName)
+            ->select('t.teacher_id')
+            ->first();
+
+        return $teacher->teacher_id ?? null;
+    }
 }
