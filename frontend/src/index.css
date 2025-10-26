@@ -56,6 +56,9 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+@tailwind base;
+@tailwind components;
+@tailwind utilities; 
 
 @tailwind base;
 @tailwind components;

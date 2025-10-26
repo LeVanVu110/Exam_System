@@ -58,3 +58,4 @@ class ExamSessionSeeder extends Seeder
         ]);
     }
 }
+

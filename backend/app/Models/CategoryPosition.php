@@ -9,11 +9,18 @@ class CategoryPosition extends Model
 {
     use HasFactory;
 
-    protected $table = 'category_position';
-    protected $fillable = ['name', 'description'];
+    protected $primaryKey = 'category_position_id';
+    protected $table = 'category_positions';
 
+    protected $fillable = [
+        'position_code',
+        'position_name',
+    ];
+
+    // Quan hệ với Teacher
     public function teachers()
     {
         return $this->hasMany(Teacher::class, 'category_position_id');
     }
 }
+

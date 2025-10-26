@@ -22,3 +22,4 @@ class UserRoleSeeder extends Seeder
         }
     }
 }
+

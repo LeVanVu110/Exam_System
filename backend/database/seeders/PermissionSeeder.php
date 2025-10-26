@@ -29,4 +29,4 @@ class PermissionSeeder extends Seeder
             Permission::create($p);
         }
     }
-}
+} 

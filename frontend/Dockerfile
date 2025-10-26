@@ -1,20 +1,23 @@
-# Sử dụng Node.js 20 chính thức
-FROM node:20-alpine
+# Dùng Node 20 bản Debian slim thay vì Alpine để tránh lỗi rollup
+FROM node:20-slim
 
-# Thư mục làm việc bên trong container
+# Đặt thư mục làm việc trong container
 WORKDIR /app
 
-# Copy file cấu hình package.json và package-lock.json (nếu có)
+# Copy file package.json và package-lock.json (nếu có)
 COPY package*.json ./
 
-# Cài đặt các gói npm
-RUN npm install
+# Cập nhật npm và cài dependencies
+RUN npm install -g npm@latest \
+    && npm install esbuild --save-dev --unsafe-perm \
+    && npm install --unsafe-perm
 
-# Copy toàn bộ mã nguồn dự án
+
+# Copy toàn bộ mã nguồn vào container
 COPY . .
 
-# Mở cổng Vite dev server
+# Mở port cho Vite dev server
 EXPOSE 5173
 
-# Chạy server Vite, cho phép truy cập từ bên ngoài (Docker host)
+# Chạy server Vite, cho phép truy cập từ ngoài Docker host
 CMD ["npm", "run", "dev", "--", "--host"]

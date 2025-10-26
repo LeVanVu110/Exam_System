@@ -38,4 +38,10 @@ class UserProfile extends Model
     {
         return $this->hasOne(Teacher::class, 'user_profile_id', 'user_profile_id');
     }
+    // Quan hệ với bảng Category_User_Type
+    public function categoryUserType()
+    {
+        return $this->belongsTo(CategoryUserType::class, 'category_user_type_id');
+    }
+    
 }
