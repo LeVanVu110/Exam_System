@@ -19,6 +19,31 @@ class ExamController extends Controller
         if ($room) {
             $exams = array_filter($exams, fn($exam) => strtolower($exam['room']) === strtolower($room));
         }
+        $date = $request->query('date'); // Ví dụ: $date = "2025-10-25"
+        if ($date) {
+
+            // Chuyển ngày từ client (Y-m-d) thành đối tượng DateTime
+            try {
+                $clientDate = new \DateTime($date);
+            } catch (\Exception $e) {
+                // Xử lý nếu client gửi định dạng ngày bậy
+                return response()->json(['error' => 'Invalid date format. Use YYYY-MM-DD.'], 400);
+            }
+
+            $exams = array_filter($exams, function ($exam) use ($clientDate) {
+                // Giả sử ngày trong JSON của bạn là "d/m/Y" (ví dụ: 25/10/2025)
+                // Nếu định dạng trong JSON khác, hãy đổi "d/m/Y" ở đây
+                $examDate = \DateTime::createFromFormat('m/d/Y', $exam['Ngày thi']);
+
+                // Nếu $examDate không hợp lệ (ví dụ: N/A), bỏ qua
+                if (!$examDate) {
+                    return false;
+                }
+
+                // So sánh 2 ngày sau khi đã chuẩn hóa
+                return $examDate->format('Y-m-d') === $clientDate->format('Y-m-d');
+            });
+        }
 
         return response()->json([
             'message' => $room ? "Danh sách ca thi phòng ($room)" : "Tất cả các ca thi",

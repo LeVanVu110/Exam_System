@@ -1,83 +1,93 @@
 package com.example.studentapp.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.property.SimpleStringProperty;
-
+import javafx.beans.property.StringProperty;
 
 public class RoomModel {
 
-    // 1. Khai báo các Properties
-    // Dùng kiểu đối tượng (IntegerProperty) thay vì kiểu nguyên thủy (int)
-    private final IntegerProperty id = new SimpleIntegerProperty();
+    // Chúng ta dùng StringProperty cho tất cả để binding cho Label dễ dàng
+    private final StringProperty stt = new SimpleStringProperty();
     private final StringProperty lopHP = new SimpleStringProperty();
     private final StringProperty tenHP = new SimpleStringProperty();
-    private final IntegerProperty soTC = new SimpleIntegerProperty();
+    private final StringProperty soTC = new SimpleStringProperty();
     private final StringProperty gioThi = new SimpleStringProperty();
     private final StringProperty ngayThi = new SimpleStringProperty();
     private final StringProperty room = new SimpleStringProperty();
-    private final IntegerProperty soSV = new SimpleIntegerProperty();
-    private final IntegerProperty tgThi = new SimpleIntegerProperty();
+    private final StringProperty soSV = new SimpleStringProperty();
+    private final StringProperty tgThi = new SimpleStringProperty();
     private final StringProperty khoaCoiThi = new SimpleStringProperty();
-    private final StringProperty cbct = new SimpleStringProperty();
 
+    private final StringProperty cbct1 = new SimpleStringProperty("N/A");
+    private final StringProperty cbct2 = new SimpleStringProperty("N/A");
 
+    // Lưu ý: Tên hàm phải khớp với tên JSON key
     @JsonProperty("STT")
-    public int getStt() { return id.get(); }
-    public void setStt(int value) { id.set(value); }
-    public IntegerProperty idProperty() { return id; }
+    public void setStt(int stt) { this.stt.set(String.valueOf(stt)); }
 
     @JsonProperty("Lớp HP")
-    public String getLopHP() { return lopHP.get(); }
-    public void setLopHP(String value) { lopHP.set(value); }
-    public StringProperty lopHPProperty() { return lopHP; }
+    public void setLopHP(String lopHP) { this.lopHP.set(lopHP); }
 
     @JsonProperty("Tên HP")
-    public String getTenHP() { return tenHP.get(); }
-    public void setTenHP(String value) { tenHP.set(value); }
-    public StringProperty tenHPProperty() { return tenHP; }
+    public void setTenHP(String tenHP) { this.tenHP.set(tenHP); }
 
     @JsonProperty("Số TC")
-    public int getSoTC() { return soTC.get(); }
-    public void setSoTC(int value) { soTC.set(value); }
-    public IntegerProperty soTCProperty() { return soTC; }
+    public void setSoTC(int soTC) { this.soTC.set(String.valueOf(soTC)); }
 
     @JsonProperty("Giờ thi")
-    public String getGioThi() { return gioThi.get(); }
-    public void setGioThi(String value) { gioThi.set(value); }
-    public StringProperty gioThiProperty() { return gioThi; }
+    public void setGioThi(String gioThi) { this.gioThi.set(gioThi); }
 
     @JsonProperty("Ngày thi")
-    public String getNgayThi() { return ngayThi.get(); }
-    public void setNgayThi(String value) { ngayThi.set(value); }
-    public StringProperty ngayThiProperty() { return ngayThi; }
+    public void setNgayThi(String ngayThi) { this.ngayThi.set(ngayThi); }
 
-    @JsonProperty("room") // Tên key "room" giống tên biến nên không bắt buộc @JsonProperty
-    public String getRoom() { return room.get(); }
-    public void setRoom(String value) { room.set(value); }
-    public StringProperty roomProperty() { return room; }
+    @JsonProperty("room")
+    public void setRoom(String room) { this.room.set(room); }
 
     @JsonProperty("Số SV")
-    public int getSoSV() { return soSV.get(); }
-    public void setSoSV(int value) { soSV.set(value); }
-    public IntegerProperty soSVProperty() { return soSV; }
+    public void setSoSV(int soSV) { this.soSV.set(String.valueOf(soSV)); }
 
     @JsonProperty("TG thi")
-    public int getTgThi() { return tgThi.get(); }
-    public void setTgThi(int value) { tgThi.set(value); }
-    public IntegerProperty tgThiProperty() { return tgThi; }
+    public void setTgThi(int tgThi) { this.tgThi.set(tgThi + " phút"); } // Thêm chữ "phút"
 
     @JsonProperty("Khoa coi thi")
-    public String getKhoaCoiThi() { return khoaCoiThi.get(); }
-    public void setKhoaCoiThi(String value) { khoaCoiThi.set(value); }
-    public StringProperty khoaCoiThiProperty() { return khoaCoiThi; }
+    public void setKhoaCoiThi(String khoaCoiThi) { this.khoaCoiThi.set(khoaCoiThi); }
 
+
+    // Jackson sẽ gọi hàm này khi thấy key "CBCT"
     @JsonProperty("CBCT")
-    public String getCbct() { return cbct.get(); }
-    public void setCbct(String value) { cbct.set(value); }
-    public StringProperty cbctProperty() { return cbct; }
+    public void setCbct(String rawCbct) {
+        if (rawCbct == null || rawCbct.trim().isEmpty()) {
+            this.cbct1.set("N/A");
+            this.cbct2.set("N/A");
+            return;
+        }
 
-    public RoomModel() {}
+        String[] names = rawCbct.split(",");
+
+        if (names.length > 0) {
+            String name1 = names[0].trim().replaceAll("\\s+", " ");
+            this.cbct1.set(name1);
+        }
+
+        if (names.length > 1) {
+            String name2 = names[1].trim().replaceAll("\\s+", " ");
+            this.cbct2.set(name2);
+        } else {
+            this.cbct2.set("N/A"); // Không có CBCT 2
+        }
+    }
+
+    // Tên hàm phải là tenBienProperty()
+    public StringProperty sttProperty() { return stt; }
+    public StringProperty lopHPProperty() { return lopHP; }
+    public StringProperty tenHPProperty() { return tenHP; }
+    public StringProperty soTCProperty() { return soTC; }
+    public StringProperty gioThiProperty() { return gioThi; }
+    public StringProperty ngayThiProperty() { return ngayThi; }
+    public StringProperty roomProperty() { return room; }
+    public StringProperty soSVProperty() { return soSV; }
+    public StringProperty tgThiProperty() { return tgThi; }
+    public StringProperty khoaCoiThiProperty() { return khoaCoiThi; }
+    public StringProperty cbct1Property() { return cbct1; }
+    public StringProperty cbct2Property() { return cbct2; }
 }
