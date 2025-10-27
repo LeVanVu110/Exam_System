@@ -12,20 +12,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 
-import com.example.studentapp.util.HttpClientUtil;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.nio.file.Files;
-import java.net.URL;
-
-import org.json.JSONObject;
-
 
 public class ApiService {
     private static final String BASE_URL = "http://localhost:8000/api";

@@ -17,10 +17,14 @@ import java.util.ResourceBundle;
 
 public class ExamRoomController implements Initializable {
 
-    @FXML private TextField txtRoom;
-    @FXML private Button btnRoom;
-    @FXML private Label lblShowRoom;
-    @FXML private VBox vbox;
+    @FXML
+    private TextField txtRoom;
+    @FXML
+    private Button btnRoom;
+    @FXML
+    private Label lblShowRoom;
+    @FXML
+    private VBox vbox;
     private final ApiService apiService = new ApiService();
     private MainController mainController;
 
@@ -240,7 +244,7 @@ public class ExamRoomController implements Initializable {
         pane.getChildren().addAll(
                 labelPhong, lblRoom, labelLopHP, lblClass, labelTenHP, lblName, labelKhoa, lblKhoa,
                 labelNgayThi, lblDate, labelGioThi, lblTime, labelCbct1, lblCbct1, labelCbct2, lblCbct2,
-                labelSTT, lblSTT, labelSoSV, lblSoSV, labelSoTC, lblSoTC, labelTgThi, lblTgThi
+                labelSoSV, lblSoSV, labelSoTC, lblSoTC, labelTgThi, lblTgThi
         );
 
         pane.setOnMouseClicked(event -> {
