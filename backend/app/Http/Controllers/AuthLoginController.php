@@ -33,19 +33,19 @@ class AuthLoginController extends Controller
 
     // Lấy vai trò (Role)
     $role = DB::table('users_roles')
-        ->join('role', 'users_roles.role_id', '=', 'role.role_id') 
-        ->where('users_roles.user_id', $user->user_id) 
-        ->value('role.role_name');
+    ->join('roles', 'users_roles.role_id', '=', 'roles.role_id') // ✅ Sửa thành 'roles.role_id'
+    ->where('users_roles.user_id', $user->user_id)
+    ->value('roles.role_name');
 
     // Trả về thông tin user
-    return response()->json([
-        'success' => true,
-        'user' => [
-            'id' => $user->user_id,
-            'user_name' => $user->user_name,
-            'user_email' => $user->user_email,
-            'user_role' => $role ?? 'student',
-        ]
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->user_id,
+                'user_name' => $user->user_name,
+                'user_email' => $user->user_email,
+                'user_role' => $role ?? 'student', // Nếu $role là null, trả về 'student'
+            ]
+        ]);
+    }
 }

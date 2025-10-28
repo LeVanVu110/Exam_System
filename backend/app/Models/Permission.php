@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Permission extends Model
 {
     use HasFactory;
-
+    protected $table = 'permissions';
     protected $primaryKey = 'permission_id';
     protected $fillable = [
         'permission_name',
@@ -26,3 +26,4 @@ class Permission extends Model
         return $this->belongsToMany(User::class, 'user_permissions', 'permission_id', 'user_id');
     }
 }
+ 

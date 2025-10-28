@@ -9,8 +9,10 @@ class UserProfile extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'user_profile_id';
     protected $table = 'user_profiles';
+    protected $primaryKey = 'user_profile_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'user_id',
@@ -27,15 +29,19 @@ class UserProfile extends Model
         'address',
     ];
 
-    // Quan hệ với bảng Users
+    // 🔗 Quan hệ
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
-
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class, 'user_profile_id', 'user_profile_id');
+    }
     // Quan hệ với bảng Category_User_Type
     public function categoryUserType()
     {
         return $this->belongsTo(CategoryUserType::class, 'category_user_type_id');
     }
+    
 }

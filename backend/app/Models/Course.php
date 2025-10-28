@@ -19,6 +19,7 @@ class Course extends Model
         'category_major_id',
         'teacher_id',
         'credits',
+        'semester',
     ];
 
     // Quan hệ
@@ -36,4 +37,9 @@ class Course extends Model
     {
         return $this->belongsTo(Teacher::class, 'teacher_id');
     }
+     public function exams()
+    {
+        return $this->hasMany(ExamSession::class, 'course_id');
+    }
 }
+

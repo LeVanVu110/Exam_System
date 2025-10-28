@@ -9,38 +9,25 @@ class Teacher extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'teacher_id';
     protected $table = 'teachers';
-
+    protected $primaryKey = 'teacher_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
     protected $fillable = [
+        'user_id',
         'user_profile_id',
         'category_faculty_id',
-        'category_major_id',
         'category_position_id',
+        'teacher_code',
     ];
 
-    // Quan hệ với UserProfile
-    public function userProfile() 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    public function userProfile()
     {
         return $this->belongsTo(UserProfile::class, 'user_profile_id', 'user_profile_id');
     }
-
-
-    // Quan hệ với CategoryFaculty
-    public function faculty()
-    {
-        return $this->belongsTo(CategoryFaculty::class, 'category_faculty_id');
-    }
-
-    // Quan hệ với CategoryMajor
-    public function major()
-    {
-        return $this->belongsTo(CategoryMajor::class, 'category_major_id');
-    }
-
-    // Quan hệ với CategoryPosition
-    public function position()
-    {
-        return $this->belongsTo(CategoryPosition::class, 'category_position_id');
-    }
 }
+

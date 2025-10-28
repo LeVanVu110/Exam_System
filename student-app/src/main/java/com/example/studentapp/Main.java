@@ -11,14 +11,18 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        
-        // Tải màn hình Đăng nhập (login.fxml)
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/login.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 400, 300); // Kích thước nhỏ hơn cho Login
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Main.fxml"));
+            Scene scene = new Scene(fxmlLoader.load());
 
-        stage.setTitle("Đăng nhập");
-        stage.setScene(scene);
-        stage.show();
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Không thể load file FXML. Vui lòng kiểm tra đường dẫn: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

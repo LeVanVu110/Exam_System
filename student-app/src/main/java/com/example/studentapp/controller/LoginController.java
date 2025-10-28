@@ -44,13 +44,13 @@ public class LoginController {
 
                             switch (role) {
                                 case "Admin":
-                                    loadView("/upload-view.fxml", "Trang quản trị");
+                                    loadView("/view/login/upload-view.fxml", "Trang quản trị");
                                     break;
-                                case "teacher":
-                                    loadView("/teacher-dashboard.fxml", "Trang giảng viên");
+                                case "Teacher":
+                                    loadView("/view/login/upload-view.fxml", "Trang giảng viên");
                                     break;
-                                case "student":
-                                    loadView("/upload-view.fxml", "Trang sinh viên");
+                                case "Student":
+                                    loadView("/view/login/upload-view.fxml", "Trang sinh viên");
                                     break;
                                 default:
                                     messageLabel.setText("Không xác định vai trò người dùng.");
@@ -83,6 +83,7 @@ public class LoginController {
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
+        conn.setConnectTimeout(5000);
 
         // Gửi dữ liệu JSON
         JSONObject requestBody = new JSONObject();
@@ -93,30 +94,62 @@ public class LoginController {
             byte[] input = requestBody.toString().getBytes("utf-8");
             os.write(input, 0, input.length);
         }
+        // Chọn luồng đầu vào dựa trên mã trạng thái
+        InputStream is;
+        int status = conn.getResponseCode();
 
-        // Đọc phản hồi
+        if (status >= 200 && status < 300) {
+            // Mã thành công (200 OK)
+            is = conn.getInputStream();
+        } else {
+            // Mã lỗi (401, 500,...) -> Đọc từ ErrorStream
+            is = conn.getErrorStream();
+            if (is == null) {
+                throw new IOException("Server returned status code: " + status + " and no error stream.");
+            }
+        }
+
+        // Đọc phản hồi (SỬA DÒNG NÀY ĐỂ DÙNG BIẾN 'is')
         StringBuilder response = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+        // ------------------------------------------------------------------
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"))) { // ✅ ĐÃ DÙNG 'is'
+            // ------------------------------------------------------------------
             String responseLine;
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
             }
         }
+        // Nếu phản hồi rỗng (dù có mã lỗi), ném lỗi
+        if (response.length() == 0) {
+            throw new IOException("Empty response received from server with status: " + status);
+        }
 
         return new JSONObject(response.toString());
     }
 
+    // LoginController.java (Phần cuối)
+
     private void loadView(String fxmlPath, String title) {
         try {
             Stage currentStage = (Stage) usernameField.getScene().getWindow();
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(fxmlPath));
-            Scene scene = new Scene(fxmlLoader.load(), 800, 600);
+            // Lấy luồng từ tài nguyên. Dùng getResourceAsStream tốt hơn getResource
+            InputStream fxmlStream = getClass().getResourceAsStream(fxmlPath);
+
+            if (fxmlStream == null) {
+                throw new FileNotFoundException("FXML file not found at path: " + fxmlPath);
+            }
+
+            FXMLLoader fxmlLoader = new FXMLLoader();
+            Scene scene = new Scene(fxmlLoader.load(fxmlStream), 800, 600); // Tải từ luồng
 
             currentStage.setTitle(title);
             currentStage.setScene(scene);
         } catch (IOException e) {
+            // 🚨 Ném lại lỗi ra console để xem chi tiết
             e.printStackTrace();
             System.err.println("Không thể tải giao diện: " + fxmlPath);
+            // 🚨 Thêm dòng này để thấy lỗi chi tiết hơn
+            throw new RuntimeException("Lỗi tải FXML: " + fxmlPath, e);
         }
     }
 }

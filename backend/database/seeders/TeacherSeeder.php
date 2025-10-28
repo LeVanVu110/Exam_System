@@ -2,73 +2,32 @@
 
 namespace Database\Seeders;
 
+use App\Models\Teacher;
+use App\Models\UserProfile;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TeacherSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        DB::table('teachers')->truncate();
+        Schema::disableForeignKeyConstraints();
+        Teacher::truncate();
+        Schema::enableForeignKeyConstraints();
 
-        DB::table('teachers')->insert([
-    [
-        'user_profile_id' => 1,
-        'category_faculty_id' => 1,
-        'category_major_id' => 1,
-        'category_position_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ],
-    [
-        'user_profile_id' => 2,
-        'category_faculty_id' => 1,
-        'category_major_id' => 2,
-        'category_position_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ],
-    [
-        'user_profile_id' => 3,
-        'category_faculty_id' => 1,
-        'category_major_id' => 1,
-        'category_position_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ],
-    [
-        'user_profile_id' => 4,
-        'category_faculty_id' => 1,
-        'category_major_id' => 2,
-        'category_position_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ],
-    [
-        'user_profile_id' => 5,
-        'category_faculty_id' => 2,
-        'category_major_id' => 3,
-        'category_position_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ],
-    [
-        'user_profile_id' => 6,
-        'category_faculty_id' => 2,
-        'category_major_id' => 3,
-        'category_position_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ],
-    [
-        'user_profile_id' => 7,
-        'category_faculty_id' => 3,
-        'category_major_id' => 4,
-        'category_position_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ],
-]);
-
+        $profiles = UserProfile::inRandomOrder()->take(3)->get();
+        foreach ($profiles as $profile) {
+            Teacher::create([
+                'user_profile_id' => $profile->user_profile_id,
+                'category_faculty_id' => rand(1, 3),
+                'category_major_id' => rand(1, 3),
+                'category_position_id' => rand(1, 3),
+            ]);
+        }
     }
 }
+

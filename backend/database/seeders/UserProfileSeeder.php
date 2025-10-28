@@ -2,136 +2,41 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
+use App\Models\UserProfile;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UserProfileSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        // Xóa dữ liệu cũ trước khi thêm mới
-        DB::table('user_profiles')->truncate();
+        Schema::disableForeignKeyConstraints();
+        UserProfile::truncate();
+        Schema::enableForeignKeyConstraints();
 
-        DB::table('user_profiles')->insert([
-            [
-                'user_profile_id' => 1,
-                'user_id' => 1,
-                'category_user_type_id' => 1,
-                'user_firstname' => 'Nguyễn',
-                'user_lastname' => 'Văn A',
-                'user_phone' => '0901000001',
-                'user_device_token' => 'token_1',
-                'user_avatar' => 'avatar1.jpg',
-                'user_sex' => 1,
-                'province_id' => 1,
-                'district_id' => 1,
-                'ward_id' => 1,
-                'address' => '123 Đường ABC, Quận 1, TP.HCM',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_profile_id' => 2,
-                'user_id' => 2,
-                'category_user_type_id' => 1,
-                'user_firstname' => 'Trần',
-                'user_lastname' => 'Thị B',
-                'user_phone' => '0902000002',
-                'user_device_token' => 'token_2',
-                'user_avatar' => 'avatar2.jpg',
-                'user_sex' => 0,
-                'province_id' => 1,
-                'district_id' => 2,
-                'ward_id' => 3,
-                'address' => '456 Đường DEF, Quận 2, TP.HCM',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_profile_id' => 3,
-                'user_id' => 3,
-                'category_user_type_id' => 2,
-                'user_firstname' => 'Lê',
-                'user_lastname' => 'Văn C',
-                'user_phone' => '0903000003',
-                'user_device_token' => 'token_3',
-                'user_avatar' => 'avatar3.jpg',
-                'user_sex' => 1,
-                'province_id' => 2,
-                'district_id' => 3,
-                'ward_id' => 4,
-                'address' => '789 Đường GHI, Quận 3, TP.HCM',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_profile_id' => 4,
-                'user_id' => 4,
-                'category_user_type_id' => 2,
-                'user_firstname' => 'Phạm',
-                'user_lastname' => 'Thị D',
-                'user_phone' => '0904000004',
-                'user_device_token' => 'token_4',
-                'user_avatar' => 'avatar4.jpg',
-                'user_sex' => 0,
-                'province_id' => 3,
-                'district_id' => 5,
-                'ward_id' => 6,
-                'address' => '12 Nguyễn Huệ, Quận 1, TP.HCM',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_profile_id' => 5,
-                'user_id' => 5,
-                'category_user_type_id' => 3,
-                'user_firstname' => 'Hoàng',
-                'user_lastname' => 'Văn E',
-                'user_phone' => '0905000005',
-                'user_device_token' => 'token_5',
-                'user_avatar' => 'avatar5.jpg',
-                'user_sex' => 1,
-                'province_id' => 2,
-                'district_id' => 4,
-                'ward_id' => 7,
-                'address' => '34 Lý Thường Kiệt, TP. Đà Nẵng',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_profile_id' => 6,
-                'user_id' => 6,
-                'category_user_type_id' => 3,
-                'user_firstname' => 'Đinh',
-                'user_lastname' => 'Thị F',
-                'user_phone' => '0906000006',
-                'user_device_token' => 'token_6',
-                'user_avatar' => 'avatar6.jpg',
-                'user_sex' => 0,
-                'province_id' => 3,
-                'district_id' => 6,
-                'ward_id' => 8,
-                'address' => '56 Trần Phú, TP. Nha Trang',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_profile_id' => 7,
-                'user_id' => 7,
-                'category_user_type_id' => 4,
-                'user_firstname' => 'Vũ',
-                'user_lastname' => 'Văn G',
-                'user_phone' => '0907000007',
-                'user_device_token' => 'token_7',
-                'user_avatar' => 'avatar7.jpg',
-                'user_sex' => 1,
-                'province_id' => 4,
-                'district_id' => 7,
-                'ward_id' => 9,
-                'address' => '78 Hai Bà Trưng, Hà Nội',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        $faker = \Faker\Factory::create();
+
+        foreach (User::all() as $user) {
+            UserProfile::create([
+                'user_id' => $user->user_id,
+                'category_user_type_id' => rand(1, 3),
+                'user_firstname' => $faker->firstName,
+                'user_lastname' => $faker->lastName,
+                'user_phone' => $faker->phoneNumber,
+                'user_device_token' => null,
+                'user_avatar' => $faker->imageUrl(200, 200, 'people'),
+                'user_sex' => rand(0, 1),
+                'province_id' => null,
+                'district_id' => null,
+                'ward_id' => null,
+                'address' => $faker->address,
+            ]);
+        }
     }
 }
+

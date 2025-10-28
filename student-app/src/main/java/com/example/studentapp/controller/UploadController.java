@@ -1,6 +1,6 @@
 package com.example.studentapp.controller;
 
-import com.example.studentapp.service.ApiService;
+import com.example.studentapp.service.ApiLogin;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.stage.FileChooser;
@@ -29,7 +29,7 @@ public class UploadController {
             statusLabel.setText("Vui lòng chọn file trước!");
             return;
         }
-        boolean success = ApiService.uploadExamFile(selectedFile);
+        boolean success = ApiLogin.uploadExamFile(selectedFile);
         statusLabel.setText(success ? "Nộp bài thành công!" : "Nộp bài thất bại!");
     }
 }

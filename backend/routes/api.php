@@ -2,8 +2,11 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-// Gọi các controller
+use App\Http\Controllers\Api\{
+    StudentController,
+    ExamController,
+    ExamSessionController
+};
 use App\Http\Controllers\{
     RoleController,
     PermissionController,
@@ -11,26 +14,40 @@ use App\Http\Controllers\{
     RolePermissionController,
     UserPermissionController,
     CategoryUserTypeController,
-    ExamSessionController,
     AuthLoginController
 };
+
+
+// kì thi(phát)
+
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
-|
-| Các route trong file này sẽ tự động có prefix "/api".
-| Ví dụ: GET /api/roles → gọi đến RoleController@index
-|
+| Những route này sẽ có prefix /api/ tự động
+|--------------------------------------------------------------------------
 */
+//student
+Route::get('/students', [StudentController::class, 'index']);         // Danh sách sinh viên
+Route::get('/students/{id}', [StudentController::class, 'show']);     // Xem chi tiết sinh viên
+Route::post('/students', [StudentController::class, 'store']);        // Thêm mới
+Route::put('/students/{id}', [StudentController::class, 'update']);   // Cập nhật
+Route::delete('/students/{id}', [StudentController::class, 'destroy']); // Xóa
 
-// ✅ Kiểm tra API hoạt động
-Route::get('/ping', function () {
-    return response()->json(['message' => 'API đang hoạt động!']);
-
+// kì thi
+Route::prefix('exam-sessions')->group(function () {
+    Route::get('/', [ExamSessionController::class, 'index']);           // Xem tất cả lịch thi
+    Route::post('/import', [ExamSessionController::class, 'importExcel']); // Import file Excel
+    Route::get('/export', [ExamSessionController::class, 'exportExcel']);  // Export Excel
+    Route::get('/{id}/report', [ExamSessionController::class, 'exportReport']); // Xuất PDF kết quả
+    Route::delete('/{id}', [ExamSessionController::class, 'destroy']); // xóa 1
+    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']); //xóa hàng loạt
 });
 
+
+// mock-data-exams
+Route::get('/exams', [ExamController::class, 'index']);
 // ✅ Các route CRUD cho hệ thống phân quyền
 Route::apiResources([
     'roles' => RoleController::class,

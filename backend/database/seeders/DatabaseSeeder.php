@@ -12,43 +12,41 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Gọi toàn bộ các Seeder cần thiết
         $this->call([
-            // Bảng danh mục
+            // ====== Các bảng danh mục (category, type, v.v.) chạy TRƯỚC ======
             CategoryUserTypeSeeder::class,
             CategoryFacultySeeder::class,
             CategoryMajorSeeder::class,
             CategoryPositionSeeder::class,
 
-            // Bảng người dùng
+            // ====== Các bảng user và liên quan đến user ======
             UserSeeder::class,
             UserProfileSeeder::class,
             TeacherSeeder::class,
-            // StudentSeeder::class,
+            StudentSeeder::class,
 
-            // Bảng khóa học
-            CourseSeeder::class,
-
-            
-
-            // Bảng quyền & vai trò
+            // ====== Các bảng phân quyền ======
             RoleSeeder::class,
             PermissionSeeder::class,
             UserRoleSeeder::class,
             RolePermissionSeeder::class,
             UserPermissionSeeder::class,
+            ScreenSeeder::class,
+            PermissionScreenSeeder::class,
 
-            // Bảng kỳ thi
+            // ====== Các bảng khóa học và thi cử ======
+            CourseSeeder::class,
+            CourseStudentSeeder::class,
             ExamSessionSeeder::class,
-            // ExamStudentSeeder::class,
-            // ExamAttendanceSeeder::class,
-            // ExamSubmissionSeeder::class,
-            // ExamReportSeeder::class,
+            ExamStudentSeeder::class,
+            ExamAttendanceSeeder::class,
+            ExamSubmissionSeeder::class,
+            ExamReportSeeder::class,
+            ExamImportLogSeeder::class,
+            ExamImportDataSeeder::class,
 
-            // Bảng cấu hình & import
-            // ExamImportLogSeeder::class,
-            // ExamImportDataSeeder::class,
-            // NetworkDriveConfigSeeder::class,
+            // ====== Cấu hình hệ thống ======
+            NetworkDriveConfigSeeder::class,
         ]);
     }
 }
