@@ -1,8 +1,7 @@
 package com.example.studentapp.service;
 
 // =================================================================
-// ĐÂY LÀ PHẦN IMPORT BỊ THIẾU
-// (Bạn phải copy tất cả các dòng này)
+// CÁC IMPORT BẮT BUỘC ĐÃ ĐƯỢC BỔ SUNG
 // =================================================================
 import com.example.studentapp.model.LichThi;
 import com.google.gson.Gson;
@@ -30,10 +29,12 @@ import java.util.List;
 
 public class LichThiService {
 
-    // URL API của bạn
-    private static final String API_URL = "http://localhost:3001/api/exams/schedule";
+    // ==========================================================
+    // SỬA LẠI URL CHO ĐÚNG VỚI MOCKOON CỦA BẠN
+    // (Mockoon của bạn chạy ở cổng 3000 và đường dẫn /template)
+    // ==========================================================
+    private static final String API_URL = "http://localhost:3000/template";
 
-    // Các dòng này sẽ hết đỏ khi bạn thêm import
     private final HttpClient client = HttpClient.newHttpClient();
     
     // Cấu hình Gson để hiểu định dạng ngày LocalDate
@@ -46,21 +47,22 @@ public class LichThiService {
      */
     public List<LichThi> getLichThiTuApi() throws Exception {
         
-        // Các dòng này sẽ hết đỏ khi bạn thêm import
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
                 .GET()
                 .build();
 
+        // Gửi request và nhận về String
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
+            // Nếu API lỗi (404, 500...)
             throw new RuntimeException("Lỗi gọi API: " + response.statusCode());
         }
 
         String jsonBody = response.body();
 
-        // Các dòng này sẽ hết đỏ khi bạn thêm import
+        // Dùng Gson để parse chuỗi JSON -> List<LichThi>
         Type listType = new TypeToken<List<LichThi>>(){}.getType();
         return gson.fromJson(jsonBody, listType);
     }
@@ -84,7 +86,7 @@ class LocalDateAdapter implements JsonSerializer<LocalDate>, JsonDeserializer<Lo
 
     @Override
     public JsonElement serialize(LocalDate src, Type typeOfSrc,
-                                                 JsonSerializationContext context) {
+                                   JsonSerializationContext context) {
         // Chuyển LocalDate thành chuỗi để gửi đi (nếu cần)
         return new JsonPrimitive(src.toString());
     }

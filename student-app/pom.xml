@@ -24,6 +24,8 @@
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+        
+        <!-- Thư viện GSON đã có ở đây -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -37,7 +39,6 @@
             <!-- 
                 FIX 1: THÊM MAVEN-COMPILER-PLUGIN
                 Plugin này buộc VS Code dùng đúng trình biên dịch Java 17
-                (sẽ sửa lỗi gạch đỏ ở 'new Task<>()')
             -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -60,13 +61,14 @@
                     
                     <!-- 
                         FIX 2: SỬA CẤU TRÚC RUNTIME
-                        Xóa thẻ <runtime> bị lặp và thêm các module còn thiếu
+                        Thêm các module còn thiếu
                     -->
                     <runtime>
                         <modules>
                             <module>javafx.controls</module>
                             <module>javafx.fxml</module>
                             <module>javafx.graphics</module>
+                            <!-- Module cho HttpClient (bị thiếu) -->
                             <module>java.net.http</module>
                             <module>java.base</module>
                             
@@ -76,7 +78,6 @@
                             <module>java.sql</module> 
                         </modules>
                     </runtime>
-                    <!-- Đã xóa thẻ <runtime> bị lặp ở đây -->
                 </configuration>
             </plugin>
 
