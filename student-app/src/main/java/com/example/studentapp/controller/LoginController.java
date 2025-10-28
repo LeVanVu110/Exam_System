@@ -78,7 +78,7 @@ public class LoginController {
     }
 
     private JSONObject sendLoginRequest(String username, String password) throws IOException {
-        URL url = new URL("http://localhost:8006/api/login"); // 🟢 đổi URL nếu khác
+        URL url = new URL("http://localhost:8000/api/login"); // 🟢 đổi URL nếu khác
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");

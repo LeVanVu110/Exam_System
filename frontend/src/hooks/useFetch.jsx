@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 
 // Lấy base URL từ file .env
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8006"
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 export const useFetch = (endpoint, options = {}) => {
   const [data, setData] = useState(null)

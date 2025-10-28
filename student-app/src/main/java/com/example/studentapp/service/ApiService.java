@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 
 public class ApiService {
-    private static final String BASE_URL = "http://localhost:8006/api";
+    private static final String BASE_URL = "http://localhost:8000/api";
 
 
     private final HttpClient httpClient;
