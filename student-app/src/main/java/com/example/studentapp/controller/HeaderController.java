@@ -28,6 +28,12 @@ public class HeaderController implements Initializable {
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
+    private MainController mainController;
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         startClock();

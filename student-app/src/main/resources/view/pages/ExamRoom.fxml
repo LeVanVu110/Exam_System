@@ -6,55 +6,55 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="TOP_CENTER" prefWidth="1024.0" stylesheets="@../../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.studentapp.controller.ExamRoomController">
+<VBox alignment="TOP_CENTER" spacing="15.0" styleClass="main-container" stylesheets="@../../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.studentapp.controller.ExamRoomController">
     <padding>
-        <Insets left="10.0" right="10.0" top="10.0" />
+        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
     </padding>
     <children>
 
-        <HBox alignment="CENTER" prefHeight="26.0" prefWidth="1005.0" spacing="20.0" styleClass="search-bar-container">
+        <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="search-bar-container, card-style">
             <children>
-                <Label alignment="CENTER" prefHeight="30.0" text="Nhập số phòng thi: ">
+                <Label text="Nhập số phòng thi: ">
                     <font>
                         <Font size="14.0" />
                     </font>
                 </Label>
-                <TextField fx:id="txtRoom" prefHeight="30.0" prefWidth="200.0">
+                <TextField fx:id="txtRoom" prefHeight="30.0" promptText="Ví dụ: B209A" styleClass="search-field" HBox.hgrow="ALWAYS">
                     <font>
                         <Font size="14.0" />
                     </font>
                 </TextField>
-                <Button fx:id="btnRoom" mnemonicParsing="false" prefHeight="24.0" prefWidth="80.0" styleClass="btn-search" text="Tìm">
+                <Button fx:id="btnRoom" mnemonicParsing="false" prefHeight="30.0" prefWidth="80.0" styleClass="btn-search" text="Tìm">
                     <font>
                         <Font name="SansSerif Bold" size="14.0" />
                     </font>
                 </Button>
             </children>
-            <padding>
-                <Insets bottom="10.0" left="20.0" top="10.0" />
-            </padding>
         </HBox>
 
-        <VBox spacing="10.0" styleClass="results-area-container" VBox.vgrow="ALWAYS">
+        <VBox spacing="10.0" styleClass="results-area-container, card-style" VBox.vgrow="ALWAYS">
             <children>
-                <Label fx:id="lblShowRoom" text="">
+                <Label fx:id="lblShowRoom" styleClass="label-header" text="">
                     <font>
                         <Font name="System Bold" size="18.0" />
                     </font>
                 </Label>
 
-                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" VBox.vgrow="ALWAYS">
+                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="results-scroll-pane" VBox.vgrow="ALWAYS">
                     <content>
-                        <VBox fx:id="vbox" alignment="TOP_CENTER" spacing="10.0" />
+                        <VBox fx:id="vbox" alignment="TOP_CENTER" spacing="10.0">
+                            <padding>
+                                <Insets top="5.0" />
+                            </padding>
+                        </VBox>
                     </content>
                 </ScrollPane>
+
             </children>
-         <VBox.margin>
-            <Insets top="10.0" />
-         </VBox.margin>
         </VBox>
     </children>
 </VBox>
