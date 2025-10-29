@@ -44,13 +44,13 @@ public class LoginController {
 
                             switch (role) {
                                 case "Admin":
-                                    loadView("/view/login/upload-view.fxml", "Trang quản trị");
+                                    loadView("view/login/upload-view.fxml", "Trang quản trị");
                                     break;
                                 case "Teacher":
-                                    loadView("/view/login/upload-view.fxml", "Trang giảng viên");
+                                    loadView("view/login/upload-view.fxml", "Trang giảng viên");
                                     break;
                                 case "Student":
-                                    loadView("/view/login/upload-view.fxml", "Trang sinh viên");
+                                    loadView("/view/Main.fxml", "Trang sinh viên");
                                     break;
                                 default:
                                     messageLabel.setText("Không xác định vai trò người dùng.");
@@ -132,24 +132,29 @@ public class LoginController {
     private void loadView(String fxmlPath, String title) {
         try {
             Stage currentStage = (Stage) usernameField.getScene().getWindow();
-            // Lấy luồng từ tài nguyên. Dùng getResourceAsStream tốt hơn getResource
-            InputStream fxmlStream = getClass().getResourceAsStream(fxmlPath);
 
-            if (fxmlStream == null) {
+            // ✅ Lấy URL thay vì InputStream — để FXMLLoader có base location
+            URL fxmlUrl = getClass().getResource(fxmlPath);
+            if (fxmlUrl == null) {
                 throw new FileNotFoundException("FXML file not found at path: " + fxmlPath);
             }
 
-            FXMLLoader fxmlLoader = new FXMLLoader();
-            Scene scene = new Scene(fxmlLoader.load(fxmlStream), 800, 600); // Tải từ luồng
+            FXMLLoader fxmlLoader = new FXMLLoader(fxmlUrl);
+            Scene scene = new Scene(fxmlLoader.load());
+            currentStage.setMinWidth(1000);
+            currentStage.setMinHeight(700);
+            currentStage.setWidth(1000);
+            currentStage.setHeight(700);
 
             currentStage.setTitle(title);
             currentStage.setScene(scene);
+            currentStage.centerOnScreen();
+            currentStage.show();
         } catch (IOException e) {
-            // 🚨 Ném lại lỗi ra console để xem chi tiết
             e.printStackTrace();
             System.err.println("Không thể tải giao diện: " + fxmlPath);
-            // 🚨 Thêm dòng này để thấy lỗi chi tiết hơn
             throw new RuntimeException("Lỗi tải FXML: " + fxmlPath, e);
         }
     }
+
 }
