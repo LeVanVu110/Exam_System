@@ -48,6 +48,8 @@ Route::prefix('exam-sessions')->group(function () {
 
 // mock-data-exams
 Route::get('/exams', [ExamController::class, 'index']);
+Route::put('/exams/{id}', [ExamController::class, 'update']);
+
 // ✅ Các route CRUD cho hệ thống phân quyền
 Route::apiResources([
     'roles' => RoleController::class,

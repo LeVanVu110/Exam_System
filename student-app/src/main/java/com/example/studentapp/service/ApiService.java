@@ -4,6 +4,7 @@ package com.example.studentapp.service;
 import com.example.studentapp.model.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -11,6 +12,10 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.util.Map;
+import java.util.concurrent.CompletionException;
 
 
 public class ApiService {
@@ -23,6 +28,31 @@ public class ApiService {
     public ApiService() {
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
+    }
+
+    public CompletableFuture<Boolean> updateExamProctors(String examId, String cbct1, String cbct2) {
+        String apiUri = BASE_URL + "/exams/" + examId;
+
+        String jsonBody = String.format(
+                "{\"CBCT\": \"%s, %s\"}",
+                cbct1,
+                cbct2
+        );
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUri))
+                .PUT(BodyPublishers.ofString(jsonBody))
+                .header("Content-Type", "application/json")
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    // Nếu server trả về mã 200 (OK) hoặc 204 (No Content) là thành công
+                    if (response.statusCode() == 200 || response.statusCode() == 204) {
+                        return true;
+                    } else {
+                        throw new CompletionException(new IOException("Lỗi Server: " + response.statusCode()));
+                    }
+                });
     }
 
     public CompletableFuture<ApiResponse> fetchAllExamsForToday() {
