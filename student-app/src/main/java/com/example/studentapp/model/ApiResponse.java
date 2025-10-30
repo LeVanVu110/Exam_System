@@ -2,12 +2,16 @@ package com.example.studentapp.model;
 
 import java.util.List;
 
-public class ApiResponse {
+/**
+ * Lớp Response API chung, sử dụng Generics (T)
+ * T có thể là RoomModel, ExamSession, Student, v.v.
+ */
+public class ApiResponse<T> { // Thêm <T> ở đây
     private String message;
     private int count;
+    private List<T> data; // <-- Sửa ở đây
 
-    private List<RoomModel> data;
-
+    // Getters and Setters
 
     public String getMessage() {
         return message;
@@ -25,11 +29,11 @@ public class ApiResponse {
         this.count = count;
     }
 
-    public List<RoomModel> getData() {
+    public List<T> getData() { // <-- Sửa ở đây
         return data;
     }
 
-    public void setData(List<RoomModel> data) {
+    public void setData(List<T> data) { // <-- Sửa ở đây
         this.data = data;
     }
 }

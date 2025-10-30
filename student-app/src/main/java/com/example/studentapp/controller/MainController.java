@@ -73,4 +73,31 @@ public class MainController implements Initializable {
             System.err.println("Lỗi: Không thể tải ExamDetail.fxml");
         }
     }
+    // ... (Dán hàm này vào bên dưới hàm showExamDetailPage của bạn)
+
+    /**
+     * Hàm tải trang KIỂM TRA CA THI (KiemTraCaThi.fxml) vào <center>
+     */
+    public void showKiemTraCaThiPage() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/pages/KiemTraCaThi.fxml"));
+            Parent kiemTraCaThiView = loader.load();
+
+            // Lấy controller của KiemTraCaThi.fxml (nếu cần)
+            // KiemTraCaThiController controller = loader.getController();
+            // controller.setMainController(this); // Bật dòng này nếu KiemTraCaThiController cần tham chiếu Main
+
+            // Đặt view vào vị trí <center>
+            mainContentPane.getChildren().setAll(kiemTraCaThiView);
+
+            // Căn chỉnh cho AnchorPane
+            AnchorPane.setTopAnchor(kiemTraCaThiView, 0.0);
+            AnchorPane.setBottomAnchor(kiemTraCaThiView, 0.0);
+            AnchorPane.setLeftAnchor(kiemTraCaThiView, 0.0);
+            AnchorPane.setRightAnchor(kiemTraCaThiView, 0.0);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Lỗi: Không thể tải KiemTraCaThi.fxml");
+        }
+    }
 }
