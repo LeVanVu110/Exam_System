@@ -15,7 +15,7 @@ function App() {
     <Router>
       <Routes>
         {/* phòng đào tạo */}
-        <Route path="/" element={<ExamManagement />} />
+        <Route path="/PDT" element={<ExamManagement />} />
       </Routes>
       {/* đăng nhập */}
       <Routes>
