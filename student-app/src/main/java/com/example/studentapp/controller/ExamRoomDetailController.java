@@ -8,7 +8,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.util.Pair;
 
 import java.util.Optional;
@@ -43,6 +45,12 @@ public class ExamDetailController {
     private Label lblCBCT2;
     @FXML
     private Button btnThayDoiCBCT;
+    @FXML
+    private TextField txtSoLuongMay;
+    @FXML
+    private TextField txtSoLuongSV;
+    @FXML
+    private TextArea txtGhiChu;
 
     private MainController mainController;
     private RoomModel currentRoom;
@@ -69,14 +77,15 @@ public class ExamDetailController {
         lblGioThi.setText(room.gioThiProperty().get());
         lblTGThi.setText(room.tgThiProperty().get());
         lblRoom.setText(room.roomProperty().get());
+
         lblCBCT1.textProperty().bind(Bindings.concat("• ", room.cbct1Property()));
         lblCBCT2.textProperty().bind(Bindings.concat("• ", room.cbct2Property()));
-
         lblCBCT1.visibleProperty().bind(room.cbct1Property().isNotEmpty());
         lblCBCT2.visibleProperty().bind(room.cbct2Property().isNotEmpty());
-
         lblCBCT1.managedProperty().bind(lblCBCT1.visibleProperty());
         lblCBCT2.managedProperty().bind(lblCBCT2.visibleProperty());
+
+        txtSoLuongMay.setText("55");
     }
 
     // 4. Hàm xử lý nút quay lại
@@ -102,16 +111,21 @@ public class ExamDetailController {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
+        // Đã thay đổi padding để cân đối hơn
+        grid.setPadding(new Insets(20, 20, 20, 20));
+
+        // THAY ĐỔI 1: Thêm ColumnConstraints để TextField tự động co giãn
+        ColumnConstraints col1 = new ColumnConstraints();
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setHgrow(Priority.ALWAYS); // Cho phép cột 2 (TextField) giãn ra
+        grid.getColumnConstraints().addAll(col1, col2);
 
         TextField txtCbct1 = new TextField();
         txtCbct1.setPromptText("Tên CBCT 1");
-        // Lấy dữ liệu hiện tại gán vào
         txtCbct1.setText(currentRoom.cbct1Property().get());
 
         TextField txtCbct2 = new TextField();
         txtCbct2.setPromptText("Tên CBCT 2");
-        // Lấy dữ liệu hiện tại gán vào
         txtCbct2.setText(currentRoom.cbct2Property().get());
 
         grid.add(new Label("CBCT 1:"), 0, 0);
@@ -119,65 +133,38 @@ public class ExamDetailController {
         grid.add(new Label("CBCT 2:"), 0, 1);
         grid.add(txtCbct2, 1, 1);
 
+        // THAY ĐỔI 2: Làm cho Dialog "bự hơn" bằng cách set PrefWidth
+        // Bạn có thể chỉnh số 450 to hơn hoặc nhỏ hơn tùy ý
+        dialog.getDialogPane().setPrefWidth(450);
         dialog.getDialogPane().setContent(grid);
+
+        // Yêu cầu focus vào textfield đầu tiên khi mở dialog
+        Platform.runLater(txtCbct1::requestFocus);
 
         // 4. Chuyển đổi kết quả trả về khi nhấn nút
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                // Trả về một Pair chứa 2 giá trị mới
                 return new Pair<>(txtCbct1.getText(), txtCbct2.getText());
             }
-            return null; // Trả về null nếu nhấn Hủy
+            return null;
         });
 
         // 5. Hiển thị Dialog và chờ kết quả
         Optional<Pair<String, String>> result = dialog.showAndWait();
 
-        // 6. Xử lý kết quả (Nếu người dùng nhấn "Lưu")
+        // 6. XỬ LÝ KẾT QUẢ (ĐÃ XÓA API CALL)
+        // THAY ĐỔI 3: Chỉ cập nhật local model, bỏ qua API, Alert, và disable button
         result.ifPresent(newNames -> {
             String newCbct1 = newNames.getKey();
             String newCbct2 = newNames.getValue();
 
-            String examId = currentRoom.sttProperty().get();
+            // === CẬP NHẬT LOCAL MODEL ===
+            // Vì các Label (lblCBCT1, lblCBCT2) đã "bind" với 2 property này,
+            // giao diện sẽ TỰ ĐỘNG cập nhật ngay lập tức!
+            currentRoom.cbct1Property().set(newCbct1);
+            currentRoom.cbct2Property().set(newCbct2);
 
-            btnThayDoiCBCT.setDisable(true);
-            btnThayDoiCBCT.setText("Đang lưu...");
-
-            apiService.updateExamProctors(examId, newCbct1, newCbct2)
-                    .thenAccept(success -> {
-                        // Khi API báo thành công
-                        Platform.runLater(() -> {
-                            // === CẬP NHẬT LOCAL MODEL ===
-                            // Vì Label đã "bind" với 2 property này,
-                            // giao diện sẽ TỰ ĐỘNG cập nhật!
-                            currentRoom.cbct1Property().set(newCbct1);
-                            currentRoom.cbct2Property().set(newCbct2);
-
-                            // Thông báo thành công
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle("Thành công");
-                            alert.setHeaderText(null);
-                            alert.setContentText("Đã cập nhật Cán bộ coi thi thành công.");
-                            alert.showAndWait();
-
-                            btnThayDoiCBCT.setDisable(false);
-                            btnThayDoiCBCT.setText("Thay đổi CBCT");
-                        });
-                    })
-                    .exceptionally(e -> {
-                        // Khi API báo lỗi
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("Lỗi");
-                            alert.setHeaderText("Không thể cập nhật");
-                            alert.setContentText("Lỗi: " + e.getMessage());
-                            alert.showAndWait();
-
-                            btnThayDoiCBCT.setDisable(false);
-                            btnThayDoiCBCT.setText("Thay đổi CBCT");
-                        });
-                        return null;
-                    });
+            // (Đã xóa toàn bộ phần gọi API, Alert, và disable/enable button)
         });
     }
 }
