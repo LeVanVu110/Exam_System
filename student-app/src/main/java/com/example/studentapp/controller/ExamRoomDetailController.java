@@ -14,8 +14,11 @@ import javafx.scene.layout.Priority;
 import javafx.util.Pair;
 
 import java.util.Optional;
+import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 
-public class ExamDetailController {
+
+public class ExamRoomDetailController {
 
     @FXML
     private Label lblTitle;
@@ -66,6 +69,10 @@ public class ExamDetailController {
         btnBack.setOnAction(this::handleBack);
         btnThayDoiCBCT.setOnAction(this::handleShowForm);
 
+        validationNumber(txtSoLuongMay, 100);
+        validationNumber(txtSoLuongSV, 200);
+        setupCharacterLimit(txtGhiChu,500);
+
         // Đổ dữ liệu từ RoomModel vào các Label
         lblTitle.setText("Chi Tiết Ca Thi Phòng " + room.roomProperty().get());
         lblShowGioThi.setText("Ca Thi: " + room.gioThiProperty().get());
@@ -88,6 +95,64 @@ public class ExamDetailController {
         txtSoLuongMay.setText("55");
     }
 
+    private void validationNumber(TextField textField, int maxValue) {
+        Pattern pattern = Pattern.compile("\\d*");
+        UnaryOperator<TextFormatter.Change> filter = change -> {
+            String newText = change.getControlNewText();
+            if (pattern.matcher(newText).matches()) {
+                return change;
+            }
+            return null;
+        };
+        TextFormatter<String> textFormatter = new TextFormatter<>(filter);
+        textField.setTextFormatter(textFormatter);
+
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && !newValue.isEmpty()) {
+                try {
+                    int value = Integer.parseInt(newValue);
+
+                    if (value > maxValue) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.WARNING);
+                            alert.setTitle("Giá trị không hợp lệ");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Giá trị nhập vào không được vượt quá " + maxValue + ".");
+                            alert.showAndWait();
+
+                            textField.setText(oldValue);
+                        });
+                    }
+                } catch (NumberFormatException e) {
+                    Platform.runLater(() -> textField.setText(oldValue));
+                }
+            }
+        });
+    }
+
+    private void setupCharacterLimit(TextArea textArea, int maxChars) {
+
+        textArea.textProperty().addListener((observable, oldValue, newValue) -> {
+
+            if (newValue != null && newValue.length() > maxChars) {
+
+                // Dùng Platform.runLater để tránh lỗi khi sửa text
+                // ngay trong lúc listener đang chạy
+                Platform.runLater(() -> {
+                    // 1. Hiển thị thông báo lỗi
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Vượt quá giới hạn ký tự");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Ghi chú không được vượt quá " + maxChars + " ký tự.");
+                    alert.showAndWait();
+
+                    // 2. Khôi phục text về giá trị cũ (trước khi gõ/dán quá)
+                    textArea.setText(oldValue);
+                });
+            }
+        });
+    }
+
     // 4. Hàm xử lý nút quay lại
     @FXML
     void handleBack(ActionEvent event) {
@@ -103,21 +168,18 @@ public class ExamDetailController {
         dialog.setTitle("Thay đổi Cán bộ coi thi");
         dialog.setHeaderText("Nhập tên cán bộ coi thi mới cho phòng " + currentRoom.roomProperty().get());
 
-        // 2. Set các nút
         ButtonType saveButtonType = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
 
-        // 3. Tạo layout cho Form (GridPane)
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
-        // Đã thay đổi padding để cân đối hơn
+
         grid.setPadding(new Insets(20, 20, 20, 20));
 
-        // THAY ĐỔI 1: Thêm ColumnConstraints để TextField tự động co giãn
         ColumnConstraints col1 = new ColumnConstraints();
         ColumnConstraints col2 = new ColumnConstraints();
-        col2.setHgrow(Priority.ALWAYS); // Cho phép cột 2 (TextField) giãn ra
+        col2.setHgrow(Priority.ALWAYS);
         grid.getColumnConstraints().addAll(col1, col2);
 
         TextField txtCbct1 = new TextField();
@@ -133,15 +195,11 @@ public class ExamDetailController {
         grid.add(new Label("CBCT 2:"), 0, 1);
         grid.add(txtCbct2, 1, 1);
 
-        // THAY ĐỔI 2: Làm cho Dialog "bự hơn" bằng cách set PrefWidth
-        // Bạn có thể chỉnh số 450 to hơn hoặc nhỏ hơn tùy ý
         dialog.getDialogPane().setPrefWidth(450);
         dialog.getDialogPane().setContent(grid);
 
-        // Yêu cầu focus vào textfield đầu tiên khi mở dialog
         Platform.runLater(txtCbct1::requestFocus);
 
-        // 4. Chuyển đổi kết quả trả về khi nhấn nút
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
                 return new Pair<>(txtCbct1.getText(), txtCbct2.getText());
@@ -149,22 +207,15 @@ public class ExamDetailController {
             return null;
         });
 
-        // 5. Hiển thị Dialog và chờ kết quả
         Optional<Pair<String, String>> result = dialog.showAndWait();
 
-        // 6. XỬ LÝ KẾT QUẢ (ĐÃ XÓA API CALL)
-        // THAY ĐỔI 3: Chỉ cập nhật local model, bỏ qua API, Alert, và disable button
         result.ifPresent(newNames -> {
             String newCbct1 = newNames.getKey();
             String newCbct2 = newNames.getValue();
 
-            // === CẬP NHẬT LOCAL MODEL ===
-            // Vì các Label (lblCBCT1, lblCBCT2) đã "bind" với 2 property này,
-            // giao diện sẽ TỰ ĐỘNG cập nhật ngay lập tức!
             currentRoom.cbct1Property().set(newCbct1);
             currentRoom.cbct2Property().set(newCbct2);
 
-            // (Đã xóa toàn bộ phần gọi API, Alert, và disable/enable button)
         });
     }
 }

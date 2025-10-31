@@ -57,7 +57,7 @@ public class MainController implements Initializable {
             Parent examDetailView = loader.load();
 
             // Lấy controller của ExamDetail.fxml
-            ExamDetailController controller = loader.getController();
+            ExamRoomDetailController controller = loader.getController();
             controller.setMainController(this);
             controller.initData(room);
 
