@@ -3,8 +3,8 @@
 import { useState } from "react"
 
 // ✅ đúng với cấu trúc hiện có: src/component/ui/
-import { Button } from "@/component/ui/Button"
-import { Input } from "@/component/ui/Input"
+import Button from "@/component/ui/Button"
+import  Input from "@/component/ui/Input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/component/ui/Card"
 
 // ✅ nếu bạn có 2 file Checkbox.jsx và Label.jsx thì giữ nguyên,
