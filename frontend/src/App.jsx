@@ -13,6 +13,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 //Phòng đào tạo
 import ExamManagement from "./pages/PDT/ExamManagement";
+// đăng nhập
+import  LoginForm  from "./pages/Login";
 
 function App() {
   return (
@@ -28,6 +30,10 @@ function App() {
           <Route path="/exams" element={<Exams />} />
           <Route path="/qa" element={<QA />} />
         </Route>
+      </Routes>
+      {/* đăng nhập */}
+      <Routes>
+        <Route path="/login" element={<LoginForm />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={2000} />
     </Router>
