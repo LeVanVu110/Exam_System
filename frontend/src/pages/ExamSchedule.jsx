@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import Button from "../component/ui/Button";
-import Input from "../component/ui/input";
+import Input from "../component/ui/Input";
 
 export default function ExamSchedule() {
   const [searchTerm, setSearchTerm] = useState("");

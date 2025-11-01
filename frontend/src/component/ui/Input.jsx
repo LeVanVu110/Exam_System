@@ -1,4 +1,4 @@
-// src/component/ui/input.jsx
+// src/component/ui/Input.jsx
 export default function Input({ label, ...props }) {
   return (
     <input
