@@ -3,26 +3,95 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.example.studentapp.controller.LoginController"
-      alignment="CENTER" spacing="15" style="-fx-padding: 30; -fx-background-color: #f4f4f4;">
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.studentapp.controller.LoginController"
+            prefWidth="480" prefHeight="600"
+            style="-fx-background-color: white; -fx-border-radius: 12; -fx-background-radius: 12;">
 
-    <Label text="Đăng nhập Hệ thống Thi" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333;" />
-    
-    <Separator/>
+    <children>
+        <VBox alignment="CENTER" spacing="22"
+              prefWidth="400" layoutX="40" layoutY="30"
+              AnchorPane.topAnchor="30" AnchorPane.leftAnchor="40" AnchorPane.rightAnchor="40">
 
-    <TextField fx:id="usernameField" promptText="Tên đăng nhập" maxWidth="250" />
-    
-    <PasswordField fx:id="passwordField" promptText="Mật khẩu" maxWidth="250" />
-    
-    <Button text="ĐĂNG NHẬP" onAction="#handleLogin" minWidth="250" style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-font-weight: bold;" />
-    
-    <Label fx:id="messageLabel" text="" minHeight="20" />
-    
-    <VBox.margin>
-        <Insets top="20" bottom="20" left="20" right="20" />
-    </VBox.margin>
+            <!-- Avatar -->
+            <StackPane alignment="CENTER"
+                               style="-fx-background-color: #0052a3;
+                                      -fx-background-radius: 12;
+                                      -fx-min-width: 100;
+                                      -fx-min-height: 100;
+                                      -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 2);">
+                        <Label text="TDC" 
+                               style="-fx-text-fill: #ffffff; 
+                                      -fx-font-size: 48px; 
+                                      -fx-font-weight: bold;
+                                      -fx-font-family: 'Arial';" />
+                    </StackPane>
 
-</VBox>
+
+            <!-- Title -->
+            <VBox alignment="CENTER" spacing="6">
+                <Label text="Đăng nhập"
+                       style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #000000;" />
+                <Label text="Chào mừng bạn quay lại"
+                       style="-fx-font-size: 14px; -fx-text-fill: #6c757d;" />
+            </VBox>
+
+            <!-- Email -->
+            <VBox alignment="CENTER_LEFT" spacing="6" prefWidth="320">
+                <Label text="Email"
+                       style="-fx-font-size: 14px; -fx-text-fill: #000000;" />
+                <TextField fx:id="usernameField"
+                           promptText="your@email.com"
+                           prefHeight="40"
+                           style="-fx-font-size: 14px;
+                                  -fx-padding: 8 12;
+                                  -fx-border-color: #ced4da;
+                                  -fx-border-radius: 8;
+                                  -fx-background-radius: 8;
+                                  -fx-background-color: #ffffff;" />
+            </VBox>
+
+            <!-- Password -->
+            <VBox alignment="CENTER_LEFT" spacing="6" prefWidth="320">
+                <Label text="Mật khẩu"
+                       style="-fx-font-size: 14px; -fx-text-fill: #000000;" />
+                <PasswordField fx:id="passwordField"
+                               promptText="••••••••"
+                               prefHeight="40"
+                               style="-fx-font-size: 14px;
+                                      -fx-padding: 8 12;
+                                      -fx-border-color: #ced4da;
+                                      -fx-border-radius: 8;
+                                      -fx-background-radius: 8;
+                                      -fx-background-color: #ffffff;" />
+            </VBox>
+
+            <!-- Remember & Forgot -->
+            <HBox alignment="CENTER_LEFT" spacing="5" prefWidth="320">
+                <CheckBox fx:id="rememberCheckBox" text="Nhớ tôi"
+                          style="-fx-font-size: 13px; -fx-text-fill: #6c757d;" />
+                <Region HBox.hgrow="ALWAYS"/>
+                <Hyperlink text="Quên mật khẩu?"
+                           style="-fx-font-size: 13px; -fx-text-fill: #0d6efd; -fx-border-color: transparent;" />
+            </HBox>
+
+            <!-- Login Button -->
+            <Button fx:id="loginButton" text="Đăng nhập" onAction="#handleLogin"
+                    prefWidth="320" prefHeight="46"
+                    style="-fx-background-color: #0d6efd;
+                           -fx-text-fill: white;
+                           -fx-font-size: 15px;
+                           -fx-font-weight: bold;
+                           -fx-background-radius: 8;
+                           -fx-cursor: hand;" />
+
+            <!-- Message Label -->
+            <Label fx:id="messageLabel" text=""
+                   style="-fx-font-size: 13px; -fx-text-fill: #d32f2f;" />
+
+        </VBox>
+    </children>
+</AnchorPane>
