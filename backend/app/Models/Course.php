@@ -9,28 +9,37 @@ class Course extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'course_id';
     protected $table = 'courses';
+
     protected $fillable = [
         'course_code',
         'course_name',
-        'teacher_id',
+        'category_faculty_id',
         'category_major_id',
-        'credit',
+        'teacher_id',
+        'credits',
         'semester',
     ];
+
+    // Quan hệ
+    public function faculty()
+    {
+        return $this->belongsTo(CategoryFaculty::class, 'category_faculty_id');
+    }
+
+    public function major()
+    {
+        return $this->belongsTo(CategoryMajor::class, 'category_major_id');
+    }
 
     public function teacher()
     {
         return $this->belongsTo(Teacher::class, 'teacher_id');
     }
-
-    public function students()
-    {
-        return $this->belongsToMany(Student::class, 'course_students', 'course_id', 'student_id');
-    }
-
-    public function exams()
+     public function exams()
     {
         return $this->hasMany(ExamSession::class, 'course_id');
     }
 }
+

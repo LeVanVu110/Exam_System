@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('import_status', 50)->nullable();
             $table->timestamps();
 
-            $table->foreign('imported_by')->references('user_id')->on('users')->onDelete('set null');
         });
     }
 

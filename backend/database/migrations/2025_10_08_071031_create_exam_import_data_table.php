@@ -22,7 +22,6 @@ return new class extends Migration
             $table->string('assigned_teachers', 500)->nullable();
             $table->timestamps();
 
-            $table->foreign('import_id')->references('import_id')->on('exam_import_log')->onDelete('cascade');
         });
     }
 

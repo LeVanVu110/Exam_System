@@ -1,93 +1,67 @@
 package com.example.studentapp.service;
 
-import com.example.studentapp.util.HttpClientUtil;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.nio.file.Files;
-import java.net.URL;
+import com.example.studentapp.model.ApiResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.json.JSONObject;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.CompletableFuture;
+
 
 public class ApiService {
     private static final String BASE_URL = "http://localhost:8000/api";
 
-    public boolean login(String email, String password) {
-        try {
-            JSONObject body = new JSONObject();
-            body.put("email", email);
-            body.put("password", password);
 
-            String response = HttpClientUtil.post(BASE_URL + "/login", body.toString());
-            JSONObject json = new JSONObject(response);
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
-            return json.has("token");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+    public ApiService() {
+        this.httpClient = HttpClient.newHttpClient();
+        this.objectMapper = new ObjectMapper();
     }
 
-    // Phương thức nộp bài thi(upload)
-    public boolean uploadExamFile(File file) {
-        try {
-            String boundary = "===" + System.currentTimeMillis() + "===";
-            String LINE_FEED = "\r\n";
+    public CompletableFuture<ApiResponse> fetchAllExamsForToday() {
 
-            URL url = new URL(BASE_URL + "/upload");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setUseCaches(false);
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        LocalDate today = LocalDate.now();
 
-            OutputStream outputStream = connection.getOutputStream();
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"), true);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formatterDate = formatter.format(today);
 
-            // Gửi file
-            String fileName = file.getName();
-            writer.append("--" + boundary).append(LINE_FEED);
-            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"" + fileName + "\"")
-                    .append(LINE_FEED);
-            writer.append("Content-Type: " + Files.probeContentType(file.toPath())).append(LINE_FEED);
-            writer.append(LINE_FEED);
-            writer.flush();
+        String apiUri = BASE_URL + "/exams?date=" + formatterDate;
 
-            Files.copy(file.toPath(), outputStream);
-            outputStream.flush();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
 
-            writer.append(LINE_FEED).flush();
-            writer.append("--" + boundary + "--").append(LINE_FEED);
-            writer.close();
+        return sendRequestAndParseResponse(request);
+    }
 
-            // Nhận phản hồi từ server
-            int status = connection.getResponseCode();
-            if (status == HttpURLConnection.HTTP_OK) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String line;
-                StringBuilder response = new StringBuilder();
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
-                connection.disconnect();
+    public CompletableFuture<ApiResponse> fetchExamsByRoomForToday(String roomName) {
 
-                System.out.println("Response: " + response);
-                return true;
-            } else {
-                System.out.println("Upload failed, status: " + status);
-                return false;
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formatterDate = formatter.format(today);
+
+        String encodedRoomName = roomName.trim();
+
+        String apiUri = BASE_URL + "/exams?date=" + formatterDate + "&room=" + encodedRoomName;
+
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
+
+        return sendRequestAndParseResponse(request);
+    }
+
+    private CompletableFuture<ApiResponse> sendRequestAndParseResponse(HttpRequest request) {
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenApply(jsonBody -> {
+            try {
+                return objectMapper.readValue(jsonBody, ApiResponse.class);
+            } catch (Exception e) {
+                throw new RuntimeException("Lỗi phân tích JSON", e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+        });
     }
 
 }

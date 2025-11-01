@@ -30,3 +30,4 @@ class Teacher extends Model
         return $this->belongsTo(UserProfile::class, 'user_profile_id', 'user_profile_id');
     }
 }
+

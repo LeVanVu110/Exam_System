@@ -1,4 +1,6 @@
 export function Input({ label, ...props }) {
+// src/component/ui/input.jsx
+export default function Input({ label, ...props }) {
   return (
     <input
       {...props}

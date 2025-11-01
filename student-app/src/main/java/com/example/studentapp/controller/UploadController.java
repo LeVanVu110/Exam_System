@@ -1,6 +1,6 @@
 package com.example.studentapp.controller;
 
-import com.example.studentapp.service.ApiService;
+import com.example.studentapp.service.ApiLogin;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.stage.FileChooser;
@@ -8,10 +8,8 @@ import javafx.stage.Stage;
 import java.io.File;
 
 public class UploadController {
-    @FXML
-    private Label fileLabel;
-    @FXML
-    private Label statusLabel;
+    @FXML private Label fileLabel;
+    @FXML private Label statusLabel;
 
     private File selectedFile;
 
@@ -25,17 +23,13 @@ public class UploadController {
         }
     }
 
-    private ApiService apiService = new ApiService();
-
     @FXML
     private void uploadFile() {
         if (selectedFile == null) {
             statusLabel.setText("Vui lòng chọn file trước!");
             return;
         }
-
-        boolean success = apiService.uploadExamFile(selectedFile);
+        boolean success = ApiLogin.uploadExamFile(selectedFile);
         statusLabel.setText(success ? "Nộp bài thành công!" : "Nộp bài thất bại!");
     }
-
 }

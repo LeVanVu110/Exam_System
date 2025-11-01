@@ -25,8 +25,8 @@ class ExamSessionSeeder extends Seeder
                 'class_code' => 'A1',
                 'subject_name' => 'Lập trình Web',
                 'exam_date' => now()->addDays(10)->toDateString(),
-                'exam_start_time' => null,
-                'exam_end_time' => null,
+                'exam_start_time' => '07:30:00',
+                'exam_end_time' => '09:00:00',
                 'exam_room' => 'P101',
                 'total_students' => 12,
                 'total_computers' => 12,
@@ -43,8 +43,8 @@ class ExamSessionSeeder extends Seeder
                 'class_code' => 'A1',
                 'subject_name' => 'Lập trình Web',
                 'exam_date' => now()->addDays(30)->toDateString(),
-                'exam_start_time' => null,
-                'exam_end_time' => null,
+                'exam_start_time' => '07:30:00',
+                'exam_end_time' => '09:00:00',
                 'exam_room' => 'P101',
                 'total_students' => 0,
                 'total_computers' => 0,
@@ -58,3 +58,4 @@ class ExamSessionSeeder extends Seeder
         ]);
     }
 }
+

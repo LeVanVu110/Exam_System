@@ -1,4 +1,8 @@
 export function Button({ children, variant = "default", ...props }) {
+
+// file: src/component/ui/button.jsx
+export default function Button({ children, variant = "default", ...props }) {
+
   const baseStyle =
     "px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 border";
 

@@ -20,9 +20,6 @@ return new class extends Migration
             $table->string('student_cv', 255)->nullable();
             $table->timestamps();
 
-            $table->foreign('user_profile_id')->references('user_profile_id')->on('user_profiles')->onDelete('cascade');
-            $table->foreign('category_faculty_id')->references('category_faculty_id')->on('category_faculty')->onDelete('set null');
-            $table->foreign('category_major_id')->references('category_major_id')->on('category_major')->onDelete('set null');
         });
     }
 

@@ -21,7 +21,6 @@ return new class extends Migration
             $table->timestamps();
 
             // self reference
-            $table->foreign('screen_parent_id')->references('screen_id')->on('screens')->onDelete('set null');
         });
     }
 

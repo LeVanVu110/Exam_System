@@ -20,7 +20,6 @@ return new class extends Migration
             $table->tinyInteger('requires_attention')->default(0);
             $table->timestamps();
 
-            $table->foreign('exam_session_id')->references('exam_session_id')->on('exam_sessions')->onDelete('cascade');
         });
     }
 

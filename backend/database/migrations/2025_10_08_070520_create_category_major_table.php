@@ -18,7 +18,6 @@ return new class extends Migration
             $table->unsignedInteger('category_faculty_id')->nullable();
             $table->timestamps();
 
-             $table->foreign('category_faculty_id')->references('category_faculty_id')->on('category_faculty')->onDelete('set null');
         });
     }
 

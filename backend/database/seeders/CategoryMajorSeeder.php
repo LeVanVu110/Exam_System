@@ -31,3 +31,4 @@ class CategoryMajorSeeder extends Seeder
         ]);
     }
 }
+

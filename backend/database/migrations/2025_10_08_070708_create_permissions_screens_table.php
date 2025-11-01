@@ -24,8 +24,6 @@ return new class extends Migration
             $table->tinyInteger('is_all')->default(0);
             $table->timestamps();
 
-            $table->foreign('permission_id')->references('permission_id')->on('permissions')->onDelete('cascade');
-            $table->foreign('screen_id')->references('screen_id')->on('screens')->onDelete('cascade');
 
             $table->unique(['permission_id', 'screen_id']);
         });

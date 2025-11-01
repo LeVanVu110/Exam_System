@@ -8,12 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class CategoryUserType extends Model
 {
     use HasFactory;
-
     protected $table = 'category_user_types';
-    protected $fillable = ['name', 'description'];
-
+    protected $primaryKey = 'category_user_type_id';
+    protected $fillable = [
+        'user_type_code',
+        'user_type_name',
+    ];
     public function profiles()
     {
         return $this->hasMany(UserProfile::class, 'category_user_type_id');
     }
 }
+ 
