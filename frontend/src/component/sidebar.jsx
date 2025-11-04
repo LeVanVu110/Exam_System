@@ -1,9 +1,19 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, FileText, Calendar, HelpCircle, BarChart3 } from "lucide-react";
-import { cn } from "../lib/utils"; // import từ file utils.js vừa tạo
+import {
+  Home,
+  BookOpen,
+  FileText,
+  Calendar,
+  HelpCircle,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { cn } from "../lib/utils";
 
 const menuItems = [
-  { icon: Home, label: "Trang Chủ", path: "/" },
+  { icon: Home, label: "Trang Chủ", path: "/Dashboard" },
   { icon: BookOpen, label: "Môi học phần trình", path: "/class-schedule" },
   { icon: BarChart3, label: "Bài thi", path: "/exams" },
   { icon: FileText, label: "Tài liệu/Giáo án", path: "/documents" },
@@ -14,22 +24,50 @@ const menuItems = [
 export default function Sidebar() {
   const location = useLocation();
 
+  // ✅ Lấy trạng thái đã lưu trong localStorage
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    return saved === "true"; // nếu null → false
+  });
+
+  // ✅ Mỗi khi collapsed thay đổi → lưu lại
+  useEffect(() => {
+    localStorage.setItem("sidebar-collapsed", collapsed);
+  }, [collapsed]);
+
   return (
-    <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+    <aside
+      className={cn(
+        "relative h-screen border-r border-border bg-white transition-all duration-300 flex flex-col justify-between",
+        collapsed ? "w-20" : "w-64"
+      )}
+    >
+      {/* --- Logo Header --- */}
+      <div className="relative p-6 border-b border-gray-300 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">E</span>
           </div>
-          <div>
-            <h1 className="font-bold text-lg text-sidebar-foreground">EduPortal</h1>
-            <p className="text-xs text-sidebar-foreground/60">Quản lý học tập</p>
-          </div>
+          {!collapsed && (
+            <div>
+              <h1 className="font-bold text-lg text-gray-900">EduPortal</h1>
+              <p className="text-xs text-gray-500">Quản lý học tập</p>
+            </div>
+          )}
         </div>
+
+        {/* --- Nút thu gọn --- */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3 top-6 z-50 bg-white border border-gray-300 rounded-full p-1 shadow hover:bg-gray-100 transition"
+          title={collapsed ? "Mở rộng" : "Thu gọn"}
+          style={{ width: "24px", height: "24px" }}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
       </div>
 
-      {/* Menu Items */}
+      {/* --- Menu Items --- */}
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -41,27 +79,40 @@ export default function Sidebar() {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-800 hover:bg-gray-100",
+                collapsed && "justify-center"
               )}
+              title={collapsed ? item.label : undefined}
             >
               <Icon size={20} />
-              <span className="text-sm font-medium">{item.label}</span>
+              {!collapsed && (
+                <span className="text-sm font-medium">{item.label}</span>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* User Profile */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-sidebar-accent">
+      {/* --- User Profile --- */}
+      <div className="p-4 border-t border-gray-300">
+        <div
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-100",
+            collapsed && "justify-center"
+          )}
+        >
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
             <span className="text-xs font-bold">NA</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">Nguyễn Văn Admin</p>
-            <p className="text-xs text-sidebar-foreground/60 truncate">admin@edu.com</p>
-          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                Nguyễn Văn Admin
+              </p>
+              <p className="text-xs text-gray-500 truncate">admin@edu.com</p>
+            </div>
+          )}
         </div>
       </div>
     </aside>

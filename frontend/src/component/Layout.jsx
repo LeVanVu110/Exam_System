@@ -1,16 +1,12 @@
-"use client"
-
-import { Outlet } from "react-router-dom"
-import Sidebar from "./Sidebar"
-import Header from "./Header"
+import { Outlet } from "react-router-dom";
+import Sidebar from "./sidebar";
+import Header from "./Header";
 
 export default function Layout() {
   return (
     <div className="flex h-screen w-screen bg-background overflow-hidden">
       {/* Sidebar bên trái */}
-      <aside className="w-64 border-r border-border bg-white">
-        <Sidebar />
-      </aside>
+      <Sidebar />
 
       {/* Nội dung chính */}
       <div className="flex-1 flex flex-col">
@@ -20,5 +16,5 @@ export default function Layout() {
         </main>
       </div>
     </div>
-  )
+  );
 }

@@ -44,10 +44,10 @@ public class LoginController {
 
                             switch (role) {
                                 case "Admin":
-                                    loadView("view/login/upload-view.fxml", "Trang quản trị");
+                                    loadView("/view/Main.fxml", "Trang quản trị");
                                     break;
                                 case "Teacher":
-                                    loadView("view/login/upload-view.fxml", "Trang giảng viên");
+                                    loadView("/view/Main.fxml", "Trang giảng viên");
                                     break;
                                 case "Student":
                                     loadView("/view/Main.fxml", "Trang sinh viên");

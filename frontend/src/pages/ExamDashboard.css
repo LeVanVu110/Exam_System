@@ -1,0 +1,124 @@
+/* ExamDashboard.css */
+
+.dashboard-container {
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+}
+
+/* Header */
+.header-box {
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.greeting {
+  font-size: 1.5em;
+  color: #333;
+}
+
+/* Summary Grid */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.summary-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-left: 5px solid #007bff; /* Mặc định */
+}
+
+.summary-item.completed {
+    border-left: 5px solid #28a745;
+}
+
+.summary-item.upcoming {
+    border-left: 5px solid #ffc107;
+}
+
+.summary-value {
+  display: block;
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.summary-item.completed .summary-value { color: #28a745; }
+.summary-item.upcoming .summary-value { color: #ffc107; }
+
+.summary-label {
+  font-size: 0.9em;
+  color: #6c757d;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Table Style */
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background-color: #fff;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border: 1px solid #dee2e6;
+  padding: 12px;
+  text-align: left;
+}
+
+.schedule-table th {
+  background-color: #e9ecef;
+  font-weight: bold;
+}
+
+/* Charts and Warnings Section */
+.charts-warnings-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* Chia 2 phần: Biểu đồ (2 phần) và Cảnh báo (1 phần) */
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 cột cho các biểu đồ */
+    gap: 20px;
+    align-items: start;
+}
+
+.warnings-container {
+    padding: 15px;
+    border: 1px solid #f44336;
+    background-color: #ffebee;
+    border-radius: 8px;
+}
+
+.warning-box {
+    text-align: center;
+}
+
+.btn-warning {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.btn-warning:hover {
+    background-color: #d32f2f;
+}
