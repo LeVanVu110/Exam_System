@@ -122,3 +122,121 @@
 .btn-warning:hover {
     background-color: #d32f2f;
 }
+/* Thêm vào ExamDashboard.css */
+
+/* Ẩn chi tiết mặc định */
+.schedule-toggle .detail-row {
+    display: none;
+    background-color: #f7f7f7; /* Nền xám nhạt cho chi tiết */
+}
+
+/* Hiển thị chi tiết khi được mở */
+.schedule-toggle .detail-row td {
+    padding: 0; /* Loại bỏ padding mặc định */
+    border-top: none;
+}
+
+.schedule-toggle .detail-content {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.schedule-toggle .detail-item {
+    flex: 0 0 33.333%; /* Chia 3 cột */
+    padding: 5px 10px;
+    box-sizing: border-box;
+}
+
+.schedule-toggle .detail-label {
+    font-weight: bold;
+    color: #555;
+    margin-right: 8px;
+}
+
+/* Hàng chính có thể click được */
+.schedule-toggle .main-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.schedule-toggle .main-row:hover {
+    background-color: #f0f0f0;
+}
+
+/* Icon mũi tên */
+.schedule-toggle .toggle-icon {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Trạng thái (Tùy chọn) */
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+.status-badge.scheduled {
+    background-color: #e0f7fa;
+    color: #00838f;
+}
+.status-badge.completed {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+/* Hiển thị hàng chi tiết khi có style tương ứng */
+.schedule-toggle tr.detail-row {
+    display: table-row; /* Cần sử dụng display: table-row nếu đang dùng table */
+}
+/* --- Hiệu ứng sổ xuống mượt --- */
+.detail-content-wrapper {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.4s ease;
+}
+
+.detail-content-wrapper.open {
+  max-height: 200px; /* hoặc auto nếu bạn dùng JS để đo chiều cao */
+  opacity: 1;
+}
+.detail-row {
+  transition: all 0.3s ease;
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+}
+
+.detail-row.open {
+  height: auto;
+  opacity: 1;
+}
+
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 50px;
+}
+.skeleton-box {
+  height: 25px;
+  background: linear-gradient(90deg, #eee, #ddd, #eee);
+  border-radius: 6px;
+  animation: shimmer 1.2s infinite;
+}
+.skeleton-box.wide {
+  height: 80px;
+}
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: 200px 0;
+  }
+}
+
