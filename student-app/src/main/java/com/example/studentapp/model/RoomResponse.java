@@ -2,7 +2,7 @@ package com.example.studentapp.model;
 
 import java.util.List;
 
-public class ApiResponse {
+public class RoomResponse {
     private boolean success;
     private String message;
     private String date;

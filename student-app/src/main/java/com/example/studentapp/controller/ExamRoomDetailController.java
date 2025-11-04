@@ -1,5 +1,6 @@
 package com.example.studentapp.controller;
 
+import com.example.studentapp.model.RoomDetailResponse;
 import com.example.studentapp.model.RoomModel;
 import com.example.studentapp.service.ApiService;
 import javafx.application.Platform;
@@ -56,22 +57,30 @@ public class ExamRoomDetailController {
     private TextArea txtGhiChu;
 
     private MainController mainController;
-    private RoomModel currentRoom;
     private final ApiService apiService = new ApiService();
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
 
-    public void initData(RoomModel room) {
-        this.currentRoom = room;
+    public void loadExamDetail(int examSessionId) {
+        apiService.fetchExamById(examSessionId).thenAccept(response -> {
+            Platform.runLater(() -> updateUiWithResponse(response));
+        }).exceptionally(e -> {
+            Platform.runLater(() -> System.out.println("Lỗi tải dữ liệu chi tiết ca thi: " + e.getMessage()));
+            return null;
+        });
+
+    }
+
+    private void updateUiWithResponse(RoomDetailResponse response) {
+        RoomModel room = response.getData();
 
         btnBack.setOnAction(this::handleBack);
-        btnThayDoiCBCT.setOnAction(this::handleShowForm);
 
         validationNumber(txtSoLuongMay, 100);
         validationNumber(txtSoLuongSV, 200);
-        setupCharacterLimit(txtGhiChu,500);
+        setupCharacterLimit(txtGhiChu, 500);
 
         // Đổ dữ liệu từ RoomModel vào các Label
         lblTitle.setText("Chi Tiết Ca Thi Phòng " + room.roomProperty().get());
@@ -162,60 +171,60 @@ public class ExamRoomDetailController {
         }
     }
 
-    @FXML
-    void handleShowForm(ActionEvent event) {
-        Dialog<Pair<String, String>> dialog = new Dialog<>();
-        dialog.setTitle("Thay đổi Cán bộ coi thi");
-        dialog.setHeaderText("Nhập tên cán bộ coi thi mới cho phòng " + currentRoom.roomProperty().get());
-
-        ButtonType saveButtonType = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-
-        grid.setPadding(new Insets(20, 20, 20, 20));
-
-        ColumnConstraints col1 = new ColumnConstraints();
-        ColumnConstraints col2 = new ColumnConstraints();
-        col2.setHgrow(Priority.ALWAYS);
-        grid.getColumnConstraints().addAll(col1, col2);
-
-        TextField txtCbct1 = new TextField();
-        txtCbct1.setPromptText("Tên CBCT 1");
-        txtCbct1.setText(currentRoom.cbct1Property().get());
-
-        TextField txtCbct2 = new TextField();
-        txtCbct2.setPromptText("Tên CBCT 2");
-        txtCbct2.setText(currentRoom.cbct2Property().get());
-
-        grid.add(new Label("CBCT 1:"), 0, 0);
-        grid.add(txtCbct1, 1, 0);
-        grid.add(new Label("CBCT 2:"), 0, 1);
-        grid.add(txtCbct2, 1, 1);
-
-        dialog.getDialogPane().setPrefWidth(450);
-        dialog.getDialogPane().setContent(grid);
-
-        Platform.runLater(txtCbct1::requestFocus);
-
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == saveButtonType) {
-                return new Pair<>(txtCbct1.getText(), txtCbct2.getText());
-            }
-            return null;
-        });
-
-        Optional<Pair<String, String>> result = dialog.showAndWait();
-
-        result.ifPresent(newNames -> {
-            String newCbct1 = newNames.getKey();
-            String newCbct2 = newNames.getValue();
-
-            currentRoom.cbct1Property().set(newCbct1);
-            currentRoom.cbct2Property().set(newCbct2);
-
-        });
-    }
+//    @FXML
+//    void handleShowForm(ActionEvent event) {
+//        Dialog<Pair<String, String>> dialog = new Dialog<>();
+//        dialog.setTitle("Thay đổi Cán bộ coi thi");
+//        dialog.setHeaderText("Nhập tên cán bộ coi thi mới cho phòng " + currentRoom.roomProperty().get());
+//
+//        ButtonType saveButtonType = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
+//        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+//
+//        GridPane grid = new GridPane();
+//        grid.setHgap(10);
+//        grid.setVgap(10);
+//
+//        grid.setPadding(new Insets(20, 20, 20, 20));
+//
+//        ColumnConstraints col1 = new ColumnConstraints();
+//        ColumnConstraints col2 = new ColumnConstraints();
+//        col2.setHgrow(Priority.ALWAYS);
+//        grid.getColumnConstraints().addAll(col1, col2);
+//
+//        TextField txtCbct1 = new TextField();
+//        txtCbct1.setPromptText("Tên CBCT 1");
+//        txtCbct1.setText(currentRoom.cbct1Property().get());
+//
+//        TextField txtCbct2 = new TextField();
+//        txtCbct2.setPromptText("Tên CBCT 2");
+//        txtCbct2.setText(currentRoom.cbct2Property().get());
+//
+//        grid.add(new Label("CBCT 1:"), 0, 0);
+//        grid.add(txtCbct1, 1, 0);
+//        grid.add(new Label("CBCT 2:"), 0, 1);
+//        grid.add(txtCbct2, 1, 1);
+//
+//        dialog.getDialogPane().setPrefWidth(450);
+//        dialog.getDialogPane().setContent(grid);
+//
+//        Platform.runLater(txtCbct1::requestFocus);
+//
+//        dialog.setResultConverter(dialogButton -> {
+//            if (dialogButton == saveButtonType) {
+//                return new Pair<>(txtCbct1.getText(), txtCbct2.getText());
+//            }
+//            return null;
+//        });
+//
+//        Optional<Pair<String, String>> result = dialog.showAndWait();
+//
+//        result.ifPresent(newNames -> {
+//            String newCbct1 = newNames.getKey();
+//            String newCbct2 = newNames.getValue();
+//
+//            currentRoom.cbct1Property().set(newCbct1);
+//            currentRoom.cbct2Property().set(newCbct2);
+//
+//        });
+//    }
 }

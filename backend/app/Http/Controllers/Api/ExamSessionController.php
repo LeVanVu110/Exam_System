@@ -89,6 +89,116 @@ class ExamSessionController extends Controller
         return response()->json(['data' => $sessions]);
     }
 
+    public function todayExams()
+    {
+        try {
+            // 🗓️ Lấy ngày hôm nay (dạng YYYY-MM-DD)
+            $today = now()->toDateString();
+
+            // 🔍 Lấy danh sách ca thi của ngày hôm nay
+            $sessions = \App\Models\ExamSession::query()
+                ->leftJoin('teachers as t1', 'exam_sessions.assigned_teacher1_id', '=', 't1.teacher_id')
+                ->leftJoin('user_profiles as up1', 't1.user_profile_id', '=', 'up1.user_profile_id')
+                ->leftJoin('teachers as t2', 'exam_sessions.assigned_teacher2_id', '=', 't2.teacher_id')
+                ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
+                ->select(
+                    'exam_sessions.*',
+                    DB::raw("CONCAT(up1.user_lastname, ' ', up1.user_firstname) as teacher1_name"),
+                    DB::raw("CONCAT(up2.user_lastname, ' ', up2.user_firstname) as teacher2_name")
+                )
+                ->whereDate('exam_date', $today)
+                ->orderBy('exam_time', 'asc')
+                ->get();
+
+            $count = $sessions->count();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Danh sách ca thi trong ngày {$today}",
+                'date' => $today,
+                'count' => $count,
+                'data' => $sessions
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi lấy danh sách ca thi hôm nay.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function searchByRoom(Request $request)
+    {
+        try {
+
+            $room = $request->query('room');
+
+            $sessions = \App\Models\ExamSession::query()
+                ->leftJoin('teachers as t1', 'exam_sessions.assigned_teacher1_id', '=', 't1.teacher_id')
+                ->leftJoin('user_profiles as up1', 't1.user_profile_id', '=', 'up1.user_profile_id')
+                ->leftJoin('teachers as t2', 'exam_sessions.assigned_teacher2_id', '=', 't2.teacher_id')
+                ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
+                ->select(
+                    'exam_sessions.*',
+                    DB::raw("CONCAT(up1.user_lastname, ' ', up1.user_firstname) as teacher1_name"),
+                    DB::raw("CONCAT(up2.user_lastname, ' ', up2.user_firstname) as teacher2_name")
+                )
+                ->where('exam_room', 'LIKE', '%' . $room . '%')
+                ->orderBy('exam_time', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Kết quả tìm kiếm cho phòng thi: {$room}",
+                'data' => $sessions
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tìm kiếm phòng thi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $session = \App\Models\ExamSession::query()
+                ->leftJoin('teachers as t1', 'exam_sessions.assigned_teacher1_id', '=', 't1.teacher_id')
+                ->leftJoin('user_profiles as up1', 't1.user_profile_id', '=', 'up1.user_profile_id')
+                ->leftJoin('teachers as t2', 'exam_sessions.assigned_teacher2_id', '=', 't2.teacher_id')
+                ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
+                ->select(
+                    'exam_sessions.*',
+                    DB::raw("CONCAT(up1.user_lastname, ' ', up1.user_firstname) as teacher1_name"),
+                    DB::raw("CONCAT(up2.user_lastname, ' ', up2.user_firstname) as teacher2_name")
+                )
+                ->where('exam_sessions.exam_session_id', $id)
+                ->first();
+
+            if (!$session) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy ca thi.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Chi tiết ca thi.',
+                'data' => $session
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi lấy chi tiết ca thi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // 📤 Xuất file Excel
     public function exportExcel(Request $request)
     {
@@ -182,50 +292,50 @@ class ExamSessionController extends Controller
 
 
     // vu_one_test
-    
+
     public function saveImported(Request $request)
     {
         $data = $request->all();
 
-        ExamSession::truncate(); 
+        ExamSession::truncate();
 
         // Lưu dữ liệu mới
         foreach ($data as $item) {
             // 1. Lấy ID trực tiếp (từ cột ẩn khi Export, nếu có)
             $teacher1Id = $item['assigned_teacher1_id'] ?? null;
             $teacher2Id = $item['assigned_teacher2_id'] ?? null;
-            
+
             // 2. Nếu ID bị null, tìm kiếm bằng tên (dùng hàm đã tạo)
             if (is_null($teacher1Id) || empty($teacher1Id)) {
                 $teacher1Name = $item['teacher1_name'] ?? null;
                 $teacher1Id = $this->findTeacherIdByName($teacher1Name);
             }
-            
+
             if (is_null($teacher2Id) || empty($teacher2Id)) {
                 $teacher2Name = $item['teacher2_name'] ?? null;
                 $teacher2Id = $this->findTeacherIdByName($teacher2Name);
             }
-            
+
             // Ánh xạ các trường
             $courseCode = $item['course']['course_code'] ?? ($item['exam_code'] ?? null);
             $subjectName = $item['course']['course_name'] ?? ($item['subject_name'] ?? null);
 
             ExamSession::create([
                 'exam_session_id' => $item['exam_session_id'] ?? null,
-                'exam_code' => $courseCode, 
+                'exam_code' => $courseCode,
                 'exam_name' => $item['exam_name'] ?? $subjectName,
-                'subject_name' => $subjectName, 
+                'subject_name' => $subjectName,
                 'exam_date' => $item['exam_date'],
                 'exam_start_time' => $item['exam_start_time'],
                 'exam_end_time' => $item['exam_end_time'],
                 'exam_room' => $item['exam_room'],
-                
+
                 // 🔥 LƯU ID GIẢNG VIÊN ĐÃ XỬ LÝ (Có thể là ID cũ hoặc ID mới tìm được)
                 'assigned_teacher1_id' => $teacher1Id,
                 'assigned_teacher2_id' => $teacher2Id,
-                
+
                 'status' => $item['status'] ?? 'Scheduled',
-                
+
                 // Các trường khác
                 'class_code' => $item['class_code'] ?? null,
                 'credits' => $item['credits'] ?? null,
@@ -244,12 +354,12 @@ class ExamSessionController extends Controller
         // Bước 1: Phân tích Tên và Họ
         // Giả định format tên trong file Excel là: [Họ] [Tên] (Ví dụ: Rosenbaum Raphaelle)
         $parts = explode(' ', trim($fullName));
-        
+
         // Lấy tên (phần tử cuối cùng)
-        $firstName = array_pop($parts); 
-        
+        $firstName = array_pop($parts);
+
         // Lấy họ (các phần còn lại)
-        $lastName = implode(' ', $parts); 
+        $lastName = implode(' ', $parts);
 
         // Bước 2: Tìm kiếm trong DB bằng cách JOIN UserProfile và Teacher
         $teacher = DB::table('user_profiles as up')
