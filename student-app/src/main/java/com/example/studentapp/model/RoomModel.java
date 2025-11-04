@@ -1,13 +1,16 @@
 package com.example.studentapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RoomModel {
 
-    // Chúng ta dùng StringProperty cho tất cả để binding cho Label dễ dàng
-    private final StringProperty stt = new SimpleStringProperty();
+    // Thêm ID, rất quan trọng để có thể gọi API cập nhật sau này
+    private final StringProperty examSessionId = new SimpleStringProperty();
+
     private final StringProperty lopHP = new SimpleStringProperty();
     private final StringProperty tenHP = new SimpleStringProperty();
     private final StringProperty soTC = new SimpleStringProperty();
@@ -21,64 +24,80 @@ public class RoomModel {
     private final StringProperty cbct1 = new SimpleStringProperty("N/A");
     private final StringProperty cbct2 = new SimpleStringProperty("N/A");
 
-    // Lưu ý: Tên hàm phải khớp với tên JSON key
-    @JsonProperty("STT")
-    public void setStt(int stt) { this.stt.set(String.valueOf(stt)); }
 
-    @JsonProperty("Lớp HP")
-    public void setLopHP(String lopHP) { this.lopHP.set(lopHP); }
+    // Các @JsonProperty đã được đổi sang key snake_case
 
-    @JsonProperty("Tên HP")
-    public void setTenHP(String tenHP) { this.tenHP.set(tenHP); }
+    @JsonProperty("exam_session_id")
+    public void setExamSessionId(int id) {
+        this.examSessionId.set(String.valueOf(id));
+    }
 
-    @JsonProperty("Số TC")
-    public void setSoTC(int soTC) { this.soTC.set(String.valueOf(soTC)); }
+    @JsonProperty("class_code")
+    public void setLopHP(String lopHP) {
+        this.lopHP.set(lopHP);
+    }
 
-    @JsonProperty("Giờ thi")
-    public void setGioThi(String gioThi) { this.gioThi.set(gioThi); }
+    @JsonProperty("subject_name")
+    public void setTenHP(String tenHP) {
+        this.tenHP.set(tenHP);
+    }
 
-    @JsonProperty("Ngày thi")
-    public void setNgayThi(String ngayThi) { this.ngayThi.set(ngayThi); }
+    @JsonProperty("credits")
+    public void setSoTC(int soTC) {
+        this.soTC.set(String.valueOf(soTC));
+    }
 
-    @JsonProperty("room")
-    public void setRoom(String room) { this.room.set(room); }
+    @JsonProperty("exam_time")
+    public void setGioThi(String gioThi) {
+        this.gioThi.set(gioThi);
+    }
 
-    @JsonProperty("Số SV")
-    public void setSoSV(int soSV) { this.soSV.set(String.valueOf(soSV)); }
+    @JsonProperty("exam_date")
+    public void setNgayThi(String ngayThi) {
+        this.ngayThi.set(ngayThi);
+    }
 
-    @JsonProperty("TG thi")
-    public void setTgThi(int tgThi) { this.tgThi.set(tgThi + " phút"); } // Thêm chữ "phút"
+    @JsonProperty("exam_room")
+    public void setRoom(String room) {
+        this.room.set(room);
+    }
 
-    @JsonProperty("Khoa coi thi")
-    public void setKhoaCoiThi(String khoaCoiThi) { this.khoaCoiThi.set(khoaCoiThi); }
+    @JsonProperty("student_count")
+    public void setSoSV(int soSV) {
+        this.soSV.set(String.valueOf(soSV));
+    }
 
+    @JsonProperty("exam_duration")
+    public void setTgThi(int tgThi) {
+        // Giữ nguyên logic thêm "phút" của bạn
+        this.tgThi.set(tgThi + " phút");
+    }
 
-    // Jackson sẽ gọi hàm này khi thấy key "CBCT"
-    @JsonProperty("CBCT")
-    public void setCbct(String rawCbct) {
-        if (rawCbct == null || rawCbct.trim().isEmpty()) {
-            this.cbct1.set("N/A");
-            this.cbct2.set("N/A");
-            return;
-        }
+    @JsonProperty("exam_faculty")
+    public void setKhoaCoiThi(String khoaCoiThi) {
+        this.khoaCoiThi.set(khoaCoiThi);
+    }
 
-        String[] names = rawCbct.split(",");
-
-        if (names.length > 0) {
-            String name1 = names[0].trim().replaceAll("\\s+", " ");
-            this.cbct1.set(name1);
-        }
-
-        if (names.length > 1) {
-            String name2 = names[1].trim().replaceAll("\\s+", " ");
-            this.cbct2.set(name2);
+    @JsonProperty("teacher1_name")
+    public void setCbct1(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            this.cbct1.set(name.trim().replaceAll("\\s+", " "));
         } else {
-            this.cbct2.set("N/A"); // Không có CBCT 2
+            this.cbct1.set("N/A");
         }
     }
 
-    // Tên hàm phải là tenBienProperty()
-    public StringProperty sttProperty() { return stt; }
+    @JsonProperty("teacher2_name")
+    public void setCbct2(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            this.cbct2.set(name.trim().replaceAll("\\s+", " "));
+        } else {
+            this.cbct2.set("N/A");
+        }
+    }
+
+    // Controller của bạn sẽ gọi các hàm này
+    public StringProperty examSessionIdProperty() { return examSessionId; }
     public StringProperty lopHPProperty() { return lopHP; }
     public StringProperty tenHPProperty() { return tenHP; }
     public StringProperty soTCProperty() { return soTC; }
@@ -90,4 +109,12 @@ public class RoomModel {
     public StringProperty khoaCoiThiProperty() { return khoaCoiThi; }
     public StringProperty cbct1Property() { return cbct1; }
     public StringProperty cbct2Property() { return cbct2; }
+
+    public int getId() {
+        try {
+            return Integer.parseInt(examSessionId.get());
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
 }
