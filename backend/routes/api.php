@@ -14,7 +14,8 @@ use App\Http\Controllers\{
     RolePermissionController,
     UserPermissionController,
     CategoryUserTypeController,
-    AuthLoginController
+    AuthLoginController,
+    ExamScheduleController
 };
 
 
@@ -37,17 +38,17 @@ Route::delete('/students/{id}', [StudentController::class, 'destroy']); // Xóa
 
 // kì thi
 Route::prefix('exam-sessions')->group(function () {
-    Route::get('/', [ExamSessionController::class, 'index']);           // Xem tất cả lịch thi
-    Route::post('/import', [ExamSessionController::class, 'importExcel']); // Import file Excel
-    Route::get('/export', [ExamSessionController::class, 'exportExcel']);  // Export Excel
+    Route::get('/', [ExamSessionController::class, 'index']);                   // Xem tất cả lịch thi
+    Route::get('/today', [ExamSessionController::class, 'todayExams']);         // Xem lịch thi hôm nay
+    Route::get('/search', [ExamSessionController::class, 'searchByRoom']);      // Tìm kiếm lịch thi
+    Route::get('/{id}', [ExamSessionController::class, 'show']);                // Xem chi tiết 1 lịch thi
+    Route::post('/import', [ExamSessionController::class, 'importExcel']);      // Import file Excel
+    Route::get('/export', [ExamSessionController::class, 'exportExcel']);       // Export Excel
     Route::get('/{id}/report', [ExamSessionController::class, 'exportReport']); // Xuất PDF kết quả
-    Route::delete('/{id}', [ExamSessionController::class, 'destroy']); // xóa 1
-    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']); //xóa hàng loạt
+    Route::delete('/{id}', [ExamSessionController::class, 'destroy']);          // xóa 1
+    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);  //xóa hàng loạt
 });
 
-
-// mock-data-exams
-Route::get('/exams', [ExamController::class, 'index']);
 // ✅ Các route CRUD cho hệ thống phân quyền
 Route::apiResources([
     'roles' => RoleController::class,
@@ -61,3 +62,12 @@ Route::apiResources([
 ]);
 Route::post('exam-schedule/save', [ExamSessionController::class, 'saveImported']);
 Route::post('login', [AuthLoginController::class, 'login']);
+
+Route::prefix('exam-schedules')->group(function () {
+    Route::get('/', [ExamSessionController::class, 'index']);           // Xem tất cả lịch thi
+    Route::post('/import', [ExamSessionController::class, 'importExcel']); // Import file Excel
+    Route::get('/export', [ExamSessionController::class, 'exportExcel']);  // Export Excel
+    Route::get('/{id}/report', [ExamSessionController::class, 'exportReport']); // Xuất PDF kết quả
+    Route::delete('/{id}', [ExamSessionController::class, 'destroy']); // xóa 1
+    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']); //xóa hàng loạt
+});

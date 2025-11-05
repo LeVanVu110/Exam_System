@@ -6,12 +6,10 @@ WORKDIR /app
 
 # Copy file package.json và package-lock.json (nếu có)
 COPY package*.json ./
+COPY package-lock.json ./
 
 # Cập nhật npm và cài dependencies
-RUN npm install -g npm@latest \
-    && npm install esbuild --save-dev --unsafe-perm \
-    && npm install --unsafe-perm
-
+RUN npm install 
 
 # Copy toàn bộ mã nguồn vào container
 COPY . .

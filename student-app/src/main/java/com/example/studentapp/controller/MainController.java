@@ -18,6 +18,9 @@ public class MainController implements Initializable {
     @FXML
     private HeaderController headerController;
 
+    private Parent examRoomView;
+    private ExamRoomController examRoomController;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         if (headerController != null) {
@@ -30,12 +33,18 @@ public class MainController implements Initializable {
     // Hàm tải trang DANH SÁCH (ExamRoom.fxml) vào <center>
     public void showExamListPage() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/pages/ExamRoom.fxml"));
-            Parent examRoomView = loader.load();
+            if(examRoomView == null){
+                System.out.println("Lần đầu: Đang tải Exam");
 
-            // Lấy controller của ExamRoom.fxml
-            ExamRoomController controller = loader.getController();
-            controller.setMainController(this);
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/pages/ExamRoom.fxml"));
+                examRoomView = loader.load();
+
+                examRoomController = loader.getController();
+                examRoomController.setMainController(this);
+            }else {
+                System.out.println("LẦN SAU: Đang dùng lại ExamRoom.fxml từ cache...");
+            }
+
 
             // Đặt view vào vị trí <center>
             mainContentPane.getChildren().setAll(examRoomView);
@@ -51,15 +60,15 @@ public class MainController implements Initializable {
     }
 
     // Hàm tải trang CHI TIẾT (ExamDetail.fxml) vào <center>
-    public void showExamDetailPage(RoomModel room) {
+    public void showExamDetailPage(int examSessionId) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/pages/ExamDetail.fxml"));
             Parent examDetailView = loader.load();
 
             // Lấy controller của ExamDetail.fxml
-            ExamDetailController controller = loader.getController();
+            ExamRoomDetailController controller = loader.getController();
             controller.setMainController(this);
-            controller.initData(room);
+            controller.loadExamDetail(examSessionId);
 
             // Đặt view vào vị trí <center>
             mainContentPane.getChildren().setAll(examDetailView);

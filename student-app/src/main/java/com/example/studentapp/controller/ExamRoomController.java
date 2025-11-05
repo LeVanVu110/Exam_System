@@ -1,7 +1,7 @@
 package com.example.studentapp.controller;
 
 import com.example.studentapp.service.ApiService;
-import com.example.studentapp.model.ApiResponse;
+import com.example.studentapp.model.RoomResponse;
 import com.example.studentapp.model.RoomModel;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -12,6 +12,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.AnchorPane;
 
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -43,37 +45,41 @@ public class ExamRoomController implements Initializable {
         vbox.getChildren().clear();
 
         apiService.fetchAllExamsForToday().thenAccept(response -> {
-            Platform.runLater(() -> updateUiWithResponse(response, ""));
+            String jsonDate = response.getDate();
+            LocalDate date = LocalDate.parse(jsonDate, DateTimeFormatter.ISO_LOCAL_DATE);
+            int day = date.getDayOfMonth();
+            int month = date.getMonthValue();
+
+            Platform.runLater(() -> updateUiWithResponse(response, "ngày " + day + "/" + month));
         }).exceptionally(e -> {
             Platform.runLater(() -> showError("Lỗi tải dữ liệu ban đầu: " + e.getMessage()));
             return null;
         });
     }
 
-    private void updateUiWithResponse(ApiResponse response, String context) {
+    private void updateUiWithResponse(RoomResponse response, String context) {
         try {
             List<RoomModel> roomList = response.getData();
-            int countRoom = response.getCount();
 
             if (roomList == null || roomList.isEmpty()) {
-                lblShowRoom.setText("Không có phòng " + context.toUpperCase());
+                lblShowRoom.setText("Không có ca thi!");
                 return;
             }
 
-            lblShowRoom.setText("Có " + countRoom + " ca thi cho " + context.toUpperCase());
-
+            lblShowRoom.setText("Các ca thi " + context);
             for (RoomModel room : roomList) {
                 AnchorPane itemPane = createRoomExams(room);
                 vbox.getChildren().add(itemPane);
             }
+
         } catch (Exception e) {
             showError("Lỗi hiễn thị dữ liệu: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private void showError(String message) {
         System.out.println(message);
-        lblShowRoom.setText(message);
     }
 
     @FXML
@@ -81,15 +87,15 @@ public class ExamRoomController implements Initializable {
         String roomName = txtRoom.getText();
 
         if (roomName == null || roomName.trim().isEmpty()) {
-            loadInitialData(); //
+            loadInitialData();
             return;
         }
 
         vbox.getChildren().clear();
         lblShowRoom.setText("Đang tìm phòng " + roomName.toUpperCase() + "...");
 
-        apiService.fetchExamsByRoomForToday(roomName.trim()).thenAccept(response -> {
-            Platform.runLater(() -> updateUiWithResponse(response, roomName.trim()));
+        apiService.searchExamsForRoom(roomName.trim()).thenAccept(response -> {
+            Platform.runLater(() -> updateUiWithResponse(response, "phòng "+roomName.trim().toUpperCase()));
         }).exceptionally(e -> {
             Platform.runLater(() -> showError("Lỗi khi tìm phòng: " + e.getMessage()));
             return null;
@@ -249,7 +255,7 @@ public class ExamRoomController implements Initializable {
 
         pane.setOnMouseClicked(event -> {
             if (mainController != null) {
-                mainController.showExamDetailPage(room);
+                mainController.showExamDetailPage(room.getId());
             } else {
                 System.err.println("Lỗi: MainController chưa được set cho ExamRoomController.");
             }
