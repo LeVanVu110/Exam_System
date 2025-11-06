@@ -1,8 +1,11 @@
 package com.example.studentapp.controller;
 
+import com.example.studentapp.model.CheckResultModel;
 import com.example.studentapp.model.RoomDetailResponse;
 import com.example.studentapp.model.RoomModel;
 import com.example.studentapp.service.ApiService;
+import com.example.studentapp.service.FolderScanService;
+import com.example.studentapp.view.ScanResultDialog;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
@@ -14,19 +17,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.util.Pair;
 import javafx.concurrent.Task;
-import javafx.stage.StageStyle;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -101,8 +91,17 @@ public class ExamRoomDetailController {
         btnThayDoiCBCT.setOnAction(this::handleShowForm);
         btnKiemTra.setOnAction(this::handleKiemTra);
 
-        validationNumber(txtSoLuongMay, 100);
-        validationNumber(txtSoLuongSV, 200);
+        validationNumber(txtSoLuongMay, 99);
+
+        String soSVString = room.soSVProperty().get();
+        int soSV = 0;
+        try {
+            soSV = Integer.parseInt(soSVString.trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Giá trị soSV không hợp lệ: " + soSVString);
+        }
+        validationNumber(txtSoLuongSV, soSV);
+
         setupCharacterLimit(txtGhiChu, 500);
 
         // Đổ dữ liệu từ RoomModel vào các Label
@@ -152,11 +151,11 @@ public class ExamRoomDetailController {
                             alert.setContentText("Giá trị nhập vào không được vượt quá " + maxValue + ".");
                             alert.showAndWait();
 
-                            textField.setText(oldValue);
+                            textField.setText(null);
                         });
                     }
                 } catch (NumberFormatException e) {
-                    Platform.runLater(() -> textField.setText(oldValue));
+                    Platform.runLater(() -> textField.setText(null));
                 }
             }
         });
@@ -256,157 +255,49 @@ public class ExamRoomDetailController {
 
     @FXML
     void handleKiemTra(ActionEvent event) {
-        // Lấy giá trị expected trước khi chạy background để tránh truy cập UI từ thread khác
-        final String baseDrive = "G:\\"; // hoặc lấy từ config nếu muốn
+        final String baseDrive = "G:\\";
         final int totalMachines;
         final int expectedStudents;
 
-        // Lấy giá trị người dùng nhập
         try {
             totalMachines = Integer.parseInt(txtSoLuongMay.getText().trim());
         } catch (NumberFormatException ex) {
-            showAlertOnUIThread("Giá trị số lượng máy không hợp lệ: " + txtSoLuongMay.getText(), Alert.AlertType.ERROR);
+            showAlertOnUIThread("Giá trị số lượng máy không hợp lệ.", Alert.AlertType.ERROR);
             return;
         }
 
         try {
             expectedStudents = Integer.parseInt(txtSoLuongSV.getText().trim());
         } catch (NumberFormatException ex) {
-            showAlertOnUIThread("Giá trị số lượng sinh viên không hợp lệ: " + txtSoLuongSV.getText(), Alert.AlertType.ERROR);
+            showAlertOnUIThread("Giá trị số lượng sinh viên không hợp lệ.", Alert.AlertType.ERROR);
             return;
         }
 
-        // Chạy kiểm tra trên background thread
-        CompletableFuture.runAsync(() -> {
-            StringBuilder report = new StringBuilder();
-            int totalStudentFoldersFound = 0;
+        FolderScanService scanService = new FolderScanService();
 
-            List<String> machinesWithStudent = new ArrayList<>();
-            List<String> machinesWithoutStudent = new ArrayList<>();
-            List<String> machinesMultipleStudents = new ArrayList<>();
-            List<String> studentWithTxt = new ArrayList<>();
-            List<String> studentWithoutTxt = new ArrayList<>();
-            List<String> missingMachineFolder = new ArrayList<>();
-
-            for (int i = 1; i <= totalMachines; i++) {
-                String machineName = "May" + i;
-                File machineDir = new File(baseDrive + machineName);
-
-                if (!machineDir.exists() || !machineDir.isDirectory()) {
-                    missingMachineFolder.add(machineName + " (thư mục máy bị thiếu)");
-                    machinesWithoutStudent.add(machineName + " (missing)");
-                    continue;
-                }
-
-                File[] studentFolders = machineDir.listFiles(File::isDirectory);
-
-                if (studentFolders == null || studentFolders.length == 0) {
-                    machinesWithoutStudent.add(machineName);
-                } else if (studentFolders.length == 1) {
-                    File studentFolder = studentFolders[0];
-                    machinesWithStudent.add(machineName + " -> " + studentFolder.getName());
-                    totalStudentFoldersFound += 1;
-
-                    File[] txtFiles = studentFolder.listFiles((d, name) -> name.toLowerCase().endsWith(".txt"));
-                    if (txtFiles != null && txtFiles.length > 0) {
-                        studentWithTxt.add(machineName + " -> " + studentFolder.getName());
-                    } else {
-                        studentWithoutTxt.add(machineName + " -> " + studentFolder.getName());
-                    }
-                } else { // nhiều hơn 1 folder: vi phạm "mỗi máy chỉ được 1 thư mục sinh viên"
-                    String names = Arrays.stream(studentFolders).map(File::getName).collect(Collectors.joining(", "));
-                    machinesMultipleStudents.add(machineName + " -> [" + names + "]");
-                    totalStudentFoldersFound += studentFolders.length;
-
-                    // vẫn kiểm tra trong từng folder con xem có .txt không
-                    for (File sf : studentFolders) {
-                        File[] txtFiles = sf.listFiles((d, name) -> name.toLowerCase().endsWith(".txt"));
-                        if (txtFiles != null && txtFiles.length > 0) {
-                            studentWithTxt.add(machineName + " -> " + sf.getName());
-                        } else {
-                            studentWithoutTxt.add(machineName + " -> " + sf.getName());
-                        }
-                    }
-                }
+        Task<CheckResultModel> scanTask = new Task<>() {
+            @Override
+            protected CheckResultModel call() throws Exception {
+                return scanService.scanFolders(baseDrive, totalMachines);
             }
+        };
 
-            // Tổng kết
-            report.append("🔍 KẾT QUẢ KIỂM TRA Ổ ĐĨA " + baseDrive + " (May1..May50)\n\n");
-            report.append("Tổng folder sinh viên tìm thấy: ").append(totalStudentFoldersFound).append("\n");
-            report.append("Số lượng sinh viên dự kiến (txtSoLuongSV): ").append(expectedStudents).append("\n\n");
+        scanTask.setOnSucceeded(e -> {
+            CheckResultModel result = scanTask.getValue();
 
-            if (totalStudentFoldersFound == expectedStudents) {
-                report.append("✅ Số lượng folder KHỚP.\n\n");
-            } else {
-                report.append("⚠️ Số lượng folder KHÔNG khớp.\n\n");
-            }
-
-            report.append("---- Máy có 1 thư mục sinh viên ----\n");
-            if (machinesWithStudent.isEmpty()) {
-                report.append("  (Không có máy nào)\n");
-            } else {
-                machinesWithStudent.forEach(s -> report.append("  - ").append(s).append("\n"));
-            }
-            report.append("\n");
-
-            report.append("---- Máy KHÔNG có thư mục sinh viên ----\n");
-            if (machinesWithoutStudent.isEmpty()) {
-                report.append("  (Không có máy nào)\n");
-            } else {
-                machinesWithoutStudent.forEach(s -> report.append("  - ").append(s).append("\n"));
-            }
-            report.append("\n");
-
-            if (!missingMachineFolder.isEmpty()) {
-                report.append("---- Máy bị thiếu thư mục MayX trên G:\\ ----\n");
-                missingMachineFolder.forEach(s -> report.append("  - ").append(s).append("\n"));
-                report.append("\n");
-            }
-
-            report.append("---- Máy có NHIỀU hơn 1 thư mục (vi phạm) ----\n");
-            if (machinesMultipleStudents.isEmpty()) {
-                report.append("  (Không có máy vi phạm)\n");
-            } else {
-                machinesMultipleStudents.forEach(s -> report.append("  - ").append(s).append("\n"));
-            }
-            report.append("\n");
-
-            report.append("---- Danh sách đã nộp (.txt tìm thấy trong folder sinh viên) ----\n");
-            if (studentWithTxt.isEmpty()) {
-                report.append("  (Không có)\n");
-            } else {
-                studentWithTxt.forEach(s -> report.append("  - ").append(s).append("\n"));
-            }
-            report.append("\n");
-
-            report.append("---- Danh sách CHƯA nộp (không thấy file .txt) ----\n");
-            if (studentWithoutTxt.isEmpty()) {
-                report.append("  (Không có)\n");
-            } else {
-                studentWithoutTxt.forEach(s -> report.append("  - ").append(s).append("\n"));
-            }
-            report.append("\n");
-
-            // Hiển thị kết quả trên UI thread
-            final String finalReport = report.toString();
-            Platform.runLater(() -> {
-                TextArea output = new TextArea(finalReport);
-                output.setEditable(false);
-                output.setWrapText(true);
-                Alert result = new Alert(Alert.AlertType.INFORMATION);
-                result.setTitle("Kết quả kiểm tra ổ G:\\");
-                result.setHeaderText("Thống kê chi tiết (May1..May50)");
-                result.getDialogPane().setContent(output);
-                result.getDialogPane().setPrefSize(700, 600);
-                result.showAndWait();
-            });
-        }).exceptionally(ex -> {
-            showAlertOnUIThread("Lỗi trong quá trình kiểm tra: " + ex.getMessage(), Alert.AlertType.ERROR);
-            return null;
+            ScanResultDialog resultDialog = new ScanResultDialog(result, expectedStudents);
+            resultDialog.showAndWait();
         });
+
+        scanTask.setOnFailed(e -> {
+            Throwable ex = scanTask.getException();
+            showAlertOnUIThread("Lỗi trong quá trình kiểm tra: " + ex.getMessage(), Alert.AlertType.ERROR);
+        });
+
+        new Thread(scanTask).start();
     }
 
-    // Helper hiển thị alert an toàn từ background thread
+    // (Giữ lại helper này)
     private void showAlertOnUIThread(String message, Alert.AlertType type) {
         Platform.runLater(() -> {
             Alert a = new Alert(type);

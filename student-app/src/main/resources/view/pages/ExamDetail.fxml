@@ -189,7 +189,7 @@
                             <children>
                                 <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
                                     <children>
-                                        <Label text="Số lượng máy thực tế:">
+                                        <Label text="Số máy thực tế:">
                                             <font>
                                                 <Font size="14.0"/>
                                             </font>
@@ -200,7 +200,7 @@
                                 </HBox>
                                 <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
                                     <children>
-                                        <Label prefHeight="18.0" text="Số lượng sinh viên đi:">
+                                        <Label prefHeight="18.0" text="Số sinh viên đi:">
                                             <font>
                                                 <Font size="14.0"/>
                                             </font>
