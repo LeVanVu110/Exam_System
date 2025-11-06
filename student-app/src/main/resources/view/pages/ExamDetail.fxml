@@ -220,17 +220,19 @@
                                         <Font size="14.0"/>
                                     </font>
                                 </Label>
-                                <TextArea fx:id="txtGhiChu" prefHeight="80.0"
-                                          promptText="Thêm ghi chú cho ca thi này..."
-                                          wrapText="true"/>
+                                <TextArea fx:id="txtGhiChu" prefHeight="120.0"
+                                          promptText="Thêm ghi chú cho ca thi này..." wrapText="true"/>
                             </children>
                         </VBox>
 
                         <HBox alignment="CENTER_RIGHT" spacing="10.0">
                             <children>
+                                <Button fx:id="btnKiemTra" mnemonicParsing="false" text="Kiểm tra bài thi"/>
                                 <Button fx:id="btnXuLyThuBai" mnemonicParsing="false" styleClass="btn-primary-green"
-                                        text="Xử lý thu bài"/>
-                                <Button fx:id="btnDong" mnemonicParsing="false" styleClass="btn-secondary" text="Đóng"/>
+                                        text="Xử lý thu bài">
+                                    <padding>
+                                    </padding>
+                                </Button>
                             </children>
                         </HBox>
                     </children>

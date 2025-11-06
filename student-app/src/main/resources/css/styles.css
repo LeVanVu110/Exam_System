@@ -99,6 +99,7 @@
     -fx-font-weight: bold;
     -fx-background-radius: 5px;
     -fx-cursor: hand;
+    -fx-padding: 2px 5px 2px 5px;
 }
 .btn-primary-green:hover {
     -fx-background-color: #45a049;
@@ -112,6 +113,7 @@
     -fx-background-radius: 5px;
     -fx-border-radius: 5px;
     -fx-cursor: hand;
+    -fx-padding: 2px 5px 2px 5px;
 }
 .btn-secondary:hover {
     -fx-background-color: #e9e9e9;

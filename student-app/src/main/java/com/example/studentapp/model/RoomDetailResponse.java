@@ -1,7 +1,5 @@
 package com.example.studentapp.model;
 
-import java.util.List;
-
 public class RoomDetailResponse {
     private boolean success;
     private String message;
