@@ -31,11 +31,10 @@ function App() {
           <Route path="/documents" element={<Documents />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/qa" element={<QA />} />
+
+{/* đăng nhập */}
+          <Route path="/login" element={<LoginForm />} />
         </Route>
-      </Routes>
-      {/* đăng nhập */}
-      <Routes>
-        <Route path="/login" element={<LoginForm />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={2000} />
     </Router>

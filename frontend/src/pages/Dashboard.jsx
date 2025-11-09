@@ -93,57 +93,106 @@ const ExamDashboard = () => {
     fetchData();
   }, []);
 
-  // --- Tổng hợp dữ liệu (useMemo để cache)
+  //1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
+  // const { summary, chartData, todaysSchedule, emptyReportsSessions } = useMemo(() => {
+//   const teacherSessions = examSessions.filter(
+  //     (s) => s.exam_teacher && s.exam_teacher.includes(USER_NAME)
+  //   );
+  //   const today = new Date(selectedDate);
+  //   let completedCount = 0,
+  //     upcomingCount = 0;
+  //   const warningSessions = [];
+
+  //   teacherSessions.forEach((session) => {
+  //     const date = new Date(session.exam_date);
+  //     if (date < today) completedCount++;
+  //     else upcomingCount++;
+  //     if (!session.actual_teacher1_id && !session.actual_teacher2_id)
+  //       warningSessions.push(session);
+  //   });
+
+  //   const monthlyCounts = {};
+  //   teacherSessions.forEach((s) => {
+  //     if (s.exam_date) {
+  //       const m = s.exam_date.substring(5, 7);
+  //       monthlyCounts[m] = (monthlyCounts[m] || 0) + 1;
+  //     }
+  //   });
+
+  //   return {
+  //     summary: {
+  //       userName: USER_NAME,
+  //       totalAssigned: teacherSessions.length,
+  //       totalCompleted: completedCount,
+  //       totalUpcoming: upcomingCount,
+  //       emptyReports: warningSessions.length,
+  //     },
+  //     chartData: {
+  //       barChartData: Object.keys(monthlyCounts).map((m) => ({
+  //         name: `T${parseInt(m)}`,
+  //         "Số ca thi": monthlyCounts[m],
+  //       })),
+  //       pieChartData: [
+  //         { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
+  //         { name: "Sắp tới", value: upcomingCount, fill: "#ffc107" },
+  //       ],
+  //     },
+  //     todaysSchedule: teacherSessions.filter(
+  //       (i) => i.exam_date === selectedDate
+  //     ),
+  //     emptyReportsSessions: warningSessions,
+  //   };
+  // }, [examSessions, selectedDate]);
+  // end 1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
+  // 2. --- Tổng hợp dữ liệu (useMemo để cache) Lọc tất Giảng Viên CHỉ Định
   const { summary, chartData, todaysSchedule, emptyReportsSessions } = useMemo(() => {
-    const teacherSessions = examSessions.filter(
-      (s) => s.exam_teacher && s.exam_teacher.includes(USER_NAME)
-    );
+  // ❌ Không lọc theo USER_NAME nữa — thống kê toàn bộ dữ liệu
+  const allSessions = examSessions;
 
-    const today = new Date(selectedDate);
-    let completedCount = 0,
-      upcomingCount = 0;
-    const warningSessions = [];
+  const today = new Date(selectedDate);
+  let completedCount = 0,
+    upcomingCount = 0;
+  const warningSessions = [];
 
-    teacherSessions.forEach((session) => {
-      const date = new Date(session.exam_date);
-      if (date < today) completedCount++;
-      else upcomingCount++;
-      if (!session.actual_teacher1_id && !session.actual_teacher2_id)
-        warningSessions.push(session);
-    });
+  allSessions.forEach((session) => {
+    const date = new Date(session.exam_date);
+    if (date < today) completedCount++;
+    else upcomingCount++;
+    if (!session.actual_teacher1_id && !session.actual_teacher2_id)
+      warningSessions.push(session);
+  });
 
-    const monthlyCounts = {};
-    teacherSessions.forEach((s) => {
-      if (s.exam_date) {
-        const m = s.exam_date.substring(5, 7);
-        monthlyCounts[m] = (monthlyCounts[m] || 0) + 1;
-      }
-    });
+  const monthlyCounts = {};
+  allSessions.forEach((s) => {
+    if (s.exam_date) {
+      const m = s.exam_date.substring(5, 7);
+      monthlyCounts[m] = (monthlyCounts[m] || 0) + 1;
+    }
+  });
 
-    return {
-      summary: {
-        userName: USER_NAME,
-        totalAssigned: teacherSessions.length,
-        totalCompleted: completedCount,
-        totalUpcoming: upcomingCount,
-        emptyReports: warningSessions.length,
-      },
-      chartData: {
-        barChartData: Object.keys(monthlyCounts).map((m) => ({
-          name: `T${parseInt(m)}`,
-          "Số ca thi": monthlyCounts[m],
-        })),
-        pieChartData: [
-          { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
-          { name: "Sắp tới", value: upcomingCount, fill: "#ffc107" },
-        ],
-      },
-      todaysSchedule: teacherSessions.filter(
-        (i) => i.exam_date === selectedDate
-      ),
-      emptyReportsSessions: warningSessions,
-    };
-  }, [examSessions, selectedDate]);
+  return {
+    summary: {
+      userName: "Toàn hệ thống",
+      totalAssigned: allSessions.length,
+      totalCompleted: completedCount,
+      totalUpcoming: upcomingCount,
+      emptyReports: warningSessions.length,
+    },
+    chartData: {
+      barChartData: Object.keys(monthlyCounts).map((m) => ({
+        name: `T${parseInt(m)}`,
+"Số ca thi": monthlyCounts[m],
+      })),
+      pieChartData: [
+        { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
+        { name: "Sắp tới", value: upcomingCount, fill: "#ffc107" },
+      ],
+    },
+    todaysSchedule: allSessions.filter((i) => i.exam_date === selectedDate),
+    emptyReportsSessions: warningSessions,
+  };
+}, [examSessions, selectedDate]);
+//end 2
 
   if (loading)
     return (
@@ -202,7 +251,7 @@ const ExamDashboard = () => {
             <thead>
               <tr>
                 <th></th>
-                <th>Mã ca</th>
+                <th>Mã lớp</th>
                 <th>Môn học</th>
                 <th>Phòng</th>
                 <th>Bắt đầu</th>
@@ -218,14 +267,14 @@ const ExamDashboard = () => {
                   >
                     <td className="toggle-icon">
                       <i
-                        className={`fas fa-chevron-${
+className={`fas fa-chevron-${
                           expandedSessionId === session.exam_session_id
                             ? "up"
                             : "down"
                         }`}
                       ></i>
                     </td>
-                    <td>{session.exam_session_id}</td>
+                    <td>{session.class_code}</td>
                     <td>{session.subject_name}</td>
                     <td>{session.exam_room}</td>
                     <td>
@@ -294,8 +343,7 @@ const ExamDashboard = () => {
             </ResponsiveContainer>
           </div>
         </div>
-
-        <div className="warnings-container">
+<div className="warnings-container">
           <h2>⚠️ Cảnh báo</h2>
           {summary.emptyReports > 0 ? (
             <div className="warning-box">
