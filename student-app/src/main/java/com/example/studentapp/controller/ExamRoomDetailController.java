@@ -60,19 +60,23 @@ public class ExamRoomDetailController {
     @FXML
     private TextArea txtGhiChu;
     @FXML
-    private Button btnXuLyThuBai;
+    private Button btnThuBaiThi;
     @FXML
     private Button btnKiemTra;
 
     private MainController mainController;
     private final ApiService apiService = new ApiService();
     private RoomModel currentRoom;
+    private int currentExamSeesionId;
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
 
+    // Hàm call API để tải dử liệu
     public void loadExamDetail(int examSessionId) {
+        this.currentExamSeesionId = examSessionId;
+
         apiService.fetchExamById(examSessionId).thenAccept(response -> {
             Platform.runLater(() -> updateUiWithResponse(response));
         }).exceptionally(e -> {
@@ -82,6 +86,7 @@ public class ExamRoomDetailController {
 
     }
 
+    // Hàm cập nhật dữ liệu khi vào chi tiết phòng thi
     private void updateUiWithResponse(RoomDetailResponse response) {
         RoomModel room = response.getData();
 
@@ -126,6 +131,7 @@ public class ExamRoomDetailController {
         txtSoLuongMay.setText("50");
     }
 
+    // Hàm cho nhập số tối thiểu
     private void validationNumber(TextField textField, int maxValue) {
         Pattern pattern = Pattern.compile("\\d*");
         UnaryOperator<TextFormatter.Change> filter = change -> {
@@ -161,6 +167,7 @@ public class ExamRoomDetailController {
         });
     }
 
+    // Hàm cho nhập ghi chú tổi thiểu
     private void setupCharacterLimit(TextArea textArea, int maxChars) {
 
         textArea.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -182,6 +189,7 @@ public class ExamRoomDetailController {
         });
     }
 
+    // Hàm quay trở lại
     @FXML
     void handleBack(ActionEvent event) {
         // "Nhờ" cha chuyển về trang danh sách
@@ -190,6 +198,7 @@ public class ExamRoomDetailController {
         }
     }
 
+    // Hàm hiển thị Dialog để đổi tên CBCT
     @FXML
     void handleShowForm(ActionEvent event) {
 
@@ -253,6 +262,7 @@ public class ExamRoomDetailController {
         });
     }
 
+    // Hàm xử lý kiểm tra folder bài thu
     @FXML
     void handleKiemTra(ActionEvent event) {
         final String baseDrive = "G:\\";
@@ -297,7 +307,11 @@ public class ExamRoomDetailController {
         new Thread(scanTask).start();
     }
 
-    // (Giữ lại helper này)
+    // Hàm xử lý thu bài thi
+    @FXML
+    void handleThuBaiThi(ActionEvent event) {}
+
+    // Hàm show thông báo khi các dữ liệu không hợp lệ
     private void showAlertOnUIThread(String message, Alert.AlertType type) {
         Platform.runLater(() -> {
             Alert a = new Alert(type);
