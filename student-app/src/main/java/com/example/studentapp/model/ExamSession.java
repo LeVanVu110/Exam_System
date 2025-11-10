@@ -1,65 +1,75 @@
 package com.example.studentapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true) 
 public class ExamSession {
-    // Đảm bảo các tên thuộc tính này khớp chính xác với JSON từ API
+
+    // Thuộc tính Form Quản Lý (Mới)
+    private String maHP; // Mã học phần
+    private String tenHP; // Tên học phần
+    private String lopSV; // Lớp sinh viên
+    private String soSV;  // Số sinh viên
+    private String hinhThucThi; // Hình thức thi
+    
+    // Thuộc tính Form PĐT và Kiểm tra ca thi (Cũ)
     private String maCaThi;
     private String tenMonHoc;
     private String phongThi;
     private String ngayThi;
     private String gioThi;
     private String trangThai;
+    private String canBoCoiThi;
+    private int soMayTrong;
+    private int soBaiNop;
 
-    // Cần constructor rỗng cho Jackson (JSON parsing)
+    // Constructor rỗng (Bắt buộc cho Jackson)
     public ExamSession() {
     }
 
-    // Getters and Setters
-    // (Bạn có thể tự động generate bằng IDE)
-    public String getMaCaThi() {
-        return maCaThi;
-    }
+    // --- Getters and Setters cho các trường mới ---
 
-    public void setMaCaThi(String maCaThi) {
-        this.maCaThi = maCaThi;
-    }
+    public String getMaHP() { return maHP; }
+    public void setMaHP(String maHP) { this.maHP = maHP; }
 
-    public String getTenMonHoc() {
-        return tenMonHoc;
-    }
+    public String getTenHP() { return tenHP; }
+    public void setTenHP(String tenHP) { this.tenHP = tenHP; }
 
-    public void setTenMonHoc(String tenMonHoc) {
-        this.tenMonHoc = tenMonHoc;
-    }
+    public String getLopSV() { return lopSV; }
+    public void setLopSV(String lopSV) { this.lopSV = lopSV; }
 
-    public String getPhongThi() {
-        return phongThi;
-    }
+    public String getSoSV() { return soSV; } // Dùng String để dễ dàng nhập Form
+    public void setSoSV(String soSV) { this.soSV = soSV; }
 
-    public void setPhongThi(String phongThi) {
-        this.phongThi = phongThi;
-    }
+    public String getHinhThucThi() { return hinhThucThi; }
+    public void setHinhThucThi(String hinhThucThi) { this.hinhThucThi = hinhThucThi; }
+    
+    // --- Getters and Setters cho các trường cũ ---
 
-    public String getNgayThi() {
-        return ngayThi;
-    }
+    public String getMaCaThi() { return maCaThi; }
+    public void setMaCaThi(String maCaThi) { this.maCaThi = maCaThi; }
 
-    public void setNgayThi(String ngayThi) {
-        this.ngayThi = ngayThi;
-    }
+    public String getTenMonHoc() { return tenMonHoc; }
+    public void setTenMonHoc(String tenMonHoc) { this.tenMonHoc = tenMonHoc; }
 
-    public String getGioThi() {
-        return gioThi;
-    }
+    public String getPhongThi() { return phongThi; }
+    public void setPhongThi(String phongThi) { this.phongThi = phongThi; }
 
-    public void setGioThi(String gioThi) {
-        this.gioThi = gioThi;
-    }
+    public String getNgayThi() { return ngayThi; }
+    public void setNgayThi(String ngayThi) { this.ngayThi = ngayThi; }
 
-    public String getTrangThai() {
-        return trangThai;
-    }
+    public String getGioThi() { return gioThi; }
+    public void setGioThi(String gioThi) { this.gioThi = gioThi; }
 
-    public void setTrangThai(String trangThai) {
-        this.trangThai = trangThai;
-    }
+    public String getTrangThai() { return trangThai; }
+    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+
+    public String getCanBoCoiThi() { return canBoCoiThi; }
+    public void setCanBoCoiThi(String canBoCoiThi) { this.canBoCoiThi = canBoCoiThi; }
+    
+    public int getSoMayTrong() { return soMayTrong; }
+    public void setSoMayTrong(int soMayTrong) { this.soMayTrong = soMayTrong; }
+
+    public int getSoBaiNop() { return soBaiNop; }
+    public void setSoBaiNop(int soBaiNop) { this.soBaiNop = soBaiNop; }
 }

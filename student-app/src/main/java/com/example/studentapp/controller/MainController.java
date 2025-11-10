@@ -24,7 +24,17 @@ public class MainController implements Initializable {
             headerController.setMainController(this);
         }
 
-        showExamListPage();
+        // ===============================================
+        // SỬA LỖI Ở ĐÂY
+        // ===============================================
+        
+        // Tạm thời tắt hàm này vì API (DS Phòng) chưa sẵn sàng
+        // showExamListPage(); 
+        
+        // Bật hàm này để kiểm tra (API /api/exams đã sẵn sàng)
+        showKiemTraCaThiPage(); 
+        
+        // ===============================================
     }
 
     // Hàm tải trang DANH SÁCH (ExamRoom.fxml) vào <center>
@@ -73,8 +83,7 @@ public class MainController implements Initializable {
             System.err.println("Lỗi: Không thể tải ExamDetail.fxml");
         }
     }
-    // ... (Dán hàm này vào bên dưới hàm showExamDetailPage của bạn)
-
+    
     /**
      * Hàm tải trang KIỂM TRA CA THI (KiemTraCaThi.fxml) vào <center>
      */
