@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -13,14 +14,28 @@ class RolePermissionSeeder extends Seeder
         RolePermission::truncate();
         Schema::enableForeignKeyConstraints();
 
-        for ($r = 1; $r <= 3; $r++) {
-            for ($p = 1; $p <= 4; $p++) {
+        // Gán quyền cố định cho từng vai trò
+        $rolePermissions = [
+            // Admin có tất cả quyền
+            1 => [1, 2, 3, 4],
+
+            // Teacher chỉ có quyền 2, 3
+            2 => [2, 3],
+
+            // Student chỉ có quyền 3
+            3 => [3],
+
+            // Academic Affairs Office có quyền 1, 4
+            4 => [1, 4],
+        ];
+
+        foreach ($rolePermissions as $roleId => $permissions) {
+            foreach ($permissions as $permissionId) {
                 RolePermission::create([
-                    'role_id' => $r,
-                    'permission_id' => $p,
+                    'role_id' => $roleId,
+                    'permission_id' => $permissionId,
                 ]);
             }
         }
     }
 }
-
