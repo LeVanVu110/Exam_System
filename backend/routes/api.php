@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\{
     StudentController,
     ExamController,
-    ExamSessionController
+    ExamSessionController,
+    AuthController
 };
 use App\Http\Controllers\{
     RoleController,
@@ -71,3 +72,6 @@ Route::prefix('exam-schedules')->group(function () {
     Route::delete('/{id}', [ExamSessionController::class, 'destroy']); // xóa 1
     Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']); //xóa hàng loạt
 });
+
+// đăng nhập web
+Route::post('/login', [AuthController::class, 'login']);

@@ -27,7 +27,18 @@ class UserSeeder extends Seeder
             'user_code' => 'U0001',
             'user_name' => 'admin',
             'user_email' => 'admin123@gmail.com',
-            'user_password' => 'Admin123@@',
+            'user_password' => 'Admin123@@', // auto hash nhờ setUserPasswordAttribute
+            'user_is_activated' => 1,
+            'user_is_banned' => 0,
+            'user_activate_at' => now(),
+        ]);
+
+        // Academic Affairs Office
+        User::create([
+            'user_code' => 'U0002',
+            'user_name' => 'academic',
+            'user_email' => 'academic123@gmail.com',
+            'user_password' => 'Academic123@@',
             'user_is_activated' => 1,
             'user_is_banned' => 0,
             'user_activate_at' => now(),
@@ -49,4 +60,3 @@ class UserSeeder extends Seeder
         }
     }
 }
-
