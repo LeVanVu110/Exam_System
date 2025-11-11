@@ -15,9 +15,16 @@ import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 import javafx.concurrent.Task;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
@@ -68,6 +75,7 @@ public class ExamRoomDetailController {
     private final ApiService apiService = new ApiService();
     private RoomModel currentRoom;
     private int currentExamSeesionId;
+    private Dialog<Void> progressDialog;
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
@@ -95,6 +103,7 @@ public class ExamRoomDetailController {
         btnBack.setOnAction(this::handleBack);
         btnThayDoiCBCT.setOnAction(this::handleShowForm);
         btnKiemTra.setOnAction(this::handleKiemTra);
+        btnThuBaiThi.setOnAction(this::handleThuBaiThi);
 
         validationNumber(txtSoLuongMay, 99);
 
@@ -309,7 +318,154 @@ public class ExamRoomDetailController {
 
     // Hàm xử lý thu bài thi
     @FXML
-    void handleThuBaiThi(ActionEvent event) {}
+    void handleThuBaiThi(ActionEvent event) {
+        // 1. Lấy thông tin
+        final String baseDrive = "G:\\";
+        final int studentCount;
+
+        // Lấy thông tin trực tiếp từ Model và UI
+        final String roomName = this.currentRoom.roomProperty().get();
+        final String examTime = this.currentRoom.gioThiProperty().get();
+        final String cbct1 = this.currentRoom.cbct1Property().get();
+        final String cbct2 = this.currentRoom.cbct2Property().get();
+        final String notes = txtGhiChu.getText();
+        final int examSessionId = this.currentExamSeesionId;
+
+        try {
+            studentCount = Integer.parseInt(txtSoLuongSV.getText().trim());
+            if (studentCount <= 0) {
+                showAlertOnUIThread("Số lượng sinh viên phải lớn hơn 0.", Alert.AlertType.WARNING);
+                return;
+            }
+        } catch (NumberFormatException ex) {
+            showAlertOnUIThread("Giá trị số lượng sinh viên không hợp lệ.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        // 2. Hiển thị xác nhận
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Xác nhận Thu Bài");
+        confirmAlert.setHeaderText("Bạn có chắc chắn muốn nộp bài cho ca thi này không?");
+        confirmAlert.setContentText(
+                "Phòng: " + roomName + "\n" +
+                        "Ca thi: " + examTime + "\n" +
+                        "Số SV: " + studentCount + "\n\n" +
+                        "Hành động này sẽ nén và gửi bài thi lên hệ thống."
+        );
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // 3. Nếu OK -> Bắt đầu quá trình nén và upload
+            startCollectionProcess(baseDrive, examSessionId, roomName, examTime, studentCount, cbct1, cbct2, notes);
+        }
+    }
+
+    // [MỚI] Hàm xử lý nén và upload trong Task (luồng nền)
+    private void startCollectionProcess(String sourceDir, int examSessionId, String roomName, String examTime, int studentCount, String cbct1,
+                                        String cbct2, String notes) {
+
+        Task<File> zipTask = new Task<>() {
+            @Override
+            protected File call() throws Exception {
+                String safeExamTime = examTime.replace(":", "h").replace(" ", "");
+                String safeRoomName = roomName.replace(" ", "");
+                String rootFolderNameInZip = String.format("%s_%s_%d", safeRoomName, safeExamTime, studentCount);
+
+                // 2. Tên file zip
+                String zipFileName = rootFolderNameInZip + ".zip";
+                Path zipFilePath = Paths.get(System.getProperty("java.io.tmpdir"), zipFileName);
+
+                // 3. Gọi hàm nén mới
+                zipDirectoryWithCustomRoot(sourceDir, zipFilePath.toString(), rootFolderNameInZip);
+
+                return zipFilePath.toFile();
+            }
+        };
+
+        // Khi nén file thành công
+        zipTask.setOnSucceeded(e -> {
+            File zipFile = zipTask.getValue();
+
+            // Gọi ApiService với ĐẦY ĐỦ các tham số
+            apiService.uploadExamCollection(zipFile, examSessionId, roomName, examTime, studentCount, cbct1, cbct2, notes)
+                    .thenAccept(uploadSuccess -> { // 'uploadSuccess' là Boolean
+                        Platform.runLater(() -> {
+                            if (uploadSuccess) {
+                                showAlertOnUIThread("Thu bài thành công!", Alert.AlertType.INFORMATION);
+                                btnThuBaiThi.setDisable(true); // Tắt nút sau khi nộp
+                            } else {
+                                showAlertOnUIThread("Upload thất bại. Server đã từ chối file hoặc có lỗi mạng.", Alert.AlertType.ERROR);
+                            }
+                        });
+                    })
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> {
+                            showAlertOnUIThread("Lỗi nghiêm trọng khi tải file: " + ex.getMessage(), Alert.AlertType.ERROR);
+                        });
+                        return null;
+                    });
+        });
+
+        // Khi nén file thất bại
+        zipTask.setOnFailed(e -> {
+            Throwable ex = zipTask.getException();
+            Platform.runLater(() -> {
+                showAlertOnUIThread("Lỗi trong quá trình nén file: " + ex.getMessage(), Alert.AlertType.ERROR);
+            });
+        });
+
+        new Thread(zipTask).start();
+    }
+
+    public void zipDirectoryWithCustomRoot(String sourceDirPath, String zipFilePath, String rootFolderNameInZip) throws IOException {
+        Path p = Paths.get(zipFilePath);
+        Path sp = Paths.get(sourceDirPath);
+
+        try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(p))) {
+
+            // Duyệt các thư mục "May..." trong G:\
+            Files.walk(sp, 1) // Chỉ duyệt cấp 1 (trong G:\)
+                    .filter(path -> !path.equals(sp)) // Bỏ qua chính nó (G:\)
+                    .filter(path -> Files.isDirectory(path) && path.getFileName().toString().toLowerCase().startsWith("may"))
+                    .forEach(dir -> {
+                        try {
+                            // Duyệt đệ quy bên trong mỗi thư mục "May..."
+                            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+
+                                // Hàm này xử lý từng file
+                                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                                    // 1. Lấy đường dẫn tương đối (vd: "May2\Student\baithi.txt")
+                                    Path relativePath = sp.relativize(file);
+                                    // 2. Thêm thư mục gốc vào (vd: "A101_07h30_45/May2/Student/baithi.txt")
+                                    String zipEntryName = rootFolderNameInZip + "/" + relativePath.toString().replace("\\", "/");
+
+                                    ZipEntry zipEntry = new ZipEntry(zipEntryName);
+                                    zs.putNextEntry(zipEntry);
+                                    Files.copy(file, zs);
+                                    zs.closeEntry();
+                                    return FileVisitResult.CONTINUE;
+                                }
+
+                                // Hàm này xử lý từng thư mục (để giữ thư mục rỗng)
+                                @Override
+                                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                                    Path relativePath = sp.relativize(dir);
+                                    if (relativePath.getNameCount() > 0) {
+                                        String zipEntryName = rootFolderNameInZip + "/" + relativePath.toString().replace("\\", "/") + "/";
+                                        ZipEntry zipEntry = new ZipEntry(zipEntryName);
+                                        zs.putNextEntry(zipEntry);
+                                        zs.closeEntry();
+                                    }
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            });
+                        } catch (IOException e) {
+                            throw new RuntimeException("Lỗi khi duyệt thư mục " + dir.toString(), e);
+                        }
+                    });
+        }
+    }
 
     // Hàm show thông báo khi các dữ liệu không hợp lệ
     private void showAlertOnUIThread(String message, Alert.AlertType type) {

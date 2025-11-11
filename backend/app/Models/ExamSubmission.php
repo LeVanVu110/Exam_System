@@ -9,15 +9,15 @@ class ExamSubmission extends Model
 {
     use HasFactory;
 
-    protected $table = 'exam_submissions';
     protected $fillable = [
-        'exam_student_id',
+        'exam_session_id',
+        'room_name',
+        'exam_time',
+        'student_count',
+        'collected_by_1',
+        'collected_by_2',
+        'notes',
+        'file_name',
         'file_path',
-        'submitted_at',
     ];
-
-    public function examStudent()
-    {
-        return $this->belongsTo(ExamStudent::class, 'exam_student_id');
-    }
 }
