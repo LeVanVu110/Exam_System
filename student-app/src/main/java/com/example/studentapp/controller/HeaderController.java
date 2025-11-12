@@ -15,6 +15,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
+import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.scene.Node;
+import java.io.IOException;
+
 public class HeaderController implements Initializable {
 
     @FXML
@@ -53,10 +61,35 @@ public class HeaderController implements Initializable {
 
                     lblDateTime.setText(now.format(formatter));
 
-                }), new KeyFrame(Duration.seconds(1))
-        );
+                }), new KeyFrame(Duration.seconds(1)));
         clock.setCycleCount(Animation.INDEFINITE);
 
         clock.play();
     }
+
+    @FXML
+    private void handleLogout(ActionEvent event) {
+        try {
+            // Load FXML login
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/login/login.fxml"));
+            Scene loginScene = new Scene(loader.load(), 480, 600); // Kích thước cố định
+
+            // Lấy stage hiện tại từ event
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+
+            // Set scene login với kích thước cố định
+            stage.setScene(loginScene);
+            stage.setTitle("Exam Collection System - Login");
+            stage.setResizable(false); // ⚡ Không cho resize
+            stage.setWidth(480);
+            stage.setHeight(600);
+            stage.centerOnScreen(); // Canh giữa màn hình
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Không thể load login.fxml khi logout.");
+        }
+    }
+
 }
