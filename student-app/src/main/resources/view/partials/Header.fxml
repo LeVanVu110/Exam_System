@@ -60,7 +60,7 @@
                 <Button fx:id="btnLogout" alignment="CENTER" mnemonicParsing="false"
                         style="-fx-background-color: #58ade5; -fx-background-radius: 4;" text="Logout"
                         textAlignment="CENTER" textFill="WHITE" AnchorPane.rightAnchor="15.0"
-                        AnchorPane.topAnchor="15.0">
+                        AnchorPane.topAnchor="15.0 " onAction="#handleLogout" >
                     <font>
                         <Font name=".VnAvant Bold" size="14.0"/>
                     </font>
