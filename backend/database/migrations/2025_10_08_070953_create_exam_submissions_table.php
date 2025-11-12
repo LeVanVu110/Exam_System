@@ -26,9 +26,6 @@ return new class extends Migration {
             $table->string('file_path'); // Đường dẫn lưu trên server, vd: "exam_collections/xyz123.zip"
 
             $table->timestamps(); // Tự động thêm created_at, updated_at
-
-            // (Tùy chọn) Thêm khóa ngoại
-            // $table->foreign('exam_session_id')->references('id')->on('exam_sessions');
         });
     }
 

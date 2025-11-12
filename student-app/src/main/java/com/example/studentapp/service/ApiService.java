@@ -1,6 +1,5 @@
 package com.example.studentapp.service;
 
-
 import com.example.studentapp.model.RoomResponse;
 import com.example.studentapp.model.RoomDetailResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,10 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.concurrent.CompletableFuture;
 
-
 public class ApiService {
     private static final String BASE_URL = "http://localhost:8000/api";
-
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -44,7 +41,7 @@ public class ApiService {
         return CompletableFuture.supplyAsync(() -> {
             String boundary = "===" + System.currentTimeMillis() + "===";
             // Endpoint này phải khớp với routes/api.php
-            String apiUrl = "http://localhost:8000/api/exam-submissions/upload";
+            String apiUrl = BASE_URL + "/exam-submissions/upload";
 
             try {
                 URL url = new URL(apiUrl);
@@ -91,7 +88,6 @@ public class ApiService {
         });
     }
 
-    // [HÀM TIỆN ÍCH MỚI] để thêm một trường text vào multipart
     private void addFormField(DataOutputStream out, String boundary, String name, String value) throws IOException {
         out.writeBytes("--" + boundary + "\r\n");
         out.writeBytes("Content-Disposition: form-data; name=\"" + name + "\"\r\n\r\n");
