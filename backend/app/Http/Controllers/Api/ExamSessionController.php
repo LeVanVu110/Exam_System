@@ -127,12 +127,13 @@ class ExamSessionController extends Controller
             ], 500);
         }
     }
-
     public function searchByRoom(Request $request)
     {
         try {
 
             $room = $request->query('room');
+
+            $today = now()->toDateString(); // 🗓️ Ngày hiện tại (vd: 2025-11-12)
 
             $sessions = \App\Models\ExamSession::query()
                 ->leftJoin('teachers as t1', 'exam_sessions.assigned_teacher1_id', '=', 't1.teacher_id')
@@ -144,23 +145,31 @@ class ExamSessionController extends Controller
                     DB::raw("CONCAT(up1.user_lastname, ' ', up1.user_firstname) as teacher1_name"),
                     DB::raw("CONCAT(up2.user_lastname, ' ', up2.user_firstname) as teacher2_name")
                 )
-                ->where('exam_room', 'LIKE', '%' . $room . '%')
+                ->whereDate('exam_date', $today) // ✅ Chỉ lấy các ca thi của hôm nay
+                ->when($room, function ($query, $room) {
+                    $query->where('exam_room', 'LIKE', '%' . $room . '%');
+                })
                 ->orderBy('exam_time', 'asc')
                 ->get();
 
+            $count = $sessions->count();
+
             return response()->json([
                 'success' => true,
-                'message' => "Kết quả tìm kiếm cho phòng thi: {$room}",
+                'message' => "Kết quả tìm kiếm phòng thi '{$room}' trong ngày {$today}",
+                'date' => $today,
+                'count' => $count,
                 'data' => $sessions
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi khi tìm kiếm phòng thi.',
+                'message' => 'Lỗi khi tìm kiếm phòng thi trong ngày hôm nay.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
 
     public function show($id)
     {

@@ -4,7 +4,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 public class ApiLogin {
-    private static final String UPLOAD_URL = "http://localhost:8080/api/exams/upload";
+    private static final String UPLOAD_URL = "http://localhost:8000/api/exams/upload";
 
     public static boolean uploadExamFile(File file) {
         try {

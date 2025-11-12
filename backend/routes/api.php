@@ -73,8 +73,9 @@ Route::prefix('exam-schedules')->group(function () {
     Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']); //xóa hàng loạt
 });
 
-Route::post('/exam-submissions/upload', [ExamSubmissionController::class, 'upload']);
 
-// (Các route khác của bạn giữ nguyên)
-Route::get('/exam-submissions', [ExamSubmissionController::class, 'index']);
-Route::get('/exam-submissions/download/{id}', [ExamSubmissionController::class, 'download']);
+Route::prefix('exam-submissions')->group(function () {
+    Route::post('/upload', [ExamSubmissionController::class, 'upload']);
+    Route::get('/', [ExamSubmissionController::class, 'index']);
+    Route::get('/download/{id}', [ExamSubmissionController::class, 'download']);
+});
