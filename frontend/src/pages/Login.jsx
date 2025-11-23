@@ -45,7 +45,7 @@ export default function LoginForm() {
             window.location.href = "/Academic Affairs Office"
             break
           default:
-            window.location.href = "/PDT/ExamManagement" // fallback
+            window.location.href = "PDT/ExamManagement" // fallback
         }
       }
     } catch (err) {

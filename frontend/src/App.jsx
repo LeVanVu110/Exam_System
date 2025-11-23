@@ -22,8 +22,8 @@ function App() {
     <Router>
       <Routes>
         {/* phòng đào tạo */}
-        <Route path="/ExamManagement" element={<ExamManagement />} />
-      
+        <Route path="PDT/ExamManagement" element={<ExamManagement />} />
+      {/* Cán bộ coi thi */}
         <Route element={<Layout />}>
           <Route path="/Dashboard" element={<ExamDashboard />} />
           <Route path="/exam-schedule" element={<Schedule />} />
