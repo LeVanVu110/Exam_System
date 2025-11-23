@@ -19,6 +19,7 @@ const menuItems = [
   { icon: FileText, label: "Tài liệu/Giáo án", path: "/documents" },
   { icon: Calendar, label: "Lịch dạy/Lịch thi", path: "/exam-schedule" },
   { icon: HelpCircle, label: "Hỏi đáp cộng đồng", path: "/qa" },
+  { icon: HelpCircle, label: "Đăng nhập", path: "/login" },
 ];
 
 export default function Sidebar() {
