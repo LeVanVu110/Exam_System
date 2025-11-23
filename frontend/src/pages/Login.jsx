@@ -42,10 +42,13 @@ export default function LoginForm() {
             window.location.href = "/dashboard"
             break
           case "Academic Affairs Office":
-            window.location.href = "/Academic Affairs Office"
+            window.location.href = "PDT/ExamManagement"
+            break
+            case "Teacher":
+            window.location.href = "/documents"
             break
           default:
-            window.location.href = "PDT/ExamManagement" // fallback
+            window.location.href = "/a" // fallback
         }
       }
     } catch (err) {
