@@ -75,4 +75,10 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Permission::class, 'user_permissions', 'user_id', 'permission_id');
     }
+
+    // Lấy role chính (vì bạn nói mỗi user 1 role)
+    public function primaryRole()
+    {
+        return $this->roles()->first();
+    }
 }
