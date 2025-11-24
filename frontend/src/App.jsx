@@ -16,6 +16,8 @@ import ExamManagement from "./pages/PDT/ExamManagement";
 // đăng nhập
 import  LoginForm  from "./pages/Login";
 import  Schedule  from "./pages/Schedule/Schedule";
+// phân quyền
+import PermissionPage from "@/pages/Admin/permission-manager";
 
 function App() {
   return (
@@ -31,11 +33,12 @@ function App() {
           <Route path="/documents" element={<Documents />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/qa" element={<QA />} />
-
 {/* đăng nhập */}
           <Route path="/" element={<LoginForm />} />
         <Route path="/login" element={<LoginForm />} />
         </Route>
+        {/* Quản lý quyền */}
+        <Route path="/permission" element={<PermissionPage />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={2000} />
     </Router>
