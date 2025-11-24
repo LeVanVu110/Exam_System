@@ -33,7 +33,8 @@ function App() {
           <Route path="/qa" element={<QA />} />
 
 {/* đăng nhập */}
-          <Route path="/login" element={<LoginForm />} />
+          <Route path="/" element={<LoginForm />} />
+        <Route path="/login" element={<LoginForm />} />
         </Route>
       </Routes>
       <ToastContainer position="top-right" autoClose={2000} />
