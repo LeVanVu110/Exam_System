@@ -16,7 +16,10 @@ public class MainController implements Initializable {
     @FXML
     private AnchorPane mainContentPane;
     @FXML
-    private HeaderController headerController;
+    private HDController headerController;
+
+    private Parent examRoomView;
+    private ExamRoomController examRoomController;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -29,7 +32,7 @@ public class MainController implements Initializable {
         // ===============================================
         
         // Tạm thời tắt hàm này vì API (DS Phòng) chưa sẵn sàng
-        // showExamListPage(); 
+        showExamListPage(); 
         
         // Bật hàm này để kiểm tra (API /api/exams đã sẵn sàng)
         showKiemTraCaThiPage(); 
@@ -38,27 +41,8 @@ public class MainController implements Initializable {
     }
 
     // Hàm tải trang DANH SÁCH (ExamRoom.fxml) vào <center>
-    public void showExamListPage() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/pages/ExamRoom.fxml"));
-            Parent examRoomView = loader.load();
-
-            // Lấy controller của ExamRoom.fxml
-            ExamRoomController controller = loader.getController();
-            controller.setMainController(this);
-
-            // Đặt view vào vị trí <center>
-            mainContentPane.getChildren().setAll(examRoomView);
-
-            AnchorPane.setTopAnchor(examRoomView, 0.0);
-            AnchorPane.setBottomAnchor(examRoomView, 0.0);
-            AnchorPane.setLeftAnchor(examRoomView, 0.0);
-            AnchorPane.setRightAnchor(examRoomView, 0.0);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Lỗi: Không thể tải ExamRoom.fxml");
-        }
-    }
+    
+    
 
     // Hàm tải trang CHI TIẾT (ExamDetail.fxml) vào <center>
     public void showExamDetailPage(RoomModel room) {
@@ -107,6 +91,34 @@ public class MainController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Lỗi: Không thể tải KiemTraCaThi.fxml");
+        }
+    }
+    // Hàm tải trang DANH SÁCH (ExamRoom.fxml) vào <center>
+    public void showExamListPage() {
+        try {
+            if(examRoomView == null){
+                System.out.println("Lần đầu: Đang tải Exam");
+
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/pages/ExamRoom.fxml"));
+                examRoomView = loader.load();
+
+                examRoomController = loader.getController();
+                examRoomController.setMainController(this);
+            }else {
+                System.out.println("LẦN SAU: Đang dùng lại ExamRoom.fxml từ cache...");
+            }
+
+
+            // Đặt view vào vị trí <center>
+            mainContentPane.getChildren().setAll(examRoomView);
+
+            AnchorPane.setTopAnchor(examRoomView, 0.0);
+            AnchorPane.setBottomAnchor(examRoomView, 0.0);
+            AnchorPane.setLeftAnchor(examRoomView, 0.0);
+            AnchorPane.setRightAnchor(examRoomView, 0.0);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Lỗi: Không thể tải ExamRoom.fxml");
         }
     }
 }

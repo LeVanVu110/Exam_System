@@ -2,7 +2,7 @@ package com.example.studentapp.controller;
 
 import com.example.studentapp.model.ApiResponse;
 import com.example.studentapp.model.ExamSession;
-import com.example.studentapp.service.ApiService;
+import com.example.studentapp.service.ApiServiceTuan;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -29,7 +29,7 @@ public class LichThiPDTController implements Initializable {
     @FXML private ComboBox<String> comboTrangThai;
     @FXML private Button btnLuu;
 
-    private ApiService apiService;
+    private ApiServiceTuan apiService;
     
     // --- FIX LỖI: Đổi kiểu sang QuanLyLichThiController ---
     private QuanLyLichThiController parentController; 
@@ -42,7 +42,7 @@ public class LichThiPDTController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        apiService = new ApiService();
+        apiService = new ApiServiceTuan();
         
         comboTrangThai.setItems(FXCollections.observableArrayList(
                 "Chưa diễn ra",

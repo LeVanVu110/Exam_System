@@ -1,34 +1,34 @@
 package com.example.studentapp.service;
 
-// Thêm các import cần thiết
 import com.example.studentapp.model.ApiResponse;
 import com.example.studentapp.model.ExamSession;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.util.Map;
 
-public class ApiService {
+public class ApiServiceTuan {
 
     // BASE_URL trỏ đến Mockoon (hoặc backend thật)
-    // Giả sử Mockoon đang chạy ở cổng 3001
-    // DÒNG ĐÚNG:
-    private static final String BASE_URL = "http://localhost:3000";
+    // Giả sử Mockoon đang chạy ở cổng 3000 (theo code cũ của bạn là 3000)
+    private static final String BASE_URL = "http://localhost:8006/api";
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    public ApiService() {
+    // SỬA LẠI TÊN CONSTRUCTOR CHO ĐÚNG VỚI TÊN CLASS
+    public ApiServiceTuan() {
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
     }
@@ -47,8 +47,7 @@ public class ApiService {
 
         String apiUri = BASE_URL + "/exams?date=" + formatterDate; // GET /exams
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
-        TypeReference<ApiResponse<ExamSession>> typeRef = new TypeReference<>() {
-        };
+        TypeReference<ApiResponse<ExamSession>> typeRef = new TypeReference<>() {};
         return sendRequestAndParseResponse(request, typeRef);
     }
 
@@ -64,8 +63,7 @@ public class ApiService {
         String apiUri = BASE_URL + "/exams?date=" + formatterDate + "&room=" + encodedRoomName;
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
-        TypeReference<ApiResponse<ExamSession>> typeRef = new TypeReference<>() {
-        };
+        TypeReference<ApiResponse<ExamSession>> typeRef = new TypeReference<>() {};
         return sendRequestAndParseResponse(request, typeRef);
     }
 
@@ -93,8 +91,7 @@ public class ApiService {
                 .header("Accept", "application/json")
                 .build();
 
-        TypeReference<ApiResponse<ExamSession>> typeRef = new TypeReference<>() {
-        };
+        TypeReference<ApiResponse<ExamSession>> typeRef = new TypeReference<>() {};
         return sendRequestAndParseResponse(request, typeRef);
     }
 
@@ -115,7 +112,8 @@ public class ApiService {
             return CompletableFuture.failedFuture(e);
         }
 
-        String apiUri = BASE_URL + "/ca-thi/" + maCaThi; // PUT /ca-thi/CT101
+        // Lưu ý: Endpoint này phải khớp với backend (/ca-thi hay /exams ?)
+        String apiUri = BASE_URL + "/ca-thi/" + maCaThi; 
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
@@ -129,8 +127,6 @@ public class ApiService {
                     if (response.statusCode() < 200 || response.statusCode() >= 300) {
                         throw new RuntimeException("Lỗi API: " + response.statusCode() + " - " + response.body());
                     }
-                })
-                .thenRun(() -> {
                 });
     }
 
@@ -145,7 +141,7 @@ public class ApiService {
             return CompletableFuture.failedFuture(e);
         }
 
-        String apiUri = BASE_URL + "/exams/" + session.getMaCaThi(); // PUT /exams/T101
+        String apiUri = BASE_URL + "/exams/" + session.getMaCaThi();
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
@@ -158,8 +154,6 @@ public class ApiService {
                     if (response.statusCode() < 200 || response.statusCode() >= 300) {
                         throw new RuntimeException("Lỗi API Update: " + response.statusCode());
                     }
-                })
-                .thenRun(() -> {
                 });
     }
 
@@ -171,7 +165,7 @@ public class ApiService {
      * Xóa một ca thi. (DELETE)
      */
     public CompletableFuture<Void> deleteExamSession(String maCaThi) {
-        String apiUri = BASE_URL + "/exams/" + maCaThi; // DELETE /exams/T101
+        String apiUri = BASE_URL + "/exams/" + maCaThi;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
@@ -183,8 +177,6 @@ public class ApiService {
                     if (response.statusCode() < 200 || response.statusCode() >= 300) {
                         throw new RuntimeException("Lỗi API Delete: " + response.statusCode());
                     }
-                })
-                .thenRun(() -> {
                 });
     }
 
@@ -205,6 +197,31 @@ public class ApiService {
                     } catch (Exception e) {
                         System.err.println("JSON bị lỗi: " + jsonBody);
                         throw new RuntimeException("Lỗi phân tích JSON", e);
+                    }
+                });
+    }
+    public CompletableFuture<Void> uploadFile(String maCaThi, File file) {
+        String apiUri = BASE_URL + "/upload/" + maCaThi; // Endpoint ví dụ: /upload/CT001
+
+        HttpRequest.BodyPublisher bodyPublisher;
+        try {
+            // Gửi file dưới dạng binary
+            bodyPublisher = HttpRequest.BodyPublishers.ofFile(file.toPath());
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUri))
+                .POST(bodyPublisher)
+                .header("Content-Type", "application/octet-stream") // Hoặc "multipart/form-data" nếu dùng thư viện hỗ trợ
+                .header("X-File-Name", file.getName()) // Gửi kèm tên file ở header
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                        throw new RuntimeException("Lỗi Upload API: " + response.statusCode());
                     }
                 });
     }

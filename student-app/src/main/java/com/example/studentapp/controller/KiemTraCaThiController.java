@@ -14,7 +14,7 @@ import javafx.event.ActionEvent;
 
 import com.example.studentapp.model.ApiResponse;
 import com.example.studentapp.model.ExamSession;
-import com.example.studentapp.service.ApiService;
+import com.example.studentapp.service.ApiServiceTuan;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -60,12 +60,12 @@ public class KiemTraCaThiController implements Initializable {
     @FXML private TableColumn<ExamSession, Void> colUpload;
     // ---------------------------------------
 
-    private ApiService apiService;
+    private ApiServiceTuan apiService;
     private ObservableList<ExamSession> examSessionList;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        apiService = new ApiService();
+        apiService = new ApiServiceTuan();
         examSessionList = FXCollections.observableArrayList();
         tableView.setEditable(true); 
         

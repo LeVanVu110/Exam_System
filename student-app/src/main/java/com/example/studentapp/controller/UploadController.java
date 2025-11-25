@@ -1,7 +1,7 @@
 package com.example.studentapp.controller;
 
 import com.example.studentapp.model.ExamSession;
-import com.example.studentapp.service.ApiService; // Sử dụng API Service mới
+import com.example.studentapp.service.ApiServiceTuan; // Sử dụng API Service mới
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -25,12 +25,12 @@ public class UploadController {
     @FXML private Button btnChooseFile; // Cần thêm fx:id vào FXML: <Button fx:id="btnChooseFile" onAction="#chooseFile" text="Chọn file" />
     @FXML private Button btnUpload;     // Cần thêm fx:id vào FXML: <Button fx:id="btnUpload" onAction="#uploadFile" text="Nộp bài" />
 
-    private ApiService apiService;
+    private ApiServiceTuan apiService;
     private ExamSession session; // Biến lưu Ca Thi được truyền từ màn hình chính
     private File selectedFile;
 
     public UploadController() {
-        this.apiService = new ApiService();
+        this.apiService = new ApiServiceTuan();
     }
     
     // --- THÊM HÀM NHẬN DỮ LIỆU CA THI ---
