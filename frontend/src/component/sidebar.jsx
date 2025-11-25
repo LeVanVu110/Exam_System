@@ -9,6 +9,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  LogIn,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -19,7 +21,8 @@ const menuItems = [
   { icon: FileText, label: "Tài liệu/Giáo án", path: "/documents" },
   { icon: Calendar, label: "Lịch dạy/Lịch thi", path: "/exam-schedule" },
   { icon: HelpCircle, label: "Hỏi đáp cộng đồng", path: "/qa" },
-  { icon: HelpCircle, label: "Đăng nhập", path: "/login" },
+  { icon: LogIn, label: "Đăng nhập", path: "/login" },
+  { icon: ShieldCheck, label: "Quản lý quyền", path: "/permission" },
 ];
 
 export default function Sidebar() {
