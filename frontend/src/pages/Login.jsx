@@ -1,19 +1,21 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Mail, Lock, Loader2 } from "lucide-react"
+import { useState } from "react";
+import { Mail, Lock, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setErrorMessage("")
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage("");
 
     try {
       // 1. GỌI API ĐĂNG NHẬP
@@ -21,81 +23,97 @@ export default function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.message || "Đăng nhập thất bại")
+        setErrorMessage(data.message || "Đăng nhập thất bại");
       } else {
         // Lưu Token
-        if (rememberMe) localStorage.setItem("token", data.token)
-        sessionStorage.setItem("token", data.token)
+        // if (rememberMe) localStorage.setItem("token", data.token);
+        // sessionStorage.setItem("token", data.token);
+        localStorage.setItem("token", data.token);
 
         // ============================================================
         // 2. GỌI API LẤY QUYỀN (Logic mới thêm vào)
         // ============================================================
         try {
-          const permRes = await fetch("http://localhost:8000/api/my-permissions", {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${data.token}`, // Gửi token vừa nhận được để xác thực
-              "Content-Type": "application/json"
+          const permRes = await fetch(
+            "http://localhost:8000/api/my-permissions",
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${data.token}`, // Gửi token vừa nhận được để xác thực
+                "Content-Type": "application/json",
+              },
             }
-          })
+          );
 
           if (permRes.ok) {
-            const myPermissions = await permRes.json()
+            const myPermissions = await permRes.json();
             // Lưu bảng quyền vào localStorage để Component ProtectedRoute sử dụng
-            localStorage.setItem("user_permissions", JSON.stringify(myPermissions))
-            console.log("✅ Đã lưu quyền user:", myPermissions)
+            localStorage.setItem(
+              "user_permissions",
+              JSON.stringify(myPermissions)
+            );
+            console.log("✅ Đã lưu quyền user:", myPermissions);
           } else {
-            console.warn("⚠️ Không thể lấy danh sách quyền từ server")
+            console.warn("⚠️ Không thể lấy danh sách quyền từ server");
           }
         } catch (permError) {
-          console.error("❌ Lỗi khi gọi API quyền:", permError)
+          console.error("❌ Lỗi khi gọi API quyền:", permError);
         }
         // ============================================================
 
         // 3. CHUYỂN HƯỚNG (Giữ nguyên logic cũ của bạn)
+        // 3. CHUYỂN HƯỚNG
         switch (data.role) {
           case "Admin":
-            window.location.href = "/dashboard"
-            break
+            navigate("/dashboard", {
+              state: { message: "Đăng nhập thành công với quyền Admin!" },
+            });
+            break;
           case "Academic Affairs Office":
-            window.location.href = "PDT/ExamManagement"
-            break
+            navigate("/PDT/ExamManagement", {
+              state: { message: "Chào Phòng Đào Tạo!" },
+            });
+            break;
           case "Teacher":
-            window.location.href = "/documents"
-            break
+            navigate("/documents", {
+              state: { message: "Đăng nhập thành công. Xin chào Thầy/Cô!" },
+            });
+            break;
           default:
-            window.location.href = "/a" // fallback
+            navigate("/a", { state: { message: "Chào mừng bạn!" } });
         }
       }
     } catch (err) {
-      console.error(err)
-      setErrorMessage("Có lỗi xảy ra. Vui lòng thử lại.")
+      console.error(err);
+      setErrorMessage("Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md mx-auto">
         {/* Card Container */}
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-          
           {/* Card Header */}
           <div className="p-8 pb-6 text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Đăng Nhập</h1>
-            <p className="text-gray-500">Nhập thông tin tài khoản để truy cập hệ thống</p>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              Đăng Nhập
+            </h1>
+            <p className="text-gray-500">
+              Nhập thông tin tài khoản để truy cập hệ thống
+            </p>
           </div>
 
           {/* Card Content */}
           <div className="p-8 pt-0">
             <form onSubmit={handleSubmit} className="space-y-6">
-              
               {/* Error Message */}
               {errorMessage && (
                 <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center">
@@ -106,7 +124,10 @@ export default function LoginForm() {
               <div className="space-y-4">
                 {/* Email Input */}
                 <div className="space-y-2">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Email
                   </label>
                   <div className="relative">
@@ -127,7 +148,10 @@ export default function LoginForm() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     {/* ĐÃ SỬA: class -> className */}
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Mật khẩu
                     </label>
                   </div>
@@ -156,11 +180,17 @@ export default function LoginForm() {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer select-none">
+                  <label
+                    htmlFor="remember"
+                    className="text-sm text-gray-600 cursor-pointer select-none"
+                  >
                     Ghi nhớ đăng nhập
                   </label>
                 </div>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                <a
+                  href="#"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                >
                   Quên mật khẩu?
                 </a>
               </div>
@@ -184,8 +214,10 @@ export default function LoginForm() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-gray-500">© 2025 EduPortal. All rights reserved.</p>
+        <p className="mt-8 text-center text-sm text-gray-500">
+          © 2025 EduPortal. All rights reserved.
+        </p>
       </div>
     </div>
-  )
+  );
 }

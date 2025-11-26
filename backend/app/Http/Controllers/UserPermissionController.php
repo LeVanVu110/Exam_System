@@ -1,29 +1,40 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class UserPermissionController extends Controller
 {
     public function getMyPermissions(Request $request)
     {
-        $user = $request->user();
-        // Load quan hệ roles và permissions
-        $user->load(['roles.permissions']);
+        // Lấy user từ token
+        $user = $request->user(); // hoặc auth()->user()
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        // Load quan hệ roles.permissions
+        $user->load('roles.permissions');
 
         $permissions = [];
 
-        // 1. Lấy quyền từ Vai trò (Roles)
+        // Duyệt qua các Roles
         foreach ($user->roles as $role) {
+            // Duyệt qua các Permissions của từng Role
             foreach ($role->permissions as $perm) {
-                // permission_name là mã quyền (VD: DASHBOARD, EXAM_MGT)
                 $code = $perm->permission_name;
 
                 if (!isset($permissions[$code])) {
                     $permissions[$code] = [
-                        'is_view' => 0, 'is_add' => 0, 'is_edit' => 0, 'is_delete' => 0
+                        'is_view' => 0,
+                        'is_add' => 0,
+                        'is_edit' => 0,
+                        'is_delete' => 0
                     ];
                 }
 
@@ -39,6 +50,6 @@ class UserPermissionController extends Controller
         // 2. (Tùy chọn) Lấy quyền riêng của User nếu có bảng user_permissions
         // ... Logic tương tự nếu cần
 
-        return response()->json($permissions);
+        return response()->json($permissions); // Trả về JSON đúng cấu trúc Frontend mong muốn
     }
 }

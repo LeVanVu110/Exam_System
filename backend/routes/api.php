@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\{
     ExamSessionController,
     AuthController,
     // [QUAN TRỌNG] Import Controller mới và đặt tên khác (Alias) để không trùng
-    UserPermissionController as ApiUserPermissionController
 };
 
 // ==============================================================================
@@ -23,7 +22,7 @@ use App\Http\Controllers\{
     PermissionController,
     UserRoleController,
     RolePermissionController,
-    UserPermissionController, // Controller cũ (không có Alias) dùng cho trang quản trị
+    UserPermissionController , // Controller cũ (không có Alias) dùng cho trang quản trị
     CategoryUserTypeController,
     AuthLoginController,
     ExamScheduleController
@@ -58,7 +57,7 @@ Route::prefix('exam-sessions')->group(function () {
 // --- 3. CUSTOM ROUTES CHO HỆ THỐNG PHÂN QUYỀN (REACT APP) ---
 
 // [QUAN TRỌNG] Route này dùng Controller API (có Alias)
-Route::get('/my-permissions', [ApiUserPermissionController::class, 'getMyPermissions']);
+
 
 Route::get('/screens', [PermissionController::class, 'getScreens']);
 Route::post('/screens', [PermissionController::class, 'storeScreen']);
@@ -72,7 +71,6 @@ Route::apiResources([
     'permissions' => PermissionController::class,
     'users-roles' => UserRoleController::class,
     'roles-permissions' => RolePermissionController::class,
-    'users-permissions' => UserPermissionController::class, // Dùng Controller thường
     'category-user-types' => CategoryUserTypeController::class,
     'exam-schedule' => ExamSessionController::class,
 ]);
@@ -91,3 +89,14 @@ Route::prefix('exam-schedules')->group(function () {
 
 // Đăng nhập
 Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // API Lấy quyền
+    Route::get('/my-permissions', [UserPermissionController::class, 'getMyPermissions']);
+
+    // API Đăng xuất
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Thêm các API khác cần xác thực vào đây...
+});

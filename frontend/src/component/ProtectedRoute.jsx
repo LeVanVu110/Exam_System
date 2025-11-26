@@ -8,7 +8,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 const ProtectedRoute = ({ screenCode }) => {
   // 1. Lấy danh sách quyền từ localStorage (đã lưu lúc Login)
   const permissionsStr = localStorage.getItem('user_permissions');
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
   // Nếu chưa đăng nhập (không có token hoặc không có quyền), đá về Login
   if (!token || !permissionsStr) {
