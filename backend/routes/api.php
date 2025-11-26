@@ -51,6 +51,7 @@ Route::get('/screens', [PermissionController::class, 'getScreens']);            
 Route::post('/screens', [PermissionController::class, 'storeScreen']);          // Tạo màn hình mới
 Route::get('/permissions/{id}/screens', [PermissionController::class, 'getMatrix']); // Lấy matrix quyền
 Route::post('/permissions/{id}/update-matrix', [PermissionController::class, 'updateMatrix']); // Lưu matrix
+Route::get('/my-permissions', [PermissionController::class, 'myPermissions']); // Lấy quyền của user hiện tại
 
 // --- 4. CRUD RESOURCES (Hệ thống phân quyền & Lịch thi) ---
 Route::apiResources([

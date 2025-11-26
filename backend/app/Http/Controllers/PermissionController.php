@@ -124,4 +124,63 @@ class PermissionController extends Controller
             return response()->json(['error' => 'Update failed: ' . $e->getMessage()], 500);
         }
     }
+    /**
+     * API: Lấy danh sách quyền của User đang đăng nhập
+     * Method: GET
+     * Url: /api/my-permissions
+     */
+    public function myPermissions(Request $request)
+    {
+        // 1. Lấy user hiện tại từ Token
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Chưa đăng nhập'], 401);
+        }
+
+        // 2. Tìm Role của User trong bảng users_roles
+        // Giả sử bảng users_roles có cột: user_id, role_id
+        $userRole = DB::table('users_roles')->where('user_id', $user->user_id)->first();
+
+        if (!$userRole) {
+            // Nếu user này chưa được gán vai trò nào -> Trả về rỗng
+            return response()->json([]);
+        }
+
+        // 3. Lấy tất cả quyền màn hình tương ứng với Role ID đó
+        // (Join bảng permissions_screens với bảng screens để lấy screen_code)
+        $permissions = DB::table('permissions_screens')
+            ->join('screens', 'permissions_screens.screen_id', '=', 'screens.screen_id')
+            ->where('permissions_screens.permission_id', $userRole->role_id)
+            ->select(
+                'screens.screen_code',
+                'permissions_screens.is_view',
+                'permissions_screens.is_add',
+                'permissions_screens.is_edit',
+                'permissions_screens.is_delete',
+                'permissions_screens.is_upload',
+                'permissions_screens.is_download'
+            )
+            ->get();
+
+        // 4. Format lại dữ liệu để Frontend dễ dùng (Dạng Key-Value)
+        // Ví dụ: { "USER_MGT": { is_view: 1, is_add: 0... }, "EXAM_MGT": ... }
+        $formatted = [];
+        foreach ($permissions as $p) {
+            if ($p->screen_code) {
+                $formatted[$p->screen_code] = [
+                    'is_view' => $p->is_view,
+                    'is_add' => $p->is_add,
+                    'is_edit' => $p->is_edit,
+                    'is_delete' => $p->is_delete,
+                    'is_upload' => $p->is_upload,
+                    'is_download' => $p->is_download,
+                ];
+            }
+        }
+
+        return response()->json($formatted);
+    }
+
+// ... Dấu đóng class ở đây
 }
