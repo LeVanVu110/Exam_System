@@ -223,14 +223,13 @@ public class ApiService {
         return CompletableFuture.completedFuture(new ApiResponse<>("OK", "OK", session));
     }
 
-    // --- HÀM HỖ TRỢ PARSE JSON BẰNG GSON (MỚI) ---
-
+    // --- HÀM HỖ TRỢ PARSE JSON BẰNG GSON (ĐÃ SỬA MAPPING CHO KHỚP JSON) ---
     private CompletableFuture<ApiResponse<List<ExamSession>>> sendRequestAndParseList(HttpRequest request) {
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenApply(jsonBody -> {
                     List<ExamSession> list = new ArrayList<>();
-                    Gson gson = new Gson(); // Khởi tạo Gson tại chỗ
+                    Gson gson = new Gson();
                     try {
                         JsonElement element = gson.fromJson(jsonBody, JsonElement.class);
                         JsonArray jsonArray = null;
@@ -246,21 +245,57 @@ public class ApiService {
                                 JsonObject obj = item.getAsJsonObject();
                                 ExamSession s = new ExamSession();
 
-                                // Map dữ liệu thủ công để đảm bảo an toàn
-                                s.setMaCaThi(getJsonString(obj, "id"));
-                                s.setMaHP(getJsonString(obj, "subject_code"));
+                                // === SỬA PHẦN NÀY ĐỂ KHỚP VỚI JSON BACKEND ===
+
+                                // 1. ID Ca thi
+                                s.setMaCaThi(getJsonString(obj, "exam_session_id")); // JSON là exam_session_id
+
+                                // 2. Mã Học Phần (JSON thiếu subject_code, lấy tạm class_code hoặc exam_code)
+                                String maHP = getJsonString(obj, "class_code");
+                                if (maHP.isEmpty())
+                                    maHP = getJsonString(obj, "exam_code");
+                                s.setMaHP(maHP);
+
+                                // 3. Tên Môn
                                 s.setTenHP(getJsonString(obj, "subject_name"));
                                 s.setTenMonHoc(getJsonString(obj, "subject_name"));
+
+                                // 4. Lớp & Phòng
                                 s.setLopSV(getJsonString(obj, "class_code"));
-                                s.setPhongThi(getJsonString(obj, "room"));
+                                s.setPhongThi(getJsonString(obj, "exam_room")); // JSON là exam_room
+
+                                // 5. Ngày thi
                                 s.setNgayThi(getJsonString(obj, "exam_date"));
-                                s.setGioThi(getJsonString(obj, "shift"));
-                                s.setSoSV(getJsonString(obj, "student_count"));
-                                s.setHinhThucThi(getJsonString(obj, "exam_type"));
-                                s.setCanBoCoiThi(getJsonString(obj, "proctor"));
+
+                                // 6. Giờ thi (Ghép Start - End)
+                                String start = getJsonString(obj, "exam_start_time");
+                                String end = getJsonString(obj, "exam_end_time");
+                                // Cắt chuỗi HH:mm:ss thành HH:mm
+                                if (start.length() > 5)
+                                    start = start.substring(0, 5);
+                                if (end.length() > 5)
+                                    end = end.substring(0, 5);
+                                s.setGioThi(start + " - " + end);
+
+                                // 7. Số lượng & Hình thức
+                                s.setSoSV(getJsonString(obj, "total_students"));
+
+                                // Nếu không có exam_method, lấy tạm status
+                                String hinhThuc = getJsonString(obj, "exam_method");
+                                if (hinhThuc.isEmpty())
+                                    hinhThuc = "Tự luận";
+                                s.setHinhThucThi(hinhThuc);
+
+                                // 8. Cán bộ coi thi (Ghép tên GV1 + GV2)
+                                String gv1 = getJsonString(obj, "teacher1_name");
+                                String gv2 = getJsonString(obj, "teacher2_name");
+                                String cbct = gv1 + (gv2.isEmpty() ? "" : ", " + gv2);
+                                s.setCanBoCoiThi(cbct);
+
+                                // 9. Trạng thái & Thống kê
                                 s.setTrangThai(getJsonString(obj, "status"));
-                                s.setSoBaiNop(getJsonString(obj, "submitted_count"));
-                                s.setSoMayTrong(getJsonString(obj, "available_machines"));
+                                s.setSoBaiNop("0"); // Mặc định
+                                s.setSoMayTrong("0"); // Mặc định
 
                                 list.add(s);
                             }

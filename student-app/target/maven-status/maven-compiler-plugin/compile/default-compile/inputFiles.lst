@@ -6,14 +6,17 @@ D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\model\CaThi.ja
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\model\LichThi.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\controller\MainController.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\controller\LichThiController.java
+D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\controller\DashboardController.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\model\RoomModel.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\service\FolderScanService.java
+D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\controller\ThongKeController.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\util\HttpClientUtil.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\controller\LichThiPDTController.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\Main.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\model\RoomResponse.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\service\ApiService.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\model\ExamSession.java
+D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\model\ThongKeModel.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\controller\ExamRoomDetailController.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\controller\LoginController.java
 D:\Web2\tuan_one\student-app\src\main\java\com\example\studentapp\view\ScanResultDialog.java

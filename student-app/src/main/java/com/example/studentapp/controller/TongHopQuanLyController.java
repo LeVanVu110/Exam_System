@@ -32,8 +32,16 @@ public class TongHopQuanLyController implements Initializable {
     private TableColumn<CaThi, String> tenHPColumn;
     @FXML
     private TableColumn<CaThi, String> ngayThiColumn;
+    @FXML
+    private TableColumn<CaThi, String> caThiColumn; // Mới
+    @FXML
+    private TableColumn<CaThi, String> phongThiColumn; // Mới
+    @FXML
+    private TableColumn<CaThi, String> cbctColumn; // Mới
+    @FXML
+    private TableColumn<CaThi, String> trangThaiColumn; // Mới
 
-    // --- Form chi tiết (Chỉ xem) ---
+    // --- Form chi tiết ---
     @FXML
     private Label detailTitleLabel;
     @FXML
@@ -46,64 +54,59 @@ public class TongHopQuanLyController implements Initializable {
     private TextField caThiField;
     @FXML
     private TextField phongThiField;
+    @FXML
+    private TextField cbctField; // Mới
+    @FXML
+    private TextField soLuongField; // Mới
+    @FXML
+    private TextField trangThaiField; // Mới
 
     private final ObservableList<CaThi> caThiList = FXCollections.observableArrayList();
-
-    // ĐƯỜNG DẪN API (Trỏ về server Laravel của bạn)
-    private static final String API_URL = "http://127.0.0.1:8000/api/exam-sessions";
+    private static final String API_URL = "http://127.0.0.1:8006/api/exam-sessions";
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // 1. Cấu hình cột cho TableView
-        maHPColumn.setCellValueFactory(cellData -> cellData.getValue().maHPProperty());
-        tenHPColumn.setCellValueFactory(cellData -> cellData.getValue().tenHPProperty());
-        ngayThiColumn.setCellValueFactory(cellData -> cellData.getValue().ngayThiProperty());
+        // 1. Cấu hình cột
+        maHPColumn.setCellValueFactory(cell -> cell.getValue().maHPProperty());
+        tenHPColumn.setCellValueFactory(cell -> cell.getValue().tenHPProperty());
+        ngayThiColumn.setCellValueFactory(cell -> cell.getValue().ngayThiProperty());
+        caThiColumn.setCellValueFactory(cell -> cell.getValue().caThiProperty());
+        phongThiColumn.setCellValueFactory(cell -> cell.getValue().phongThiProperty());
+        cbctColumn.setCellValueFactory(cell -> cell.getValue().cbctProperty());
+        trangThaiColumn.setCellValueFactory(cell -> cell.getValue().trangThaiProperty());
 
-        // 2. Gán danh sách vào bảng
         caThiTable.setItems(caThiList);
 
-        // 3. Sự kiện: Khi chọn 1 dòng -> Hiển thị chi tiết
+        // 2. Sự kiện chọn dòng
         caThiTable.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> showCaThiDetails(newValue));
 
-        // 4. Gọi API lấy dữ liệu từ Backend
+        // 3. Gọi API
         loadDataFromApi();
     }
 
     private void loadDataFromApi() {
-        // Tạo HttpClient
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_URL))
-                .GET()
-                .build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_URL)).GET().build();
 
-        // Gửi request bất đồng bộ (Async)
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenAccept(this::processApiResponse)
                 .exceptionally(e -> {
-                    Platform.runLater(
-                            () -> showError("Lỗi kết nối", "Không thể kết nối đến server Laravel: " + e.getMessage()));
+                    Platform.runLater(() -> showError("Lỗi kết nối", e.getMessage()));
                     return null;
                 });
     }
 
     private void processApiResponse(String jsonResponse) {
-        // [DEBUG] In ra console để xem cấu trúc JSON thực tế trả về
-        System.out.println("API Response: " + jsonResponse);
-
         Gson gson = new Gson();
         try {
             JsonElement element = gson.fromJson(jsonResponse, JsonElement.class);
             JsonArray jsonArray = null;
 
-            // Xử lý các định dạng trả về phổ biến của Laravel
             if (element.isJsonObject() && element.getAsJsonObject().has("data")) {
-                // Trường hợp trả về: { "data": [...] } (Laravel Resource Collection)
                 jsonArray = element.getAsJsonObject().getAsJsonArray("data");
             } else if (element.isJsonArray()) {
-                // Trường hợp trả về: [...] (Mảng trực tiếp)
                 jsonArray = element.getAsJsonArray();
             }
 
@@ -115,75 +118,77 @@ public class TongHopQuanLyController implements Initializable {
                         try {
                             JsonObject obj = item.getAsJsonObject();
 
-                            // --- [QUAN TRỌNG] MAPPING KEY JSON ---
-                            // Hãy sửa các chuỗi bên phải cho khớp với JSON in ra ở Console
-                            // Ví dụ: Database bảng courses có cột 'course_code' thì sửa thành "course_code"
-
-                            String maHP = getJsonString(obj, "subject_code");
-                            // Nếu null thử: "course_code" hoặc "ma_hoc_phan"
-
+                            // === MAPPING DỮ LIỆU MỚI ===
+                            String maHP = getJsonString(obj, "class_code"); // Lấy mã lớp
                             String tenHP = getJsonString(obj, "subject_name");
-                            // Nếu null thử: "course_name" hoặc "ten_hoc_phan"
+                            String ngayThi = formatDate(getJsonString(obj, "exam_date"));
 
-                            String ngayThiRaw = getJsonString(obj, "exam_date");
+                            // Ghép giờ
+                            String start = formatTime(getJsonString(obj, "exam_start_time"));
+                            String end = formatTime(getJsonString(obj, "exam_end_time"));
+                            String ca = start + " - " + end;
 
-                            String ca = getJsonString(obj, "shift");
+                            String phong = getJsonString(obj, "exam_room");
 
-                            String phong = getJsonString(obj, "room");
+                            // Ghép tên 2 giảng viên
+                            String gv1 = getJsonString(obj, "teacher1_name");
+                            String gv2 = getJsonString(obj, "teacher2_name");
+                            String cbct = (gv1.isEmpty() ? "" : gv1) + (gv2.isEmpty() ? "" : ", " + gv2);
 
-                            // Thêm vào danh sách hiển thị
-                            caThiList.add(new CaThi(maHP, tenHP, formatDate(ngayThiRaw), ca, phong));
+                            String soLuong = getJsonString(obj, "total_students");
+                            String trangThai = getJsonString(obj, "status");
+
+                            caThiList.add(new CaThi(maHP, tenHP, ngayThi, ca, phong, cbct, soLuong, trangThai));
+
                         } catch (Exception innerEx) {
-                            System.err.println("Lỗi parse dòng dữ liệu: " + innerEx.getMessage());
+                            System.err.println("Lỗi dòng: " + innerEx.getMessage());
                         }
                     }
                 });
-            } else {
-                Platform.runLater(() -> showError("Lỗi dữ liệu", "API không trả về danh sách hợp lệ."));
             }
-
         } catch (Exception e) {
             e.printStackTrace();
-            Platform.runLater(() -> showError("Lỗi xử lý", "Không thể đọc dữ liệu JSON."));
         }
     }
 
-    // Hàm lấy chuỗi từ JSON an toàn (tránh null)
     private String getJsonString(JsonObject obj, String key) {
-        if (obj.has(key) && !obj.get(key).isJsonNull()) {
+        if (obj.has(key) && !obj.get(key).isJsonNull())
             return obj.get(key).getAsString();
-        }
-        return ""; // Trả về rỗng nếu không tìm thấy key
+        return "";
     }
 
-    // Format ngày yyyy-MM-dd sang dd/MM/yyyy
     private String formatDate(String rawDate) {
         try {
-            if (rawDate == null || rawDate.isEmpty())
-                return "";
-            LocalDate date = LocalDate.parse(rawDate); // Mặc định parse yyyy-MM-dd
-            return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            return LocalDate.parse(rawDate).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         } catch (Exception e) {
-            return rawDate; // Nếu lỗi format (do chuỗi lạ) thì giữ nguyên
+            return rawDate;
         }
     }
 
-    // Hiển thị chi tiết khi click vào bảng
+    private String formatTime(String rawTime) {
+        return (rawTime != null && rawTime.length() >= 5) ? rawTime.substring(0, 5) : rawTime;
+    }
+
     private void showCaThiDetails(CaThi caThi) {
         if (caThi != null) {
-            detailTitleLabel.setText("Chi tiết: " + caThi.getMaHP());
+            detailTitleLabel.setText("Chi tiết: " + caThi.getTenHP());
             maHPField.setText(caThi.getMaHP());
             tenHPField.setText(caThi.getTenHP());
             ngayThiField.setText(caThi.getNgayThi());
             caThiField.setText(caThi.getCaThi());
             phongThiField.setText(caThi.getPhongThi());
+            cbctField.setText(caThi.getCbct());
+            soLuongField.setText(caThi.getSoLuong());
+            trangThaiField.setText(caThi.getTrangThai());
         } else {
-            detailTitleLabel.setText("Thông tin chi tiết");
             maHPField.clear();
             tenHPField.clear();
             ngayThiField.clear();
             caThiField.clear();
             phongThiField.clear();
+            cbctField.clear();
+            soLuongField.clear();
+            trangThaiField.clear();
         }
     }
 

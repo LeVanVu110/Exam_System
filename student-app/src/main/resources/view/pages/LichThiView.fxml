@@ -8,17 +8,17 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="650.0" prefWidth="1200.0"
+<BorderPane prefHeight="650.0" prefWidth="1200.0" stylesheets="@../../css/styles.css"
    xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-   fx:controller="com.example.studentapp.controller.LichThiController"
-   stylesheets="@styles.css">
+   fx:controller="com.example.studentapp.controller.LichThiController">
 
    <top>
       <VBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
          <children>
-            <Label text="LỊCH THI - PHÒNG ĐÀO TẠO"
-               style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;">
+            <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"
+               text="LỊCH THI - PHÒNG ĐÀO TẠO (DỮ LIỆU TRỰC TUYẾN)">
                <VBox.margin>
                   <Insets top="20.0" />
                </VBox.margin>
@@ -27,9 +27,9 @@
             <HBox alignment="CENTER" spacing="10.0"
                style="-fx-background-color: #f8f9fa; -fx-padding: 15;">
                <children>
-                  <Label text="Tìm kiếm:" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
-                  <TextField fx:id="searchField" promptText="Nhập Mã HP, Tên HP, Lớp..."
-                     prefWidth="400.0" styleClass="text-field" />
+                  <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Tìm kiếm:" />
+                  <TextField fx:id="searchField" prefWidth="400.0"
+                     promptText="Nhập Mã HP, Tên HP, Lớp..." styleClass="text-field" />
                </children>
             </HBox>
          </children>
