@@ -18,7 +18,7 @@ import ExamManagement from "./pages/PDT/ExamManagement";
 import  LoginForm  from "./pages/Login";
 import  Schedule  from "./pages/Schedule/Schedule";
 // phân quyền
-import PermissionPage from "@/pages/Admin/permission-manager";
+import PermissionPage from "@/pages/Admin/permission";
 
 function App() {
   return (
