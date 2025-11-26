@@ -5,102 +5,123 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Permission;
 use App\Models\Screen;
-use App\Models\PermissionScreen;
 use Illuminate\Support\Facades\DB;
 
 class PermissionController extends Controller
 {
     /**
-     * Lấy danh sách Permissions và Screens để hiển thị lên giao diện
+     * Lấy danh sách nhóm quyền (Permissions)
+     * GET /api/permissions
      */
     public function index()
     {
-        $permissions = Permission::where('permission_is_active', 1)->get();
-        $screens = Screen::all();
-
-        return response()->json([
-            'permissions' => $permissions,
-            'screens' => $screens
-        ]);
+        // Trả về danh sách active
+        return response()->json(Permission::where('permission_is_active', 1)->get());
     }
 
     /**
-     * Lấy ma trận phân quyền hiện tại của một Permission cụ thể
+     * Tạo nhóm quyền mới (Standard CRUD)
+     * POST /api/permissions
      */
-    public function getMatrix($permissionId)
-    {
-        // Lấy tất cả các screen đã được gán cho permission này
-        $permissionScreens = PermissionScreen::where('permission_id', $permissionId)
-            ->get()
-            ->keyBy('screen_id'); // Key by screen_id để frontend dễ mapping
-
-        return response()->json($permissionScreens);
-    }
-
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:permissions,name',
-            'description' => 'nullable|string',
+            'permission_name' => 'required|string|max:55'
         ]);
 
-        $permission = Permission::create([
-            'name' => $request->name,
-            'description' => $request->description,
+        $perm = Permission::create([
+            'permission_name' => $request->permission_name,
+            'permission_description' => $request->permission_description,
+            'permission_is_active' => 1
         ]);
 
-        return response()->json($permission, 201);
+        return response()->json($perm, 201);
     }
 
-    public function destroy($id)
+    // --- CÁC HÀM CUSTOM CHO MÀN HÌNH VÀ MATRIX ---
+
+    /**
+     * Lấy danh sách màn hình
+     * GET /api/screens
+     */
+    public function getScreens()
     {
-        Permission::destroy($id);
-        return response()->json(['message' => 'Đã xóa nhóm quyền']);
+        return response()->json(Screen::all());
     }
 
     /**
-     * Cập nhật phân quyền (Hàm quan trọng nhất)
+     * Tạo màn hình mới
+     * POST /api/screens
      */
-    public function updateMatrix(Request $request, $permissionId)
+    public function storeScreen(Request $request)
     {
-        // Validate dữ liệu gửi lên
-        // Data structure expected:
-        // [
-        //    { screen_id: 1, is_view: 1, is_add: 0 ... },
-        //    { screen_id: 2, is_view: 1, is_add: 1 ... }
-        // ]
-        $data = $request->input('matrix');
+        $request->validate([
+            'screen_name' => 'required|string|max:55',
+            'screen_code' => 'required|string|max:15'
+        ]);
+
+        $screen = Screen::create([
+            'screen_name' => $request->screen_name,
+            'screen_code' => $request->screen_code,
+        ]);
+
+        return response()->json($screen, 201);
+    }
+
+    /**
+     * Lấy ma trận quyền hiện tại của một nhóm quyền
+     * GET /api/permissions/{id}/screens
+     */
+    public function getMatrix($id)
+    {
+        // Lấy dữ liệu từ bảng trung gian permissions_screens
+        $matrix = DB::table('permissions_screens')
+                    ->where('permission_id', $id)
+                    ->get();
+
+        return response()->json($matrix);
+    }
+
+    /**
+     * Cập nhật ma trận quyền
+     * POST /api/permissions/{id}/update-matrix
+     */
+    public function updateMatrix(Request $request, $id)
+    {
+        $permissionsData = $request->input('permissions'); // Mảng dữ liệu từ React gửi lên
+
+        if (!$permissionsData || !is_array($permissionsData)) {
+            return response()->json(['error' => 'Invalid data format'], 400);
+        }
 
         DB::beginTransaction();
         try {
-            foreach ($data as $row) {
-                // Sử dụng updateOrInsert để xử lý cả trường hợp tạo mới và cập nhật
-                PermissionScreen::updateOrInsert(
+            foreach ($permissionsData as $row) {
+                // Sử dụng updateOrInsert để tự động Insert hoặc Update
+                DB::table('permissions_screens')->updateOrInsert(
                     [
-                        'permission_id' => $permissionId,
-                        'screen_id' => $row['screen_id']
+                        // Điều kiện tìm kiếm (Composite Key)
+                        'permission_id' => $id,
+                        'screen_id'     => $row['screen_id']
                     ],
                     [
-                        'is_view' => $row['is_view'] ?? 0,
-                        'is_edit' => $row['is_edit'] ?? 0,
-                        'is_add'  => $row['is_add']  ?? 0,
-                        'is_delete' => $row['is_delete'] ?? 0,
-                        'is_upload' => $row['is_upload'] ?? 0,
-                        'is_download' => $row['is_download'] ?? 0,
-                        'is_all'    => $row['is_all'] ?? 0,
-                        'updated_at' => now(),
-                        // Nếu là insert thì cần created_at, updateOrInsert không tự thêm created_at nếu update
-                        // Có thể cần xử lý thủ công hơn nếu muốn time chuẩn xác cho created_at
+                        // Các trường cần update
+                        'is_view'     => $row['is_view'],
+                        'is_add'      => $row['is_add'],
+                        'is_edit'     => $row['is_edit'],
+                        'is_delete'   => $row['is_delete'],
+                        'is_upload'   => $row['is_upload'],
+                        'is_download' => $row['is_download'],
+                        'is_all'      => $row['is_all'],
+                        'updated_at'  => now(),
                     ]
                 );
             }
-
             DB::commit();
-            return response()->json(['message' => 'Cập nhật phân quyền thành công!', 'status' => 'success']);
-
+            return response()->json(['message' => 'Matrix updated successfully']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Lỗi cập nhật: ' . $e->getMessage(), 'status' => 'error'], 500);
+            return response()->json(['error' => 'Update failed: ' . $e->getMessage()], 500);
         }
     }
 }

@@ -1,93 +1,136 @@
 import React, { useState, useEffect } from "react";
 import { 
-  Save, Check, Shield, Search, Layout, Loader2, Plus, X
+  Save, Check, Shield, Search, Layout, Loader2, Plus, X, Users
 } from "lucide-react";
 
-// --- 1. MOCK DATA (Dữ liệu mẫu ban đầu) ---
-const MOCK_SCREENS = [
-  { screen_id: 1, screen_name: "Quản lý Người dùng", screen_code: "USER_MGT" },
-  { screen_id: 2, screen_name: "Quản lý Sản phẩm", screen_code: "PROD_MGT" },
-  { screen_id: 3, screen_name: "Báo cáo Doanh thu", screen_code: "RPT_REV" },
-  { screen_id: 4, screen_name: "Cài đặt Hệ thống", screen_code: "SYS_SET" },
-  { screen_id: 5, screen_name: "Quản lý Đơn hàng", screen_code: "ORD_MGT" },
-];
+// ⚠️ QUAN TRỌNG: Đổi URL này nếu backend của bạn chạy ở port khác
+// Mặc định Laravel serve chạy ở port 8000
+const API_URL = "http://localhost:8000/api"; 
 
-const MOCK_PERMISSIONS = [
-  { permission_id: 1, permission_name: "Quản trị viên (Admin)", permission_description: "Toàn quyền hệ thống" },
-  { permission_id: 2, permission_name: "Nhân viên Bán hàng", permission_description: "Quản lý đơn hàng & sản phẩm" },
-  { permission_id: 3, permission_name: "Kế toán", permission_description: "Xem báo cáo & tài chính" },
-  { permission_id: 4, permission_name: "Kho", permission_description: "Quản lý nhập xuất tồn" },
-];
-
-// Hàm tạo quyền mặc định (tất cả false)
-const createDefaultMatrix = (screens) => {
-  const matrix = {};
-  screens.forEach(s => {
-    matrix[s.screen_id] = {
-      screen_id: s.screen_id,
-      is_view: false, is_add: false, is_edit: false, 
-      is_delete: false, is_upload: false, is_download: false, is_all: false
-    };
-  });
-  return matrix;
-};
-
-// --- 2. MAIN LOGIC COMPONENT ---
 export default function PermissionApp() {
-  const [selectedPermissionId, setSelectedPermissionId] = useState(MOCK_PERMISSIONS[0].permission_id);
+  // --- STATE QUẢN LÝ DỮ LIỆU ---
+  // Đổi permissions -> roles để đúng nghiệp vụ
+  const [roles, setRoles] = useState([]);
+  const [screens, setScreens] = useState([]);
+  const [selectedRoleId, setSelectedRoleId] = useState(null);
+  
   const [matrix, setMatrix] = useState({}); // Dữ liệu hiển thị trên bảng
+  
+  // --- STATE UI & LOADING ---
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [permissions, setPermissions] = useState(MOCK_PERMISSIONS);
-  const [screens, setScreens] = useState(MOCK_SCREENS);
-
-  const [showAddPermission, setShowAddPermission] = useState(false);
+  const [showAddRole, setShowAddRole] = useState(false);
   const [showAddScreen, setShowAddScreen] = useState(false);
 
-  // Form states
-  const [newPermissionName, setNewPermissionName] = useState("");
+  // --- STATE FORM ---
+  const [newRoleName, setNewRoleName] = useState("");
   const [newScreenName, setNewScreenName] = useState("");
   const [newScreenCode, setNewScreenCode] = useState("");
 
-  // --- DATABASE GIẢ LẬP (Load/Save LocalStorage) ---
-  
-  // Load dữ liệu khi đổi Nhóm quyền
+  // ==================================================================================
+  // 1. KHỞI TẠO: Tải danh sách Vai trò (Roles) & Màn hình khi vào trang
+  // ==================================================================================
   useEffect(() => {
-    setLoading(true);
-    // Giả lập độ trễ mạng
-    const timer = setTimeout(() => {
-      // 1. Thử lấy từ LocalStorage (Giả lập DB)
-      const storedData = localStorage.getItem(`perm_matrix_${selectedPermissionId}`);
-      
-      if (storedData) {
-        setMatrix(JSON.parse(storedData));
-      } else {
-        // 2. Nếu chưa có, tạo dữ liệu mẫu
-        const initialMatrix = createDefaultMatrix(screens);
-        // Nếu là Admin (id=1), tick full quyền demo
-        if (selectedPermissionId === 1) {
-             Object.keys(initialMatrix).forEach(key => {
-                 const row = initialMatrix[key];
-                 ['is_view', 'is_add', 'is_edit', 'is_delete', 'is_upload', 'is_download', 'is_all'].forEach(k => row[k] = true);
-             });
+    const fetchInitialData = async () => {
+      try {
+        // Gọi song song 2 API: Lấy Roles và Screens
+        const [roleRes, screenRes] = await Promise.all([
+          fetch(`${API_URL}/roles`),   // Đổi từ /permissions sang /roles
+          fetch(`${API_URL}/screens`)
+        ]);
+
+        if (!roleRes.ok || !screenRes.ok) throw new Error("Lỗi kết nối API");
+
+        const roleData = await roleRes.json();
+        const screenData = await screenRes.json();
+
+        setRoles(roleData);
+        setScreens(screenData);
+
+        // Mặc định chọn vai trò đầu tiên nếu danh sách không rỗng
+        if (roleData.length > 0) {
+          setSelectedRoleId(roleData[0].role_id);
         }
-        setMatrix(initialMatrix);
+      } catch (error) {
+        console.error("Lỗi khởi tạo:", error);
+        alert("Không thể tải dữ liệu. Hãy kiểm tra Backend (php artisan serve).");
+      } finally {
+        setInitialLoading(false);
       }
-      setLoading(false);
-    }, 400);
+    };
 
-    return () => clearTimeout(timer);
-  }, [selectedPermissionId, screens]); // Thêm screens vào dep để khi thêm màn hình mới nó cập nhật matrix
+    fetchInitialData();
+  }, []);
 
-  // Xử lý tick checkbox
+  // ==================================================================================
+  // 2. LOAD MATRIX: Khi người dùng chọn một Vai trò khác
+  // ==================================================================================
+  useEffect(() => {
+    if (!selectedRoleId || screens.length === 0) return;
+
+    const fetchMatrix = async () => {
+      setLoading(true);
+      try {
+        // Gọi API lấy ma trận quyền của Role này
+        // Backend cần route: GET /api/roles/{id}/screens
+        const res = await fetch(`${API_URL}/roles/${selectedRoleId}/screens`);
+        const savedPermissions = await res.json(); 
+
+        // TRỘN DỮ LIỆU: Danh sách Màn hình gốc + Quyền đã lưu từ DB
+        const newMatrix = {};
+        
+        screens.forEach(screen => {
+          // Tìm xem màn hình này đã được cấu hình cho Role này chưa
+          const saved = savedPermissions.find(p => p.screen_id === screen.screen_id);
+
+          if (saved) {
+            // Có rồi -> Convert 1/0 từ DB sang true/false cho React
+            const isAll = 
+              saved.is_view === 1 && saved.is_add === 1 && saved.is_edit === 1 &&
+              saved.is_delete === 1 && saved.is_upload === 1 && saved.is_download === 1;
+
+            newMatrix[screen.screen_id] = {
+              screen_id: screen.screen_id,
+              is_view: saved.is_view === 1,
+              is_add: saved.is_add === 1,
+              is_edit: saved.is_edit === 1,
+              is_delete: saved.is_delete === 1,
+              is_upload: saved.is_upload === 1,
+              is_download: saved.is_download === 1,
+              is_all: isAll
+            };
+          } else {
+            // Chưa có trong DB -> Mặc định là false hết
+            newMatrix[screen.screen_id] = {
+              screen_id: screen.screen_id,
+              is_view: false, is_add: false, is_edit: false, 
+              is_delete: false, is_upload: false, is_download: false, is_all: false
+            };
+          }
+        });
+
+        setMatrix(newMatrix);
+      } catch (error) {
+        console.error("Lỗi tải matrix:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMatrix();
+  }, [selectedRoleId, screens]);
+
+  // ==================================================================================
+  // 3. XỬ LÝ LOGIC CHECKBOX (Client Side) - Giữ nguyên logic
+  // ==================================================================================
   const handleCheckboxChange = (screenId, field) => {
     setMatrix((prev) => {
       const currentRow = { ...prev[screenId] };
       const newValue = !currentRow[field];
 
-      // Nếu tick "Tất cả"
       if (field === "is_all") {
         return {
           ...prev,
@@ -100,10 +143,8 @@ export default function PermissionApp() {
         };
       }
 
-      // Nếu tick từng cái lẻ
       currentRow[field] = newValue;
 
-      // Logic kiểm tra nút "Tất cả"
       if (!newValue) {
         currentRow.is_all = false;
       } else {
@@ -117,139 +158,194 @@ export default function PermissionApp() {
     });
   };
 
-  // Lưu dữ liệu
+  // ==================================================================================
+  // 4. LƯU DỮ LIỆU (Gọi API Update Matrix cho Role)
+  // ==================================================================================
   const handleSave = async () => {
     setSaving(true);
-    // Giả lập gọi API
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    
-    // Lưu vào LocalStorage
-    localStorage.setItem(`perm_matrix_${selectedPermissionId}`, JSON.stringify(matrix));
-    
-    setSaving(false);
-    // Thay vì alert, có thể dùng Toast (nhưng dùng alert cho đơn giản code)
-    alert(`Đã lưu phân quyền cho nhóm: ${permissions.find(p => p.permission_id === selectedPermissionId)?.permission_name}`);
+    try {
+      // 1. Chuẩn bị dữ liệu: Convert true/false về 1/0
+      const payload = Object.values(matrix).map(row => ({
+        screen_id: row.screen_id,
+        is_view: row.is_view ? 1 : 0,
+        is_add: row.is_add ? 1 : 0,
+        is_edit: row.is_edit ? 1 : 0,
+        is_delete: row.is_delete ? 1 : 0,
+        is_upload: row.is_upload ? 1 : 0,
+        is_download: row.is_download ? 1 : 0,
+        is_all: row.is_all ? 1 : 0 
+      }));
+
+      // 2. Gửi lên Server: POST /api/roles/{id}/update-matrix
+      const response = await fetch(`${API_URL}/roles/${selectedRoleId}/update-matrix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions: payload }) // Backend nhận key 'permissions' chứa mảng
+      });
+
+      if (!response.ok) throw new Error("Lỗi Server");
+
+      alert("✅ Cập nhật quyền cho Vai trò thành công!");
+    } catch (error) {
+      console.error("Lỗi save:", error);
+      alert("❌ Lỗi khi lưu dữ liệu!");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Thêm nhóm quyền mới
-  const handleAddPermission = () => {
-    if (!newPermissionName.trim()) return;
-    const newId = Math.max(...permissions.map(p => p.permission_id)) + 1;
-    const newPerm = { 
-        permission_id: newId, 
-        permission_name: newPermissionName, 
-        permission_description: "Nhóm quyền mới tạo" 
-    };
-    setPermissions([...permissions, newPerm]);
-    setSelectedPermissionId(newId); // Chuyển sang nhóm mới tạo
-    setNewPermissionName("");
-    setShowAddPermission(false);
+  // ==================================================================================
+  // 5. THÊM VAI TRÒ MỚI (ROLE)
+  // ==================================================================================
+  const handleAddRole = async () => {
+    if (!newRoleName.trim()) return;
+    try {
+      const response = await fetch(`${API_URL}/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          role_name: newRoleName,
+          role_description: "Tạo từ giao diện Admin"
+        })
+      });
+      
+      if (response.ok) {
+        const newRole = await response.json();
+        setRoles([...roles, newRole]);
+        setSelectedRoleId(newRole.role_id); // Chuyển ngay sang role mới
+        setNewRoleName("");
+        setShowAddRole(false);
+      }
+    } catch (error) {
+      alert("Lỗi khi tạo vai trò");
+    }
   };
 
-  // Thêm màn hình mới
-  const handleAddScreen = () => {
+  // ==================================================================================
+  // 6. THÊM MÀN HÌNH MỚI
+  // ==================================================================================
+  const handleAddScreen = async () => {
     if (!newScreenName.trim() || !newScreenCode.trim()) return;
-    const newId = Math.max(...screens.map(s => s.screen_id)) + 1;
-    const newScreen = { screen_id: newId, screen_name: newScreenName, screen_code: newScreenCode };
-    
-    // Cập nhật danh sách màn hình
-    const updatedScreens = [...screens, newScreen];
-    setScreens(updatedScreens);
+    try {
+      const response = await fetch(`${API_URL}/screens`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          screen_name: newScreenName, 
+          screen_code: newScreenCode 
+        })
+      });
 
-    // Cập nhật matrix hiện tại để có dòng mới
-    setMatrix(prev => ({
-        ...prev,
-        [newId]: {
-            screen_id: newId,
-            is_view: false, is_add: false, is_edit: false, 
-            is_delete: false, is_upload: false, is_download: false, is_all: false
-        }
-    }));
+      if (response.ok) {
+        const newScreen = await response.json();
+        setScreens([...screens, newScreen]);
+        
+        setMatrix(prev => ({
+            ...prev,
+            [newScreen.screen_id]: {
+                screen_id: newScreen.screen_id,
+                is_view: false, is_add: false, is_edit: false, 
+                is_delete: false, is_upload: false, is_download: false, is_all: false
+            }
+        }));
 
-    setNewScreenName("");
-    setNewScreenCode("");
-    setShowAddScreen(false);
+        setNewScreenName("");
+        setNewScreenCode("");
+        setShowAddScreen(false);
+      }
+    } catch (error) {
+      alert("Lỗi khi tạo màn hình");
+    }
   };
 
+  // Lọc màn hình
   const filteredScreens = screens.filter(
     (s) =>
       s.screen_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.screen_code.toLowerCase().includes(searchTerm.toLowerCase())
+      (s.screen_code && s.screen_code.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // --- RENDER GIAO DIỆN ---
+  if (initialLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600"/></div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-slate-900 flex flex-col h-screen overflow-hidden">
-      {/* 2. Main Content Area - Full Width */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header Content */}
         <div className="p-6 pb-2">
             <div className="mb-4 text-center">
                 <h1 className="text-2xl font-bold text-blue-900">Hệ Thống Phân Quyền</h1>
-                <p className="text-blue-600 text-sm">Quản lý quyền truy cập chi tiết cho từng vai trò</p>
+                <p className="text-blue-600 text-sm">Quản lý quyền truy cập chi tiết cho từng Vai trò (Role)</p>
             </div>
             
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 h-[calc(100vh-8rem)] max-w-7xl mx-auto w-full">
             
-            {/* Cột trái: Danh sách nhóm quyền */}
+            {/* CỘT TRÁI: DANH SÁCH VAI TRÒ (ROLES) */}
             <div className="rounded-xl border border-blue-100 bg-white shadow-sm lg:col-span-1 flex flex-col h-full overflow-hidden">
                 <div className="border-b border-blue-100 p-4 bg-blue-50/50 flex justify-between items-center">
                 <h2 className="flex items-center gap-2 font-semibold text-blue-900">
-                    <Shield className="h-5 w-5 text-blue-600" />
-                    Nhóm Quyền
+                    <Users className="h-5 w-5 text-blue-600" />
+                    Danh sách Vai trò
                 </h2>
                 <button
-                    onClick={() => setShowAddPermission(true)}
+                    onClick={() => setShowAddRole(true)}
                     className="p-1 hover:bg-white rounded-full text-blue-600 transition-colors"
                 >
                     <Plus className="w-5 h-5" />
                 </button>
                 </div>
 
-                {showAddPermission && (
+                {/* Form thêm role (ẩn/hiện) */}
+                {showAddRole && (
                 <div className="p-3 bg-blue-50 border-b border-blue-100">
                     <input
                     autoFocus
                     type="text"
-                    placeholder="Tên nhóm quyền..."
+                    placeholder="Tên vai trò (VD: Admin)..."
                     className="w-full px-3 py-2 text-sm border border-blue-200 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newPermissionName}
-                    onChange={(e) => setNewPermissionName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddPermission()}
+                    value={newRoleName}
+                    onChange={(e) => setNewRoleName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddRole()}
                     />
                     <div className="flex gap-2">
-                    <button onClick={handleAddPermission} className="flex-1 bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-700">Lưu</button>
-                    <button onClick={() => setShowAddPermission(false)} className="flex-1 bg-white border border-gray-300 text-xs py-1.5 rounded">Hủy</button>
+                    <button onClick={handleAddRole} className="flex-1 bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-700">Lưu</button>
+                    <button onClick={() => setShowAddRole(false)} className="flex-1 bg-white border border-gray-300 text-xs py-1.5 rounded">Hủy</button>
                     </div>
                 </div>
                 )}
 
+                {/* Danh sách roles */}
                 <div className="p-2 overflow-y-auto flex-1 space-y-1">
-                {permissions.map((perm) => (
+                {roles.map((role) => (
                     <button
-                    key={perm.permission_id}
-                    onClick={() => setSelectedPermissionId(perm.permission_id)}
+                    key={role.role_id}
+                    onClick={() => setSelectedRoleId(role.role_id)}
                     className={`w-full text-left rounded-lg p-3 text-sm transition-all ${
-                        selectedPermissionId === perm.permission_id
+                        selectedRoleId === role.role_id
                         ? "bg-blue-600 text-white shadow-md shadow-blue-200"
                         : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                     }`}
                     >
-                    <div className="font-medium">{perm.permission_name}</div>
-                    <div className={`text-xs mt-0.5 ${selectedPermissionId === perm.permission_id ? "text-blue-100" : "text-gray-400"}`}>
-                        {perm.permission_description}
+                    <div className="font-medium">{role.role_name}</div>
+                    <div className={`text-xs mt-0.5 ${selectedRoleId === role.role_id ? "text-blue-100" : "text-gray-400"}`}>
+                        {role.role_description || "..."}
                     </div>
                     </button>
                 ))}
                 </div>
             </div>
 
-            {/* Cột phải: Bảng phân quyền */}
+            {/* CỘT PHẢI: BẢNG MATRIX PHÂN QUYỀN */}
             <div className="rounded-xl border border-blue-100 bg-white shadow-sm lg:col-span-3 overflow-hidden flex flex-col h-full">
                 <div className="flex flex-col border-b border-blue-100 bg-blue-50/50 p-4 sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <Layout className="h-5 w-5 text-blue-600" />
                     <h2 className="font-semibold text-blue-900">
-                    Phân Quyền: <span className="text-blue-600">{permissions.find((p) => p.permission_id === selectedPermissionId)?.permission_name}</span>
+                    Phân Quyền: <span className="text-blue-600">
+                        {roles.find((r) => r.role_id === selectedRoleId)?.role_name}
+                    </span>
                     </h2>
                 </div>
 
@@ -269,7 +365,7 @@ export default function PermissionApp() {
                     </div>
                     <button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || !selectedRoleId}
                     className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                     >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -278,7 +374,7 @@ export default function PermissionApp() {
                 </div>
                 </div>
 
-                {/* Table Content */}
+                {/* Bảng dữ liệu */}
                 <div className="overflow-auto flex-1 bg-white relative">
                 {loading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
@@ -361,6 +457,7 @@ export default function PermissionApp() {
   );
 }
 
+// Component ô checkbox nhỏ
 function CheckboxCell({ checked, onChange }) {
   return (
     <td className="px-2 py-4 text-center">

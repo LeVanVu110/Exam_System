@@ -11,6 +11,16 @@ class PermissionScreen extends Model
 
     protected $table = 'permissions_screens';
     protected $primaryKey = 'permission_screen_id';
-    public $incrementing = true;
-    protected $fillable = ['permission_id', 'screen_id'];
+
+    protected $fillable = [
+        'permission_id',
+        'screen_id',
+        'is_view',
+        'is_add',
+        'is_edit',
+        'is_delete',
+        'is_upload',
+        'is_download',
+        'is_all'
+    ];
 }
