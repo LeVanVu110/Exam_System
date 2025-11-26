@@ -12,6 +12,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ExamDashboard from './pages/Dashboard.jsx';
 //Phòng đào tạo
+import LayoutPDT from "./pages/PDT/LayoutPDT"
 import ExamManagement from "./pages/PDT/ExamManagement";
 // đăng nhập
 import  LoginForm  from "./pages/Login";
@@ -24,7 +25,10 @@ function App() {
     <Router>
       <Routes>
         {/* phòng đào tạo */}
-        <Route path="PDT/ExamManagement" element={<ExamManagement />} />
+        <Route element={<LayoutPDT />}>
+          <Route path="/PDT/ExamManagement" element={<ExamManagement />} />
+        </Route>
+        <Route path="at" element={<ExamManagement />} />
       {/* Cán bộ coi thi */}
         <Route element={<Layout />}>
           <Route path="/Dashboard" element={<ExamDashboard />} />

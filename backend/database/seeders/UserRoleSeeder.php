@@ -3,26 +3,48 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\User;
-use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class UserRoleSeeder extends Seeder
 {
     public function run(): void
     {
         Schema::disableForeignKeyConstraints();
-        DB::table('users_roles')->truncate(); // Bảng pivot
+        DB::table('users_roles')->truncate();
         Schema::enableForeignKeyConstraints();
 
-        $roleIds = Role::pluck('role_id')->toArray(); // Lấy danh sách role_id
+        // Admin
+        DB::table('users_roles')->insert([
+            'user_id' => 1,
+            'role_id' => 1,
+        ]);
 
-        foreach (User::all() as $user) {
-            $randomRoleId = $roleIds[array_rand($roleIds)];
+        // PĐT / Academic
+        DB::table('users_roles')->insert([
+            'user_id' => 2,
+            'role_id' => 4,
+        ]);
 
-            // Gắn role vào user bằng belongsToMany
-            $user->roles()->attach($randomRoleId);
+        // Teacher
+        DB::table('users_roles')->insert([
+            'user_id' => 3,
+            'role_id' => 2,
+        ]);
+
+        // Student
+        DB::table('users_roles')->insert([
+            'user_id' => 4,
+            'role_id' => 3,
+        ]);
+
+        // Các user random khác (id >= 5) → Student
+        for ($i = 5; $i <= 12; $i++) {
+            DB::table('users_roles')->insert([
+                'user_id' => $i,
+                'role_id' => 3,
+            ]);
         }
     }
 }
