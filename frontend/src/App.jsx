@@ -7,6 +7,7 @@ import ClassSchedule from "./pages/ClassSchedule"
 import Documents from "./pages/Documents"
 import Exams from "./pages/Exams"
 import QA from "./pages/QA"
+import Userprofile from "./pages/UserProfile.jsx"
 import "./index.css"; // <--- quan trọng
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -31,6 +32,8 @@ function App() {
           <Route path="/documents" element={<Documents />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/qa" element={<QA />} />
+          <Route path="/UserProfile" element={<Userprofile />} />
+          
         </Route>
       </Routes>
       {/* đăng nhập */}

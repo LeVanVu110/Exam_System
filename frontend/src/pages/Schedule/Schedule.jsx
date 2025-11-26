@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import {
   Upload,
@@ -9,6 +9,8 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
+  ChevronLeft, 
+  ChevronRight, 
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
@@ -22,6 +24,25 @@ export default function ExamManagement() {
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [selectedRows, setSelectedRows] = useState(new Set());
+
+  // ✅ PHÂN TRANG: State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8; // Đặt 8 mục trên mỗi trang
+
+  // ✅ PHÂN TRANG: Tính toán dữ liệu hiển thị
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  
+  const currentData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  }, [data, currentPage, itemsPerPage]);
+
+  // Đặt lại trang về 1 mỗi khi dữ liệu hoặc bộ lọc thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data]);
+
 
   // ✅ Tìm kiếm + Popup khi không có dữ liệu
   const handleSearch = async () => {
@@ -142,13 +163,20 @@ export default function ExamManagement() {
     setSelectedRows(newSelected);
   };
 
+  // ✅ ĐÃ CẬP NHẬT: Chọn/bỏ chọn tất cả (toàn bộ dữ liệu)
   const toggleSelectAll = () => {
-    if (selectedRows.size === data.length) {
+    // Kiểm tra xem TẤT CẢ bản ghi (trên mọi trang) đã được chọn chưa
+    const allSelected = data.length > 0 && selectedRows.size === data.length;
+
+    if (allSelected) {
+      // Bỏ chọn tất cả
       setSelectedRows(new Set());
     } else {
+      // Chọn tất cả các bản ghi (trên mọi trang)
       setSelectedRows(new Set(data.map((item) => item.exam_session_id)));
     }
   };
+
 
   // ✅ Import Excel + Toastify
   const handleImport = async (e) => {
@@ -233,6 +261,13 @@ export default function ExamManagement() {
     }
     setExpandedRows(newExpanded);
   };
+
+  // ✅ PHÂN TRANG: Hàm xử lý chuyển trang
+  const goToPage = (page) => {
+    setCurrentPage(page);
+    setExpandedRows(new Set()); // Thu gọn tất cả các hàng khi chuyển trang
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -392,6 +427,7 @@ export default function ExamManagement() {
                   <th className="w-8 px-2 py-2">
                     <input
                       type="checkbox"
+                      // ✅ ĐÃ CẬP NHẬT: So sánh với toàn bộ data.length
                       checked={
                         data.length > 0 && selectedRows.size === data.length
                       }
@@ -431,8 +467,9 @@ export default function ExamManagement() {
               </thead>
 
               <tbody className="divide-y divide-slate-200">
-                {data.length > 0 ? (
-                  data.map((item) => (
+                {/* Dùng currentData thay cho data */}
+                {currentData.length > 0 ? (
+                  currentData.map((item) => (
                     <>
                       <tr
                         key={item.exam_session_id}
@@ -562,6 +599,54 @@ export default function ExamManagement() {
               </tbody>
             </table>
           </div>
+
+          {/* ✅ PHÂN TRANG: Giao diện */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-slate-200">
+              <p className="text-sm text-slate-700">
+                Trang {currentPage} trên {totalPages}
+              </p>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-50 transition flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Trước
+                </button>
+
+                {/* Hiển thị các nút số trang (tùy chọn) */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) ? (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`px-3 py-1 border rounded-lg text-sm transition ${
+                        page === currentPage
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ) : (page === currentPage - 2 || page === currentPage + 2) && totalPages > 5 && (
+                    <span key={page} className="px-3 py-1 text-slate-500">...</span>
+                  )
+                ))}
+
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-50 transition flex items-center gap-1"
+                >
+                  Sau
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

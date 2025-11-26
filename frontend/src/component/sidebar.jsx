@@ -9,6 +9,7 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  UserCircle
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -19,6 +20,8 @@ const menuItems = [
   { icon: FileText, label: "Tài liệu/Giáo án", path: "/documents" },
   { icon: Calendar, label: "Lịch dạy/Lịch thi", path: "/exam-schedule" },
   { icon: HelpCircle, label: "Hỏi đáp cộng đồng", path: "/qa" },
+  { icon: UserCircle, label: "UserProfile", path: "/UserProfile" },
+
 ];
 
 export default function Sidebar() {

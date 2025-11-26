@@ -16,7 +16,8 @@ use App\Http\Controllers\{
     UserPermissionController,
     CategoryUserTypeController,
     AuthLoginController,
-    ExamScheduleController
+    ExamScheduleController,
+    UserProfileController
 };
 
 
@@ -52,14 +53,15 @@ Route::prefix('exam-sessions')->group(function () {
 
 // ✅ Các route CRUD cho hệ thống phân quyền
 Route::apiResources([
-    'roles' => RoleController::class,
-    'permissions' => PermissionController::class,
-    'users-roles' => UserRoleController::class,
-    'roles-permissions' => RolePermissionController::class,
-    'users-permissions' => UserPermissionController::class,
-    'category-user-types' => CategoryUserTypeController::class,
-    'exam-schedule' => ExamSessionController::class,
-
+    'roles'                 => RoleController::class,
+    'permissions'           => PermissionController::class,
+    'users-roles'           => UserRoleController::class,
+    'roles-permissions'     => RolePermissionController::class,
+    'users-permissions'     => UserPermissionController::class,
+    'category-user-types'   => CategoryUserTypeController::class,
+    // Sửa 'userprofile' thành 'user-profiles' để theo chuẩn RESTful
+    'user-profiles'         => UserProfileController::class,
+    // Bỏ 'exam-schedule' vì ExamSession có nhiều routes custom, dùng group bên dưới
 ]);
 Route::post('exam-schedule/save', [ExamSessionController::class, 'saveImported']);
 Route::post('login', [AuthLoginController::class, 'login']);
