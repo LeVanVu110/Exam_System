@@ -23,7 +23,7 @@ class AuthController extends Controller
         }
 
         if (!Hash::check($request->password, $user->user_password)) {
-            return response()->json(['message' => 'Email hoặc mật khẩu không đúng'], 401);
+            return response()->json(['message' => 'Mật khẩu không đúng'], 401);
         }
 
         if ($user->user_is_banned) {

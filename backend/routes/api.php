@@ -2,18 +2,28 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+// ==============================================================================
+// 1. IMPORT CONTROLLER API (Dành cho Frontend/Mobile)
+// ==============================================================================
 use App\Http\Controllers\Api\{
     StudentController,
     ExamController,
     ExamSessionController,
-    AuthController
+    AuthController,
+    // [QUAN TRỌNG] Import Controller mới và đặt tên khác (Alias) để không trùng
+    UserPermissionController as ApiUserPermissionController
 };
+
+// ==============================================================================
+// 2. IMPORT CONTROLLER QUẢN LÝ (CRUD Dashboard)
+// ==============================================================================
 use App\Http\Controllers\{
     RoleController,
-    PermissionController, // Đảm bảo Controller này đã được tạo (xem file dưới)
+    PermissionController,
     UserRoleController,
     RolePermissionController,
-    UserPermissionController,
+    UserPermissionController, // Controller cũ (không có Alias) dùng cho trang quản trị
     CategoryUserTypeController,
     AuthLoginController,
     ExamScheduleController
@@ -46,28 +56,29 @@ Route::prefix('exam-sessions')->group(function () {
 });
 
 // --- 3. CUSTOM ROUTES CHO HỆ THỐNG PHÂN QUYỀN (REACT APP) ---
-// Những route này cần định nghĩa TRƯỚC apiResources để tránh xung đột
-Route::get('/screens', [PermissionController::class, 'getScreens']);            // Lấy danh sách màn hình
-Route::post('/screens', [PermissionController::class, 'storeScreen']);          // Tạo màn hình mới
-Route::get('/permissions/{id}/screens', [PermissionController::class, 'getMatrix']); // Lấy matrix quyền
-Route::post('/permissions/{id}/update-matrix', [PermissionController::class, 'updateMatrix']); // Lưu matrix
-Route::get('/my-permissions', [PermissionController::class, 'myPermissions']); // Lấy quyền của user hiện tại
 
-// --- 4. CRUD RESOURCES (Hệ thống phân quyền & Lịch thi) ---
+// [QUAN TRỌNG] Route này dùng Controller API (có Alias)
+Route::get('/my-permissions', [ApiUserPermissionController::class, 'getMyPermissions']);
+
+Route::get('/screens', [PermissionController::class, 'getScreens']);
+Route::post('/screens', [PermissionController::class, 'storeScreen']);
+Route::get('/permissions/{id}/screens', [PermissionController::class, 'getMatrix']);
+Route::post('/permissions/{id}/update-matrix', [PermissionController::class, 'updateMatrix']);
+
+
+// --- 4. CRUD RESOURCES (Dùng Controller thường) ---
 Route::apiResources([
     'roles' => RoleController::class,
-    'permissions' => PermissionController::class, // Route này sẽ map vào các hàm index, store, show, update, destroy
+    'permissions' => PermissionController::class,
     'users-roles' => UserRoleController::class,
     'roles-permissions' => RolePermissionController::class,
-    'users-permissions' => UserPermissionController::class,
+    'users-permissions' => UserPermissionController::class, // Dùng Controller thường
     'category-user-types' => CategoryUserTypeController::class,
     'exam-schedule' => ExamSessionController::class,
 ]);
 
 // --- 5. OTHER ROUTES ---
 Route::post('exam-schedule/save', [ExamSessionController::class, 'saveImported']);
-Route::post('login', [AuthLoginController::class, 'login']);
-
 // Group lặp lại cho exam-schedules (nếu bạn cần giữ legacy)
 Route::prefix('exam-schedules')->group(function () {
     Route::get('/', [ExamSessionController::class, 'index']);
@@ -78,5 +89,5 @@ Route::prefix('exam-schedules')->group(function () {
     Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);
 });
 
-// Đăng nhập web
+// Đăng nhập
 Route::post('/login', [AuthController::class, 'login']);

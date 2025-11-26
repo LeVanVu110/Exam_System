@@ -4,13 +4,23 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class UserRoleSeeder extends Seeder
 {
     public function run(): void
     {
+        // ---------------------------------------------------------------------
+        // QUAN TRỌNG: ĐÃ VÔ HIỆU HÓA FILE NÀY
+        // ---------------------------------------------------------------------
+        // Lý do: Việc gán Role cho User đã được thực hiện trực tiếp trong
+        // file 'UserSeeder.php' ngay khi tạo User.
+        //
+        // File này nếu chạy sẽ gây xung đột (truncate bảng) làm mất quyền
+        // của các user vừa tạo, dẫn đến lỗi 401/403.
+        // ---------------------------------------------------------------------
+
+        /*
         Schema::disableForeignKeyConstraints();
         DB::table('users_roles')->truncate();
         Schema::enableForeignKeyConstraints();
@@ -46,5 +56,6 @@ class UserRoleSeeder extends Seeder
                 'role_id' => 3,
             ]);
         }
+        */
     }
 }

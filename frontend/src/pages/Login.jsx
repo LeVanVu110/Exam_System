@@ -126,7 +126,8 @@ export default function LoginForm() {
                 {/* Password Input */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="password" class="block text-sm font-medium text-gray-700">
+                    {/* ĐÃ SỬA: class -> className */}
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                       Mật khẩu
                     </label>
                   </div>

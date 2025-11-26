@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     {
         Schema::disableForeignKeyConstraints();
         User::truncate();
-        \DB::table('users_roles')->truncate(); // <-- thêm dòng này
+        DB::table('users_roles')->truncate(); // <-- thêm dòng này
         Schema::enableForeignKeyConstraints();
 
         $faker = Faker::create();
