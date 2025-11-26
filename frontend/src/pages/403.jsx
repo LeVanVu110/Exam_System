@@ -13,10 +13,10 @@ const ForbiddenPage = () => {
       
       <div className="mt-8">
         <Link 
-          to="/" 
+          to="/login" 
           className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition duration-300"
         >
-          Quay về Trang chủ
+          Quay về Trang đăng nhập
         </Link>
       </div>
     </div>

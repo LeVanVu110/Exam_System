@@ -19,14 +19,16 @@ class PermissionSeeder extends Seeder
         Schema::enableForeignKeyConstraints();
 
         $permissions = [
-            ['permission_name' => 'view_exam', 'permission_description' => 'Xem thông tin kỳ thi', 'permission_is_active' => 1],
-            ['permission_name' => 'create_exam', 'permission_description' => 'Tạo kỳ thi mới', 'permission_is_active' => 1],
-            ['permission_name' => 'edit_exam', 'permission_description' => 'Chỉnh sửa kỳ thi', 'permission_is_active' => 1],
-            ['permission_name' => 'delete_exam', 'permission_description' => 'Xóa kỳ thi', 'permission_is_active' => 1],
+            ['permission_name' => 'DASHBOARD', 'permission_description' => 'Truy cập Dashboard', 'permission_is_active' => 1],
+            ['permission_name' => 'EXAM_SCHEDULE', 'permission_description' => 'Xem lịch thi', 'permission_is_active' => 1],
+            ['permission_name' => 'EXAM_MGT', 'permission_description' => 'Quản lý kỳ thi (Phòng đào tạo)', 'permission_is_active' => 1],
+            ['permission_name' => 'DOC_MGT', 'permission_description' => 'Quản lý tài liệu', 'permission_is_active' => 1],
+            ['permission_name' => 'PERMISSION_MGT', 'permission_description' => 'Quản lý quyền người dùng', 'permission_is_active' => 1],
         ];
+
 
         foreach ($permissions as $p) {
             Permission::create($p);
         }
     }
-} 
+}
