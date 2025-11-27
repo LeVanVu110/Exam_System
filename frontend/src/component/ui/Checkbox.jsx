@@ -1,3 +1,5 @@
+"use client"
+
 export function Checkbox({ id, checked, onCheckedChange, className = "", ...props }) {
   return (
     <input
@@ -5,8 +7,10 @@ export function Checkbox({ id, checked, onCheckedChange, className = "", ...prop
       type="checkbox"
       checked={checked}
       onChange={(e) => onCheckedChange?.(e.target.checked)}
-      className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary ${className}`}
+      className={`h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${className}`}
       {...props}
     />
   )
 }
+
+export default Checkbox

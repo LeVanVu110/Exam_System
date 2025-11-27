@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-use Illuminate\Support\Facades\DB;
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -13,30 +12,44 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // ====== Các bảng danh mục (category, type, v.v.) chạy TRƯỚC ======
+
+            // =====================================
+            // 1. Các bảng danh mục (Loại, Khoa, Ngành...)
+            // =====================================
             CategoryUserTypeSeeder::class,
             CategoryFacultySeeder::class,
             CategoryMajorSeeder::class,
             CategoryPositionSeeder::class,
 
-            // ====== Các bảng user và liên quan đến user ======
+            // =====================================
+            // 2. Bảng Users → Profile → Teacher/Student
+            // =====================================
             UserSeeder::class,
             UserProfileSeeder::class,
             TeacherSeeder::class,
             StudentSeeder::class,
 
-            // ====== Các bảng phân quyền ======
-            RoleSeeder::class,
-            PermissionSeeder::class,
-            UserRoleSeeder::class,
-            RolePermissionSeeder::class,
-            UserPermissionSeeder::class,
+            // =====================================
+            // 3. Phân quyền – CHẠY ĐÚNG THỨ TỰ
+            // =====================================
+            RoleSeeder::class,             // Tạo danh sách role
+            PermissionSeeder::class,       // Tạo danh sách quyền
+            RolePermissionSeeder::class,   // Gán quyền → role
+            UserRoleSeeder::class,         // Gán role → user (Cách 2 bạn đang dùng)
+            UserPermissionSeeder::class,   // Nếu bạn cho user override quyền
+
+            // =====================================
+            // 4. Màn hình + quyền màn hình
+            // =====================================
             ScreenSeeder::class,
             PermissionScreenSeeder::class,
 
-            // ====== Các bảng khóa học và thi cử ======
+            // =====================================
+            // 5. Khóa học – Lịch thi – Bài thi
+            // =====================================
             CourseSeeder::class,
             CourseStudentSeeder::class,
+
             ExamSessionSeeder::class,
             ExamStudentSeeder::class,
             ExamAttendanceSeeder::class,
@@ -45,7 +58,9 @@ class DatabaseSeeder extends Seeder
             ExamImportLogSeeder::class,
             ExamImportDataSeeder::class,
 
-            // ====== Cấu hình hệ thống ======
+            // =====================================
+            // 6. Cấu hình hệ thống
+            // =====================================
             NetworkDriveConfigSeeder::class,
         ]);
     }

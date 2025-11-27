@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'users';
     protected $primaryKey = 'user_id';
@@ -73,5 +74,11 @@ class User extends Authenticatable
     public function permissions()
     {
         return $this->belongsToMany(Permission::class, 'user_permissions', 'user_id', 'permission_id');
+    }
+
+    // Lấy role chính (vì bạn nói mỗi user 1 role)
+    public function primaryRole()
+    {
+        return $this->roles()->first();
     }
 }
