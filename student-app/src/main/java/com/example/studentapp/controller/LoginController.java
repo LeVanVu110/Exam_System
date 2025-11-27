@@ -1,5 +1,6 @@
 package com.example.studentapp.controller;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -7,11 +8,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import org.json.JSONObject;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import org.json.JSONObject; // ⚠️ Thêm thư viện JSON nếu chưa có (org.json:json trong pom.xml)
 
 public class LoginController {
 
@@ -30,32 +31,18 @@ public class LoginController {
         messageLabel.setText("Đang đăng nhập...");
         messageLabel.setStyle("-fx-text-fill: gray;");
 
-        // 🧵 Tạo luồng riêng để tránh đơ giao diện
         new Thread(() -> {
             try {
                 JSONObject response = sendLoginRequest(username, password);
 
-                // ⚠️ Gọi lại UI phải nằm trong Platform.runLater
-                javafx.application.Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     try {
                         if (response.getBoolean("success")) {
                             JSONObject user = response.getJSONObject("user");
                             String role = user.getString("user_role");
 
-                            switch (role) {
-                                case "Admin":
-                                    loadView("/view/Main.fxml", "Trang quản trị");
-                                    break;
-                                case "Teacher":
-                                    loadView("/view/Main.fxml", "Trang giảng viên");
-                                    break;
-                                case "Student":
-                                    loadView("/view/Main.fxml", "Trang sinh viên");
-                                    break;
-                                default:
-                                    messageLabel.setText("Không xác định vai trò người dùng.");
-                                    messageLabel.setStyle("-fx-text-fill: red;");
-                            }
+                            loadMainView(role);
+
                         } else {
                             messageLabel.setText("Sai tài khoản hoặc mật khẩu.");
                             messageLabel.setStyle("-fx-text-fill: red;");
@@ -69,23 +56,22 @@ public class LoginController {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                javafx.application.Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     messageLabel.setText("Không thể kết nối tới server.");
                     messageLabel.setStyle("-fx-text-fill: red;");
                 });
             }
-        }).start(); // 🔹 Chạy thread
+        }).start();
     }
 
     private JSONObject sendLoginRequest(String username, String password) throws IOException {
-        URL url = new URL("http://localhost:8000/api/login"); // 🟢 đổi URL nếu khác
+        URL url = new URL("http://localhost:8000/api/login");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
         conn.setConnectTimeout(5000);
 
-        // Gửi dữ liệu JSON
         JSONObject requestBody = new JSONObject();
         requestBody.put("email", username);
         requestBody.put("password", password);
@@ -94,67 +80,82 @@ public class LoginController {
             byte[] input = requestBody.toString().getBytes("utf-8");
             os.write(input, 0, input.length);
         }
-        // Chọn luồng đầu vào dựa trên mã trạng thái
+
         InputStream is;
         int status = conn.getResponseCode();
-
         if (status >= 200 && status < 300) {
-            // Mã thành công (200 OK)
             is = conn.getInputStream();
         } else {
-            // Mã lỗi (401, 500,...) -> Đọc từ ErrorStream
             is = conn.getErrorStream();
-            if (is == null) {
-                throw new IOException("Server returned status code: " + status + " and no error stream.");
-            }
+            if (is == null)
+                throw new IOException("Server trả lỗi " + status);
         }
 
-        // Đọc phản hồi (SỬA DÒNG NÀY ĐỂ DÙNG BIẾN 'is')
         StringBuilder response = new StringBuilder();
-        // ------------------------------------------------------------------
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"))) { // ✅ ĐÃ DÙNG 'is'
-            // ------------------------------------------------------------------
-            String responseLine;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
-            }
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"))) {
+            String line;
+            while ((line = br.readLine()) != null)
+                response.append(line.trim());
         }
-        // Nếu phản hồi rỗng (dù có mã lỗi), ném lỗi
-        if (response.length() == 0) {
-            throw new IOException("Empty response received from server with status: " + status);
-        }
+
+        if (response.length() == 0)
+            throw new IOException("Response rỗng, status: " + status);
 
         return new JSONObject(response.toString());
     }
 
-    // LoginController.java (Phần cuối)
+    /** Load Main.fxml giữ nguyên kích thước Stage hiện tại */
+    private void loadMainView(String role) throws IOException {
+        Stage currentStage = (Stage) usernameField.getScene().getWindow();
+        FXMLLoader loader;
+        String title;
 
-    private void loadView(String fxmlPath, String title) {
-        try {
-            Stage currentStage = (Stage) usernameField.getScene().getWindow();
-
-            // ✅ Lấy URL thay vì InputStream — để FXMLLoader có base location
-            URL fxmlUrl = getClass().getResource(fxmlPath);
-            if (fxmlUrl == null) {
-                throw new FileNotFoundException("FXML file not found at path: " + fxmlPath);
-            }
-
-            FXMLLoader fxmlLoader = new FXMLLoader(fxmlUrl);
-            Scene scene = new Scene(fxmlLoader.load());
-            currentStage.setMinWidth(1000);
-            currentStage.setMinHeight(700);
-            currentStage.setWidth(1000);
-            currentStage.setHeight(700);
-
-            currentStage.setTitle(title);
-            currentStage.setScene(scene);
-            currentStage.centerOnScreen();
-            currentStage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Không thể tải giao diện: " + fxmlPath);
-            throw new RuntimeException("Lỗi tải FXML: " + fxmlPath, e);
+        switch (role) {
+            case "Admin":
+                loader = new FXMLLoader(getClass().getResource("/view/Main.fxml"));
+                title = "Trang quản trị";
+                break;
+            case "Teacher":
+                loader = new FXMLLoader(getClass().getResource("/view/Main.fxml"));
+                title = "Trang giảng viên";
+                break;
+            case "Student":
+                loader = new FXMLLoader(getClass().getResource("/view/Main.fxml"));
+                title = "Trang sinh viên";
+                break;
+            default:
+                loader = new FXMLLoader(getClass().getResource("/view/Main.fxml"));
+                title = "Main";
+                break;
         }
+
+        Scene scene = new Scene(loader.load());
+
+        currentStage.setScene(scene);
+        currentStage.setTitle(title);
+
+        // Set kích thước lớn hơn login
+        currentStage.setMinWidth(479);
+        currentStage.setMinHeight(599);
+        currentStage.setWidth(1000);
+        currentStage.setHeight(700);
+
+        currentStage.centerOnScreen();
+        currentStage.show();
     }
 
+    /** Load lại login với kích thước 480x600 */
+    public static void loadLogin(Stage stage) {
+        try {
+            FXMLLoader loader = new FXMLLoader(LoginController.class.getResource("/view/login/login.fxml"));
+            Scene scene = new Scene(loader.load(), 480, 600);
+            stage.setScene(scene);
+            stage.setTitle("Exam Collection System - Login");
+            stage.setResizable(false);
+            stage.centerOnScreen();
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

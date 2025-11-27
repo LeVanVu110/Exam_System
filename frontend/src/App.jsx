@@ -14,7 +14,14 @@ import ExamManagement from "./pages/PDT/ExamManagement";
 import LoginForm from "./pages/Login";
 import PermissionPage from "@/pages/Admin/permission";
 
-import "./index.css";
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import Layout from "./component/Layout"
+import ExamSchedule from "./pages/ExamSchedule"
+import ClassSchedule from "./pages/ClassSchedule"
+import Documents from "./pages/Documents"
+import Userprofile from "./pages/UserProfile.jsx"
+import "./index.css"; // <--- quan trọng
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -24,6 +31,13 @@ function App() {
       <Routes>
 
         {/* Public routes */}
+        
+          <Route path="/UserProfile" element={<Userprofile />} />
+          
+        </Route>
+      </Routes>
+      {/* đăng nhập */}
+      <Routes>
         <Route path="/login" element={<LoginForm />} />
         <Route path="/403" element={<ForbiddenPage />} />
 

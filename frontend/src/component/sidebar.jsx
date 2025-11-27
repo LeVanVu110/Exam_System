@@ -10,6 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  UserCircle
+
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -21,6 +23,7 @@ const menuItems = [
   { icon: Calendar, label: "Lịch dạy/Lịch thi", path: "/exam-schedule" },
   { icon: HelpCircle, label: "Hỏi đáp cộng đồng", path: "/qa" },
   { icon: ShieldCheck, label: "Quản lý quyền", path: "/permission" },
+  { icon: UserCircle, label: "UserProfile", path: "/UserProfile" },
 ];
 
 export default function Sidebar() {

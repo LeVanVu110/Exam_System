@@ -227,9 +227,9 @@
 
                         <HBox alignment="CENTER_RIGHT" spacing="10.0">
                             <children>
-                                <Button fx:id="btnKiemTra" mnemonicParsing="false" text="Kiểm tra bài thi"/>
-                                <Button fx:id="btnXuLyThuBai" mnemonicParsing="false" styleClass="btn-primary-green"
-                                        text="Xử lý thu bài">
+                                <Button fx:id="btnKiemTra" mnemonicParsing="false" text="Kiểm tra bài thi" styleClass="btn-secondary"/>
+                                <Button fx:id="btnThuBaiThi" mnemonicParsing="false" styleClass="btn-primary-green"
+                                        text="Thu bài thi">
                                     <padding>
                                     </padding>
                                 </Button>

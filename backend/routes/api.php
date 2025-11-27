@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\{
     ExamSessionController,
     AuthController,
     // [QUAN TRỌNG] Import Controller mới và đặt tên khác (Alias) để không trùng
+    ExamSubmissionController
 };
 
 // ==============================================================================
@@ -25,7 +26,8 @@ use App\Http\Controllers\{
     UserPermissionController , // Controller cũ (không có Alias) dùng cho trang quản trị
     CategoryUserTypeController,
     AuthLoginController,
-    ExamScheduleController
+    ExamScheduleController,
+    UserProfileController
 };
 
 /*
@@ -73,6 +75,8 @@ Route::apiResources([
     'roles-permissions' => RolePermissionController::class,
     'category-user-types' => CategoryUserTypeController::class,
     'exam-schedule' => ExamSessionController::class,
+    'user-profiles'         => UserProfileController::class,
+    // Bỏ 'exam-schedule' vì ExamSession có nhiều routes custom, dùng group bên dưới
 ]);
 
 // --- 5. OTHER ROUTES ---
@@ -99,4 +103,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Thêm các API khác cần xác thực vào đây...
+});
+
+
+Route::prefix('exam-submissions')->group(function () {
+    Route::post('/upload', [ExamSubmissionController::class, 'upload']);
+    Route::get('/', [ExamSubmissionController::class, 'index']);
+    Route::get('/download/{id}', [ExamSubmissionController::class, 'download']);
 });

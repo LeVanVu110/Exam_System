@@ -96,6 +96,7 @@ const ExamDashboard = () => {
   //1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
   // const { summary, chartData, todaysSchedule, emptyReportsSessions } = useMemo(() => {
 //   const teacherSessions = examSessions.filter(
+
   //     (s) => s.exam_teacher && s.exam_teacher.includes(USER_NAME)
   //   );
   //   const today = new Date(selectedDate);
@@ -181,7 +182,7 @@ const ExamDashboard = () => {
     chartData: {
       barChartData: Object.keys(monthlyCounts).map((m) => ({
         name: `T${parseInt(m)}`,
-"Số ca thi": monthlyCounts[m],
+        "Số ca thi": monthlyCounts[m],
       })),
       pieChartData: [
         { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
