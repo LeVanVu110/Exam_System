@@ -275,10 +275,10 @@ export default function PermissionApp() {
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header Content */}
         <div className="p-6 pb-2">
-            <div className="mb-4 text-center">
+            {/* <div className="mb-4 text-center">
                 <h1 className="text-2xl font-bold text-blue-900">Hệ Thống Phân Quyền</h1>
                 <p className="text-blue-600 text-sm">Quản lý quyền truy cập chi tiết cho từng Vai trò (Role)</p>
-            </div>
+            </div> */}
             
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 h-[calc(100vh-8rem)] max-w-7xl mx-auto w-full">
             
