@@ -6,22 +6,28 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox spacing="15" style="-fx-padding: 20;" xmlns="http://javafx.com/javafx/21"
+<VBox spacing="15" style="-fx-padding: 20;"
+    xmlns="http://javafx.com/javafx/21"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="com.example.studentapp.controller.ThongKeController">
-    <Label text="TRẠNG THÁI PHÒNG THI &amp; MÁY TÍNH" textFill="#2c3e50">
-        <font>
-            <Font name="System Bold" size="22.0" />
-        </font>
-    </Label>
+    
+    <VBox>
+        <Label text="KIỂM TRA FILE BÀI NỘP (SERVER)" textFill="#2c3e50">
+            <font>
+                <Font name="System Bold" size="22.0" />
+            </font>
+        </Label>
+        <Label text="* Nhấn đúp chuột (Double click) vào ca thi để xem chi tiết file bài nộp bên trong." 
+               textFill="#7f8c8d" style="-fx-font-style: italic;"/>
+    </VBox>
 
     <TableView fx:id="tableThongKe" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="colMaCa" prefWidth="150.0" text="Mã Ca Thi" />
             <TableColumn fx:id="colTenMon" prefWidth="300.0" text="Môn Thi" />
-            <TableColumn fx:id="colTongMay" prefWidth="150.0" text="Tổng Máy (Sĩ số)"
+            <TableColumn fx:id="colTongMay" prefWidth="150.0" text="Tổng Máy"
                 style="-fx-alignment: CENTER;" />
-            <TableColumn fx:id="colDaNop" prefWidth="150.0" text="Đã Nộp Bài"
+            <TableColumn fx:id="colDaNop" prefWidth="150.0" text="Đã Nộp (File)"
                 style="-fx-text-fill: green; -fx-font-weight: bold; -fx-alignment: CENTER;" />
             <TableColumn fx:id="colMayTrong" prefWidth="150.0" text="Máy Trống"
                 style="-fx-text-fill: red; -fx-font-weight: bold; -fx-alignment: CENTER;" />
