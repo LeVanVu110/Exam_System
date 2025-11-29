@@ -114,7 +114,7 @@ const AllTeachersModal = ({ isOpen, onClose, teachers, currentUserId }) => {
 // Component chính để hiển thị User Profile
 export default function UserProfile() {
     const API_URL_ALL = 'http://localhost:8000/api/user-profiles';
-    const CURRENT_USER_PROFILE_ID = 2; 
+    const CURRENT_USER_PROFILE_ID = 4; 
 
     const { data: allProfiles, loading, error, refetch } = useFetch(API_URL_ALL); 
 
