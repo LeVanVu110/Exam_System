@@ -81,4 +81,14 @@ class User extends Authenticatable
     {
         return $this->roles()->first();
     }
+
+    // Thêm vào app/Models/User.php
+
+    public function hasAccess($screenCode, $permission = 'is_view')
+    {
+        return $this->roles()->whereHas('screens', function ($q) use ($screenCode, $permission) {
+            $q->where('screen_code', $screenCode) // Tìm theo mã màn hình (VD: STUDENT_MGT)
+                ->where("roles_permissions.$permission", 1); // Tìm theo cột quyền (is_add, is_download...)
+        })->exists();
+    }
 }

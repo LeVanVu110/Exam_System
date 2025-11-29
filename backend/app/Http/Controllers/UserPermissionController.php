@@ -3,53 +3,61 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use App\Models\User;
 
 class UserPermissionController extends Controller
 {
+    /**
+     * API trả về danh sách quyền tổng hợp của User hiện tại
+     * Route: GET /api/my-permissions
+     */
     public function getMyPermissions(Request $request)
     {
-        // Lấy user từ token
-        $user = $request->user(); // hoặc auth()->user()
+        // 1. Lấy user hiện tại từ Token
+        $user = $request->user();
 
         if (!$user) {
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        // Load quan hệ roles.permissions
-        $user->load('roles.permissions');
+        // 2. Load Eager Loading: User -> Roles -> Screens (kèm dữ liệu Pivot)
+        // Lưu ý: Trong Model Role cần có function screens()
+        $user->load(['roles.screens']);
 
-        $permissions = [];
+        $finalPermissions = [];
 
-        // Duyệt qua các Roles
+        // 3. Duyệt qua từng Role của User
         foreach ($user->roles as $role) {
-            // Duyệt qua các Permissions của từng Role
-            foreach ($role->permissions as $perm) {
-                $code = $perm->permission_name;
+            // Duyệt qua từng Màn hình (Screen) trong Role đó
+            foreach ($role->screens as $screen) {
+                // Key là Mã màn hình (VD: 'STUDENT_MGT', 'EXAM_SCHEDULE')
+                // Nếu bạn lưu trong DB là 'permission_name' thì sửa lại dòng này
+                $code = $screen->screen_code;
 
-                if (!isset($permissions[$code])) {
-                    $permissions[$code] = [
-                        'is_view' => 0,
-                        'is_add' => 0,
-                        'is_edit' => 0,
-                        'is_delete' => 0
+                // Khởi tạo nếu chưa có trong mảng kết quả
+                if (!isset($finalPermissions[$code])) {
+                    $finalPermissions[$code] = [
+                        'is_view'     => 0,
+                        'is_add'      => 0,
+                        'is_edit'     => 0,
+                        'is_delete'   => 0,
+                        'is_upload'   => 0,
+                        'is_download' => 0,
                     ];
                 }
 
-                // Lấy thông tin từ bảng trung gian (pivot)
-                // Dùng hàm max để nếu có 1 role cho phép thì sẽ được phép (logic OR)
-                $permissions[$code]['is_view']   = max($permissions[$code]['is_view'],   $perm->pivot->is_view ?? 0);
-                $permissions[$code]['is_add']    = max($permissions[$code]['is_add'],    $perm->pivot->is_add ?? 0);
-                $permissions[$code]['is_edit']   = max($permissions[$code]['is_edit'],   $perm->pivot->is_edit ?? 0);
-                $permissions[$code]['is_delete'] = max($permissions[$code]['is_delete'], $perm->pivot->is_delete ?? 0);
+                // 4. Logic Hợp nhất (OR): Chỉ cần 1 Role có quyền thì User có quyền
+                // Sử dụng hàm max() để lấy giá trị lớn nhất (1 > 0)
+                // pivot là bảng trung gian (role_screens)
+                $finalPermissions[$code]['is_view']     = max($finalPermissions[$code]['is_view'],     $screen->pivot->is_view ?? 0);
+                $finalPermissions[$code]['is_add']      = max($finalPermissions[$code]['is_add'],      $screen->pivot->is_add ?? 0);
+                $finalPermissions[$code]['is_edit']     = max($finalPermissions[$code]['is_edit'],     $screen->pivot->is_edit ?? 0);
+                $finalPermissions[$code]['is_delete']   = max($finalPermissions[$code]['is_delete'],   $screen->pivot->is_delete ?? 0);
+                $finalPermissions[$code]['is_upload']   = max($finalPermissions[$code]['is_upload'],   $screen->pivot->is_upload ?? 0);
+                $finalPermissions[$code]['is_download'] = max($finalPermissions[$code]['is_download'], $screen->pivot->is_download ?? 0);
             }
         }
 
-        // 2. (Tùy chọn) Lấy quyền riêng của User nếu có bảng user_permissions
-        // ... Logic tương tự nếu cần
-
-        return response()->json($permissions); // Trả về JSON đúng cấu trúc Frontend mong muốn
+        return response()->json($finalPermissions);
     }
 }

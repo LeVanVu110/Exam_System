@@ -18,6 +18,11 @@ class ExamSessionController extends Controller
     // 📄 Import file Excel
     public function importExcel(Request $request)
     {
+        // (Tùy chọn) Kiểm tra quyền Upload
+        if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_upload')) {
+            return response()->json(['message' => 'Bạn không có quyền tải lên dữ liệu!'], 403);
+        }
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls'
         ]);
@@ -60,6 +65,11 @@ class ExamSessionController extends Controller
     // 📅 Danh sách kỳ thi
     public function index(Request $request)
     {
+        // (Tùy chọn) Kiểm tra quyền Xem
+        // if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_view')) {
+        //     return response()->json(['message' => 'Bạn không có quyền xem danh sách này!'], 403);
+        // }
+
         $query = ExamSession::query()
             ->leftJoin('teachers as t1', 'exam_sessions.assigned_teacher1_id', '=', 't1.teacher_id')
             ->leftJoin('user_profiles as up1', 't1.user_profile_id', '=', 'up1.user_profile_id')
@@ -208,9 +218,15 @@ class ExamSessionController extends Controller
         }
     }
 
-    // 📤 Xuất file Excel
+    // 📤 Xuất file Excel (ĐÃ THÊM CHẶN QUYỀN)
     public function exportExcel(Request $request)
     {
+        // 🔒 CHECK QUYỀN DOWNLOAD
+        // 'EXAM_SCHEDULE': Mã màn hình trong DB (hãy đảm bảo nó khớp với bảng permissions)
+        if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_download')) {
+            return response()->json(['message' => 'Bạn không có quyền tải xuống dữ liệu này!'], 403);
+        }
+
         // Kiểm tra ngày nhập hợp lệ
         $request->validate([
             'from' => 'nullable|date',
@@ -231,9 +247,17 @@ class ExamSessionController extends Controller
     }
 
 
-    // 🧾 Xuất báo cáo PDF
+    // 🧾 Xuất báo cáo PDF (ĐÃ THÊM CHẶN QUYỀN)
     public function exportReport($exam_session_id)
     {
+        // 🔒 CHECK QUYỀN DOWNLOAD
+        // Vì hàm này không có Request $request được inject, ta dùng helper request() hoặc Auth::user()
+        $user = request()->user() ?? Auth::user();
+
+        if (!$user || !$user->hasAccess('EXAM_SCHEDULE', 'is_download')) {
+            return response()->json(['message' => 'Bạn không có quyền tải xuống báo cáo này!'], 403);
+        }
+
         $exam = ExamSession::with(['course', 'assignedTeacher1', 'assignedTeacher2'])->findOrFail($exam_session_id);
         $pdf = Pdf::loadView('reports.exam_result', compact('exam'));
         return $pdf->download('bao_cao_ky_thi_' . $exam->exam_code . '.pdf');
@@ -242,6 +266,11 @@ class ExamSessionController extends Controller
     // 🗑️ Xóa 1 kỳ thi
     public function destroy($id)
     {
+        // (Tùy chọn) Kiểm tra quyền Xóa
+        if (!request()->user()->hasAccess('EXAM_SCHEDULE', 'is_delete')) {
+            return response()->json(['message' => 'Bạn không có quyền xóa dữ liệu này!'], 403);
+        }
+
         try {
             $exam = ExamSession::find($id);
 
@@ -270,6 +299,11 @@ class ExamSessionController extends Controller
     // 🧹 Xóa hàng loạt kỳ thi
     public function deleteBulk(Request $request)
     {
+        // (Tùy chọn) Kiểm tra quyền Xóa
+        if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_delete')) {
+            return response()->json(['message' => 'Bạn không có quyền xóa dữ liệu này!'], 403);
+        }
+
         try {
             $ids = $request->input('ids', []);
 

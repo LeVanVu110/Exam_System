@@ -30,13 +30,11 @@ export default function LoginForm() {
       if (!res.ok) {
         setErrorMessage(data.message || "Đăng nhập thất bại");
       } else {
-        // Lưu Token
-        // if (rememberMe) localStorage.setItem("token", data.token);
-        // sessionStorage.setItem("token", data.token);
-        localStorage.setItem("token", data.token);
+        // ✅ Lưu Token
+        localStorage.setItem("ACCESS_TOKEN", data.token);
 
         // ============================================================
-        // 2. GỌI API LẤY QUYỀN (Logic mới thêm vào)
+        // 2. GỌI API LẤY QUYỀN
         // ============================================================
         try {
           const permRes = await fetch(
@@ -44,7 +42,7 @@ export default function LoginForm() {
             {
               method: "GET",
               headers: {
-                Authorization: `Bearer ${data.token}`, // Gửi token vừa nhận được để xác thực
+                Authorization: `Bearer ${data.token}`,
                 "Content-Type": "application/json",
               },
             }
@@ -52,7 +50,6 @@ export default function LoginForm() {
 
           if (permRes.ok) {
             const myPermissions = await permRes.json();
-            // Lưu bảng quyền vào localStorage để Component ProtectedRoute sử dụng
             localStorage.setItem(
               "user_permissions",
               JSON.stringify(myPermissions)
@@ -66,26 +63,46 @@ export default function LoginForm() {
         }
         // ============================================================
 
-        // 3. CHUYỂN HƯỚNG (Giữ nguyên logic cũ của bạn)
-        // 3. CHUYỂN HƯỚNG
-        switch (data.role) {
+        // 3. CHUYỂN HƯỚNG VỚI DEBUG
+        console.log("🔍 Role nhận được từ Backend:", data.role); // Kiểm tra log này!
+
+        // Chuẩn hóa role (loại bỏ khoảng trắng thừa nếu có)
+        const roleName = data.role ? data.role.trim() : "";
+
+        switch (roleName) {
           case "Admin":
+            console.log("➡️ Chuyển hướng đến Dashboard (Admin)");
             navigate("/dashboard", {
               state: { message: "Đăng nhập thành công với quyền Admin!" },
             });
             break;
-          case "Academic Affairs Office":
+
+          case "Academic Affairs Office": // Phải khớp 100% với DB
+            console.log("➡️ Chuyển hướng đến ExamManagement (PDT)");
             navigate("/PDT/ExamManagement", {
               state: { message: "Chào Phòng Đào Tạo!" },
             });
             break;
+
           case "Teacher":
+            console.log("➡️ Chuyển hướng đến Documents (Teacher)");
             navigate("/documents", {
               state: { message: "Đăng nhập thành công. Xin chào Thầy/Cô!" },
             });
             break;
+
+          case "Student": // Thêm case Student nếu cần
+             console.log("➡️ Chuyển hướng đến Student (Student)");
+             navigate("/student-dashboard", {
+               state: { message: "Chào mừng sinh viên!" }
+             });
+             break;
+
           default:
-            navigate("/a", { state: { message: "Chào mừng bạn!" } });
+            console.warn("⚠️ Role không được nhận diện:", roleName);
+            // Thay vì chuyển đến /a, hãy thông báo lỗi hoặc chuyển về trang chủ chung
+            setErrorMessage(`Đăng nhập thành công nhưng Vai trò "${roleName}" chưa được cấu hình trang đích.`);
+            // navigate("/dashboard"); // Hoặc chuyển về dashboard mặc định để test
         }
       }
     } catch (err) {
@@ -99,9 +116,7 @@ export default function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md mx-auto">
-        {/* Card Container */}
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-          {/* Card Header */}
           <div className="p-8 pb-6 text-center space-y-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
               Đăng Nhập
@@ -111,10 +126,8 @@ export default function LoginForm() {
             </p>
           </div>
 
-          {/* Card Content */}
           <div className="p-8 pt-0">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Error Message */}
               {errorMessage && (
                 <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center">
                   {errorMessage}
@@ -122,7 +135,6 @@ export default function LoginForm() {
               )}
 
               <div className="space-y-4">
-                {/* Email Input */}
                 <div className="space-y-2">
                   <label
                     htmlFor="email"
@@ -144,10 +156,8 @@ export default function LoginForm() {
                   </div>
                 </div>
 
-                {/* Password Input */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    {/* ĐÃ SỬA: class -> className */}
                     <label
                       htmlFor="password"
                       className="block text-sm font-medium text-gray-700"
@@ -170,7 +180,6 @@ export default function LoginForm() {
                 </div>
               </div>
 
-              {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <input
@@ -195,7 +204,6 @@ export default function LoginForm() {
                 </a>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}

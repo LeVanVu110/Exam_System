@@ -38,8 +38,15 @@ class Role extends Model
     public function permissions()
     {
         return $this->belongsToMany(Permission::class, 'roles_permissions', 'role_id', 'permission_id')
-                    ->withPivot('is_view', 'is_add', 'is_edit', 'is_delete')
-                    ->withTimestamps();
+            ->withPivot('is_view', 'is_add', 'is_edit', 'is_delete')
+            ->withTimestamps();
     }
 
+    // [ĐÃ SỬA] Quan hệ Role - Screen (Tận dụng bảng roles_permissions có sẵn)
+    public function screens()
+    {
+        // Lưu ý: Chúng ta map 'screen_id' của Model Screen vào cột 'permission_id' của bảng trung gian
+        return $this->belongsToMany(Screen::class, 'roles_permissions', 'role_id', 'permission_id')
+            ->withPivot('is_view', 'is_add', 'is_edit', 'is_delete', 'is_upload', 'is_download');
+    }
 }

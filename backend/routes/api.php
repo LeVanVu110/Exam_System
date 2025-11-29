@@ -44,7 +44,7 @@ Route::put('/students/{id}', [StudentController::class, 'update']);
 Route::delete('/students/{id}', [StudentController::class, 'destroy']);
 
 // --- 2. EXAM SESSION ROUTES ---
-Route::prefix('exam-sessions')->group(function () {
+Route::prefix('exam-sessions')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [ExamSessionController::class, 'index']);
     Route::get('/today', [ExamSessionController::class, 'todayExams']);
     Route::get('/search', [ExamSessionController::class, 'searchByRoom']);
@@ -63,8 +63,11 @@ Route::prefix('exam-sessions')->group(function () {
 
 Route::get('/screens', [PermissionController::class, 'getScreens']);
 Route::post('/screens', [PermissionController::class, 'storeScreen']);
-Route::get('/permissions/{id}/screens', [PermissionController::class, 'getMatrix']);
-Route::post('/permissions/{id}/update-matrix', [PermissionController::class, 'updateMatrix']);
+// [ĐÃ SỬA LẠI ĐOẠN NÀY ĐỂ KHỚP VỚI REACT]
+// Đổi từ 'permissions' -> 'roles'
+// Đổi Controller về RoleController (vì đang thao tác trên Role ID)
+Route::get('/roles/{id}/screens', [RoleController::class, 'getScreensByRole']);
+Route::post('/roles/{id}/update-matrix', [RoleController::class, 'updateMatrix']);
 
 
 // --- 4. CRUD RESOURCES (Dùng Controller thường) ---
