@@ -16,9 +16,7 @@ export default function LoginForm() {
     setErrorMessage("");
 
     try {
-      // ============================================================
       // 1. GỌI API ĐĂNG NHẬP
-      // ============================================================
       const res = await fetch("http://localhost:8000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -26,8 +24,6 @@ export default function LoginForm() {
       });
 
       const data = await res.json();
-
-      // 👉 DEBUG: Xem Server trả về Role tên chính xác là gì
       console.log("👉 API Login Response:", data);
 
       if (!res.ok) {
@@ -39,9 +35,7 @@ export default function LoginForm() {
       // ✅ Lưu Token
       localStorage.setItem("ACCESS_TOKEN", data.token);
 
-      // ============================================================
-      // 2. GỌI API LẤY QUYỀN (Xử lý an toàn cho 204)
-      // ============================================================
+      // 2. GỌI API LẤY QUYỀN
       try {
         const permRes = await fetch("http://localhost:8000/api/my-permissions", {
           method: "GET",
@@ -51,71 +45,53 @@ export default function LoginForm() {
           },
         });
 
-        // Chỉ parse JSON nếu status là 200. Nếu 204 (No Content) thì bỏ qua để tránh lỗi crash app
         if (permRes.ok && permRes.status !== 204) {
           const myPermissions = await permRes.json();
           localStorage.setItem("user_permissions", JSON.stringify(myPermissions));
-          console.log("✅ Đã lưu quyền user:", myPermissions);
         } else {
-          console.warn("⚠️ API quyền trả về 204 hoặc rỗng (User chưa có quyền nào).");
-          localStorage.setItem("user_permissions", JSON.stringify({})); // Lưu rỗng để không lỗi app
+          localStorage.setItem("user_permissions", JSON.stringify({}));
         }
       } catch (permError) {
-        console.error("❌ Lỗi khi gọi API quyền:", permError);
-        // Không return ở đây, vẫn cho đăng nhập tiếp
+        console.error("❌ Lỗi API quyền:", permError);
       }
 
-      // ============================================================
-      // 3. CHUYỂN HƯỚNG (Cập nhật theo Database thực tế)
-      // ============================================================
-      
-      // Lấy role, xóa khoảng trắng thừa
+      // 3. CHUYỂN HƯỚNG & LƯU ROLE (QUAN TRỌNG NHẤT)
       const rawRole = data.role ? data.role.trim() : "";
       
-      console.log(`🚀 Đang chuyển hướng cho role gốc: "${rawRole}"`);
+      // ✅ [FIX LỖI] Lưu Role vào localStorage để Layout.jsx đọc được
+      localStorage.setItem("USER_ROLE", rawRole);
 
-      // Tắt loading trước khi chuyển
+      console.log(`🚀 Đang chuyển hướng cho role: "${rawRole}"`);
       setIsLoading(false);
 
-      // Switch case dựa trên dữ liệu thật từ Database
       switch (rawRole) {
-        // --- ID 1: ADMIN (DB: Admin) ---
         case "Admin":
         case "admin":
         case "Administrator":
         case "1": 
-          console.log("-> Chuyển hướng Dashboard Admin");
           window.location.href = "/dashboard";
           break;
 
-        // --- ID 4: PHÒNG ĐÀO TẠO (DB: Academic Affairs Office) ---
-        case "Academic Affairs Office": // Khớp DB
+        case "Academic Affairs Office":
         case "PDT": 
         case "4":
-          console.log("-> Chuyển hướng PDT");
           window.location.href = "/PDT/ExamManagement";
           break;
 
-        // --- ID 2: GIẢNG VIÊN (DB: teacher - viết thường) ---
-        case "teacher": // Khớp DB (quan trọng)
-        case "Teacher": // Dự phòng
-        case "Lecturer":
+        case "teacher": 
+        case "Teacher": 
         case "2":
-          console.log("-> Chuyển hướng Teacher");
           window.location.href = "/documents";
           break;
 
-        // --- ID 3: SINH VIÊN (DB: Student) ---
-        case "Student": // Khớp DB
+        case "Student":
         case "student":
         case "3":
-          console.log("-> Chuyển hướng Student");
           window.location.href = "/student-dashboard";
           break;
 
-        // --- MẶC ĐỊNH (Không khớp role nào) ---
         default:
-          console.warn(`⚠️ Role "${rawRole}" không khớp case nào. Chuyển về Home.`);
+          console.warn(`⚠️ Role "${rawRole}" không khớp.`);
           window.location.href = "/"; 
       }
 
@@ -131,14 +107,9 @@ export default function LoginForm() {
       <div className="w-full max-w-md mx-auto">
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
           <div className="p-8 pb-6 text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Đăng Nhập
-            </h1>
-            <p className="text-gray-500">
-              Nhập thông tin tài khoản để truy cập hệ thống
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Đăng Nhập</h1>
+            <p className="text-gray-500">Nhập thông tin tài khoản để truy cập hệ thống</p>
           </div>
-
           <div className="p-8 pt-0">
             <form onSubmit={handleSubmit} className="space-y-6">
               {errorMessage && (
@@ -146,74 +117,31 @@ export default function LoginForm() {
                   {errorMessage}
                 </div>
               )}
-
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <input
-                      id="email"
-                      type="email"
-                      placeholder="name@edu.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full pl-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
+                    <input id="email" type="email" placeholder="name@edu.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
-
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Mật khẩu</label>
-                  </div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">Mật khẩu</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full pl-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
+                    <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
               </div>
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <input
-                    id="remember"
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer select-none">
-                    Ghi nhớ đăng nhập
-                  </label>
+                  <input id="remember" type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer select-none">Ghi nhớ đăng nhập</label>
                 </div>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
-                  Quên mật khẩu?
-                </a>
+                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">Quên mật khẩu?</a>
               </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg disabled:opacity-70"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang xử lý...
-                  </>
-                ) : (
-                  "Đăng Nhập"
-                )}
+              <button type="submit" disabled={isLoading} className="w-full h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg disabled:opacity-70">
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang xử lý...</> : "Đăng Nhập"}
               </button>
             </form>
           </div>
