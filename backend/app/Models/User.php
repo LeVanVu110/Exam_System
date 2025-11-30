@@ -84,11 +84,15 @@ class User extends Authenticatable
 
     // Thêm vào app/Models/User.php
 
-    public function hasAccess($screenCode, $permission = 'is_view')
+    public function hasAccess($permissionName, $accessType = 'is_view')
     {
-        return $this->roles()->whereHas('screens', function ($q) use ($screenCode, $permission) {
-            $q->where('screen_code', $screenCode) // Tìm theo mã màn hình (VD: STUDENT_MGT)
-                ->where("roles_permissions.$permission", 1); // Tìm theo cột quyền (is_add, is_download...)
+        // Sửa 'screens' thành 'permissions' (để gọi đúng quan hệ trong Role)
+        return $this->roles()->whereHas('permissions', function ($q) use ($permissionName, $accessType) {
+            // ✅ SỬA LỖI QUAN TRỌNG TẠI ĐÂY:
+            // Database dùng cột 'permission_name', không phải 'screen_code'
+            $q->where('permission_name', $permissionName)
+              // Kiểm tra cột quyền trong bảng trung gian (roles_permissions)
+              ->where("roles_permissions.$accessType", 1);
         })->exists();
     }
 }
