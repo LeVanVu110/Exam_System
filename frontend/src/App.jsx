@@ -34,7 +34,6 @@ function App() {
         <Route element={<ProtectedRoute screenCode="DASHBOARD" />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<ExamDashboard />} />
-            <Route path="/UserProfile" element={<Userprofile />} />
           </Route>
         </Route>
 
@@ -65,6 +64,14 @@ function App() {
            <Route element={<Layout />}>
              <Route path="/permission" element={<PermissionPage />} />
            </Route>
+        </Route>
+
+        {/* 6. Quản profile */}
+        <Route element={<ProtectedRoute screenCode="USER-PRO" />}>
+          <Route element={<LayoutPDT />}>
+            {/* Đây chính là route bạn đang cần */}
+            <Route path="/UserProfile" element={<Userprofile />} />
+          </Route>
         </Route>
 
         {/* Catch all - 404 */}

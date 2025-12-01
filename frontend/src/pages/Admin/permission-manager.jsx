@@ -22,7 +22,7 @@ export default function PermissionApp() {
   const [currentUserRole, setCurrentUserRole] = useState("");
 
   const [showAddRole, setShowAddRole] = useState(false);
-  const [showAddScreen, setShowAddScreen] = useState(false);
+  const [showAddScreen, setShowAddScreen] = useState(false); // State hiển thị modal thêm màn hình
   const [newRoleName, setNewRoleName] = useState("");
   const [newScreenName, setNewScreenName] = useState("");
   const [newScreenCode, setNewScreenCode] = useState("");
@@ -31,7 +31,6 @@ export default function PermissionApp() {
   // 1. KHỞI TẠO: Tải data & Lấy Role từ LocalStorage
   // ==================================================================================
   useEffect(() => {
-    // Lấy Role thật từ localStorage
     const storedRole = localStorage.getItem("USER_ROLE") || "";
     setCurrentUserRole(storedRole);
 
@@ -95,14 +94,73 @@ export default function PermissionApp() {
   const canEdit = isEditable();
 
   // ==================================================================================
-  // 🆕 HÀM REFRESH QUYỀN CỦA CHÍNH MÌNH (KEY FUNCTION)
+  // 3. LOGIC THÊM MÀN HÌNH MỚI (MỚI THÊM)
+  // ==================================================================================
+  const handleAddScreen = async () => {
+    // Validate đầu vào
+    if (!newScreenName.trim() || !newScreenCode.trim()) {
+        alert("Vui lòng nhập tên và mã màn hình!");
+        return;
+    }
+
+    setLoading(true);
+    try {
+        const token = localStorage.getItem("ACCESS_TOKEN");
+        
+        // Gọi API tạo màn hình
+        const response = await fetch(`${API_URL}/screens`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ 
+                screen_name: newScreenName, 
+                screen_code: newScreenCode 
+            })
+        });
+
+        if (response.ok) {
+            const newScreen = await response.json();
+            
+            // 1. Cập nhật state danh sách màn hình
+            setScreens([...screens, newScreen]);
+            
+            // 2. Cập nhật Matrix (khởi tạo row quyền mặc định là false cho màn hình mới)
+            setMatrix(prev => ({
+                ...prev,
+                [newScreen.screen_id]: {
+                    screen_id: newScreen.screen_id,
+                    is_view: false, is_add: false, is_edit: false, 
+                    is_delete: false, is_upload: false, is_download: false, is_all: false
+                }
+            }));
+
+            // 3. Reset form và đóng modal
+            setNewScreenName("");
+            setNewScreenCode("");
+            setShowAddScreen(false);
+            alert("✅ Thêm màn hình thành công!");
+        } else {
+            const err = await response.json();
+            alert(`❌ Lỗi: ${err.message || "Không thể thêm màn hình"}`);
+        }
+    } catch (error) {
+        console.error("Lỗi thêm màn hình:", error);
+        alert("❌ Lỗi kết nối Server");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  // ==================================================================================
+  // 4. LOGIC REFRESH QUYỀN
   // ==================================================================================
   const refreshMyPermissions = async () => {
     try {
         const token = localStorage.getItem("ACCESS_TOKEN");
         if (!token) return;
 
-        // Gọi API lấy quyền mới nhất từ Backend
         const res = await fetch(`${API_URL}/my-permissions`, {
             headers: { 
                 "Authorization": `Bearer ${token}`,
@@ -112,17 +170,9 @@ export default function PermissionApp() {
 
         if (res.ok && res.status !== 204) {
             const newPermissions = await res.json();
-            
-            // 1. Cập nhật LocalStorage
             localStorage.setItem("user_permissions", JSON.stringify(newPermissions));
-            console.log("🔄 Đã tự động cập nhật quyền mới:", newPermissions);
-
-            // 2. 🔥 PHÁT SỰ KIỆN ĐỂ CÁC COMPONENT KHÁC (SIDEBAR) BIẾT
-            // Tạo một Custom Event tên là 'permissions_updated'
             const event = new Event('permissions_updated');
             window.dispatchEvent(event);
-            
-            // Nếu bạn dùng Context API, đây là lúc gọi hàm updateContext
         }
     } catch (error) {
         console.error("Lỗi khi refresh quyền:", error);
@@ -130,7 +180,7 @@ export default function PermissionApp() {
   };
 
   // ==================================================================================
-  // 3. XỬ LÝ API VÀ SAVE
+  // 5. XỬ LÝ API LOAD MATRIX VÀ SAVE
   // ==================================================================================
   useEffect(() => {
     if (!selectedRoleId || screens.length === 0) return;
@@ -193,7 +243,6 @@ export default function PermissionApp() {
         is_delete: row.is_delete ? 1 : 0, is_upload: row.is_upload ? 1 : 0, is_download: row.is_download ? 1 : 0, is_all: row.is_all ? 1 : 0 
       }));
       
-      // 1. Lưu xuống DB
       const response = await fetch(`${API_URL}/roles/${selectedRoleId}/update-matrix`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,11 +251,8 @@ export default function PermissionApp() {
       
       if (!response.ok) throw new Error("Lỗi Server");
 
-      // 👉 2. LOGIC TỰ ĐỘNG CẬP NHẬT QUYỀN (Realtime Update)
-      // Kiểm tra: Nếu Role đang sửa CHÍNH LÀ Role của user hiện tại
       const targetRoleObj = roles.find(r => r.role_id === selectedRoleId);
       if (targetRoleObj && normalizeRole(targetRoleObj.role_name) === normalizeRole(currentUserRole)) {
-          // Gọi hàm refresh quyền
           await refreshMyPermissions();
           alert("✅ Cập nhật thành công! Các quyền hạn mới đã được áp dụng ngay lập tức.");
       } else {
@@ -221,7 +267,7 @@ export default function PermissionApp() {
     }
   };
 
-  // --- RENDER (Không thay đổi nhiều) ---
+  // --- RENDER ---
   const filteredScreens = screens.filter(s => s.screen_name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.screen_code && s.screen_code.toLowerCase().includes(searchTerm.toLowerCase())));
 
   if (initialLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600"/></div>;
@@ -269,9 +315,19 @@ export default function PermissionApp() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* 👉 Nút Thêm Màn Hình */}
+                    {normalizeRole(currentUserRole) === "ADMIN" && (
+                        <button 
+                            onClick={() => setShowAddScreen(true)} 
+                            className="hidden sm:flex items-center gap-1 px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 text-xs font-medium shadow-sm transition-colors"
+                        >
+                            <Plus className="w-4 h-4" /> Thêm Màn Hình
+                        </button>
+                    )}
+
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                        <input type="text" placeholder="Tìm màn hình..." className="h-9 w-full rounded-md border border-gray-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-blue-500 sm:w-64" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <input type="text" placeholder="Tìm màn hình..." className="h-9 w-full rounded-md border border-gray-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-blue-500 sm:w-56" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
                     {/* NÚT LƯU */}
                     <button
@@ -344,6 +400,65 @@ export default function PermissionApp() {
             </div>
         </div>
       </div>
+
+      {/* 👉 MODAL THÊM MÀN HÌNH */}
+      {showAddScreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
+                    <h3 className="font-semibold text-lg text-gray-800">Thêm Màn Hình Mới</h3>
+                    <button onClick={() => setShowAddScreen(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-200">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-5">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên màn hình</label>
+                        <input 
+                            type="text" 
+                            className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                            placeholder="Ví dụ: Quản lý sinh viên"
+                            value={newScreenName}
+                            onChange={(e) => setNewScreenName(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Mã màn hình (Code)</label>
+                        <input 
+                            type="text" 
+                            className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-sm shadow-sm"
+                            placeholder="Ví dụ: STD_MGT"
+                            value={newScreenCode}
+                            onChange={(e) => setNewScreenCode(e.target.value.toUpperCase())}
+                        />
+                        <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                            <Shield className="w-3 h-3" /> Mã nên viết hoa, không dấu, dùng gạch dưới (VD: SYS_USER).
+                        </p>
+                    </div>
+                </div>
+
+                <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                    <button 
+                        onClick={() => setShowAddScreen(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 rounded-lg transition-all"
+                    >
+                        Hủy
+                    </button>
+                    <button 
+                        onClick={handleAddScreen}
+                        disabled={loading}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Thêm mới
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 }
