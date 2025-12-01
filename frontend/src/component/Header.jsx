@@ -1,10 +1,12 @@
 "use client"
 
 import { Search, Bell, Settings } from "lucide-react"
+import { Search, Bell, Settings } from "lucide-react"
 import Button from "./ui/Button"
 
 export default function Header() {
   return (
+    <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
     <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
       <div className="flex-1 max-w-md">
         <div className="relative">
@@ -19,8 +21,10 @@ export default function Header() {
 
       <div className="flex items-center gap-4 ml-6">
         <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon">
           <Bell size={20} />
         </Button>
+        <Button variant="ghost" size="icon">
         <Button variant="ghost" size="icon">
           <Settings size={20} />
         </Button>
@@ -28,3 +32,4 @@ export default function Header() {
     </header>
   )
 }
+

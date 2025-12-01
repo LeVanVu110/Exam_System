@@ -32,6 +32,7 @@
         </dependency>
 
         <!-- JSON -->
+        <!-- JSON -->
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
@@ -39,12 +40,14 @@
         </dependency>
 
         <!-- Jackson -->
+        <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.17.0</version>
         </dependency>
 
+        <!-- Apache HttpClient -->
         <!-- Apache HttpClient -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
@@ -67,6 +70,7 @@
     <build>
         <plugins>
             <!-- JavaFX Maven Plugin -->
+            <!-- JavaFX Maven Plugin -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -76,6 +80,7 @@
                 </configuration>
             </plugin>
 
+            <!-- Maven Compiler -->
             <!-- Maven Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

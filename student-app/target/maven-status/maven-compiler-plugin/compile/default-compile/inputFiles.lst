@@ -1,7 +1,6 @@
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\service\FolderScanService.java
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\controller\MainController.java
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\model\RoomDetailResponse.java
-D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\module-info.java
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\model\RoomModel.java
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\controller\HeaderController.java
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\controller\ExamRoomController.java
@@ -15,3 +14,4 @@ D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\ex
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\controller\UploadController.java
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\util\HttpClientUtil.java
 D:\DoAn_Chuyen_De_Web_2\vu_one_giaodien_teacher\student-app\src\main\java\com\example\studentapp\model\RoomResponse.java
+
