@@ -10,5 +10,17 @@ class PermissionScreen extends Model
     use HasFactory;
 
     protected $table = 'permissions_screens';
-    protected $fillable = ['permission_id', 'screen_id'];
+    protected $primaryKey = 'permission_screen_id';
+
+    protected $fillable = [
+        'permission_id',
+        'screen_id',
+        'is_view',
+        'is_add',
+        'is_edit',
+        'is_delete',
+        'is_upload',
+        'is_download',
+        'is_all'
+    ];
 }

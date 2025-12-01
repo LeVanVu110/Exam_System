@@ -95,7 +95,8 @@ const ExamDashboard = () => {
 
   //1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
   // const { summary, chartData, todaysSchedule, emptyReportsSessions } = useMemo(() => {
-  //   const teacherSessions = examSessions.filter(
+//   const teacherSessions = examSessions.filter(
+
   //     (s) => s.exam_teacher && s.exam_teacher.includes(USER_NAME)
   //   );
   //   const today = new Date(selectedDate);
@@ -267,7 +268,7 @@ const ExamDashboard = () => {
                   >
                     <td className="toggle-icon">
                       <i
-                        className={`fas fa-chevron-${
+className={`fas fa-chevron-${
                           expandedSessionId === session.exam_session_id
                             ? "up"
                             : "down"
@@ -343,8 +344,7 @@ const ExamDashboard = () => {
             </ResponsiveContainer>
           </div>
         </div>
-
-        <div className="warnings-container">
+<div className="warnings-container">
           <h2>⚠️ Cảnh báo</h2>
           {summary.emptyReports > 0 ? (
             <div className="warning-box">
