@@ -37,8 +37,9 @@ class Role extends Model
     // Quan hệ với permissions (thông qua bảng roles_permissions)
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class, 'roles_permissions', 'role_id', 'permission_id');
+        return $this->belongsToMany(Permission::class, 'roles_permissions', 'role_id', 'permission_id')
+                    ->withPivot('is_view', 'is_add', 'is_edit', 'is_delete')
+                    ->withTimestamps();
     }
-    
-}
 
+}

@@ -33,7 +33,7 @@ public class MainController implements Initializable {
     // Hàm tải trang DANH SÁCH (ExamRoom.fxml) vào <center>
     public void showExamListPage() {
         try {
-            if(examRoomView == null){
+            if (examRoomView == null) {
                 System.out.println("Lần đầu: Đang tải Exam");
 
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/pages/ExamRoom.fxml"));
@@ -41,10 +41,9 @@ public class MainController implements Initializable {
 
                 examRoomController = loader.getController();
                 examRoomController.setMainController(this);
-            }else {
+            } else {
                 System.out.println("LẦN SAU: Đang dùng lại ExamRoom.fxml từ cache...");
             }
-
 
             // Đặt view vào vị trí <center>
             mainContentPane.getChildren().setAll(examRoomView);

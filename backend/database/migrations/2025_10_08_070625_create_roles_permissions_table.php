@@ -15,8 +15,15 @@ return new class extends Migration
             $table->increments('role_permission_id');
             $table->unsignedInteger('role_id');
             $table->unsignedInteger('permission_id');
-            $table->timestamps();
 
+            // --- CẬP NHẬT: Thêm các cột quyền chi tiết ---
+            $table->boolean('is_view')->default(0);
+            $table->boolean('is_add')->default(0);
+            $table->boolean('is_edit')->default(0);
+            $table->boolean('is_delete')->default(0);
+            // ---------------------------------------------
+
+            $table->timestamps();
 
             $table->unique(['role_id', 'permission_id']);
         });

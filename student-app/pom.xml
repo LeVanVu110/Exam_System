@@ -14,7 +14,6 @@
     </properties>
 
     <dependencies>
-        <!-- JavaFX modules -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -30,8 +29,6 @@
             <artifactId>javafx-graphics</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-
-        <!-- JSON -->
         <!-- JSON -->
         <dependency>
             <groupId>org.json</groupId>
@@ -40,14 +37,12 @@
         </dependency>
 
         <!-- Jackson -->
-        <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.17.0</version>
         </dependency>
 
-        <!-- Apache HttpClient -->
         <!-- Apache HttpClient -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
@@ -70,7 +65,6 @@
     <build>
         <plugins>
             <!-- JavaFX Maven Plugin -->
-            <!-- JavaFX Maven Plugin -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -79,8 +73,6 @@
                     <mainClass>com.example.studentapp.Main</mainClass>
                 </configuration>
             </plugin>
-
-            <!-- Maven Compiler -->
             <!-- Maven Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

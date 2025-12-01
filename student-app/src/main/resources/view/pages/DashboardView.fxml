@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.shape.Line?>
+
+<BorderPane prefHeight="768.0" prefWidth="1366.0"
+    xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="com.example.studentapp.controller.DashboardController"
+    stylesheets="@../css/dashboard.css">
+
+    <left>
+        <VBox spacing="0" style="-fx-background-color: #003366; -fx-pref-width: 260;">
+            <children>
+
+                <VBox alignment="CENTER" spacing="10" style="-fx-padding: 30 0 30 0;">
+                    <children>
+                        <Label text="QUẢN LÝ THI" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="24.0" />
+                            </font>
+                        </Label>
+                        <Label text="Hệ thống quản lý sinh viên" textFill="#aaccff">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                        <Line endX="200.0" stroke="WHITE" strokeWidth="0.5"
+                            style="-fx-opacity: 0.3;">
+                            <VBox.margin>
+                                <Insets top="10" />
+                            </VBox.margin>
+                        </Line>
+                    </children>
+                </VBox>
+
+                <VBox spacing="2" VBox.vgrow="ALWAYS">
+                    <padding>
+                        <Insets top="10" left="0" right="0" />
+                    </padding>
+                    <children>
+                        <Button text="📂   Tổng Hợp" maxWidth="Infinity" onAction="#showTongHop"
+                            styleClass="menu-btn" />
+
+                        <Button text="📅   Xem Lịch Thi" maxWidth="Infinity" onAction="#showLichThi"
+                            styleClass="menu-btn" />
+
+                        <Button text="✅   Kiểm Tra Ca Thi" maxWidth="Infinity"
+                            onAction="#showKiemTra"
+                            styleClass="menu-btn" />
+
+                        <Button text="📊   Thống Kê" maxWidth="Infinity" onAction="#showThongKe"
+                            styleClass="menu-btn" />
+                    </children>
+                </VBox>
+
+                <VBox alignment="CENTER" style="-fx-padding: 20;">
+                    <children>
+                        <Label text="Version 1.0.0" textFill="#6688cc">
+                            <font>
+                                <Font size="12.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane fx:id="contentArea" style="-fx-background-color: WHITE;">
+            <children>
+                <VBox alignment="CENTER" spacing="20">
+                    <children>
+                        <Label text="CHÀO MỪNG ĐẾN VỚI HỆ THỐNG" textFill="#003366">
+                            <font>
+                                <Font name="System Bold" size="32.0" />
+                            </font>
+                        </Label>
+                        <Label text="Vui lòng chọn chức năng từ menu bên trái để bắt đầu"
+                            textFill="#00509E">
+                            <font>
+                                <Font size="18.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </VBox>
+            </children>
+        </StackPane>
+    </center>
+
+</BorderPane>

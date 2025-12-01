@@ -10,5 +10,13 @@ class Screen extends Model
     use HasFactory;
 
     protected $table = 'screens';
-    protected $fillable = ['screen_name', 'screen_code', 'screen_description'];
+    protected $primaryKey = 'screen_id';
+
+    protected $fillable = [
+        'screen_name',
+        'screen_code',
+        'screen_description',
+        'category_screen_type_id',
+        'screen_parent_id'
+    ];
 }

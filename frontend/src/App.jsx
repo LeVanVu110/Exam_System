@@ -1,49 +1,67 @@
-
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import Layout from "./component/Layout"
-import ExamSchedule from "./pages/ExamSchedule"
-import ClassSchedule from "./pages/ClassSchedule"
-import Documents from "./pages/Documents"
-import Exams from "./pages/Exams"
-import QA from "./pages/QA"
-import Userprofile from "./pages/UserProfile.jsx"
-import "./index.css"; // <--- quan trọng
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ExamDashboard from './pages/Dashboard.jsx';
-//Phòng đào tạo
+import "./index.css";
+
+// Components
+import ProtectedRoute from "./component/ProtectedRoute";
+import ForbiddenPage from "./pages/403";
+import Layout from "./component/Layout";
+import LayoutPDT from "./pages/PDT/LayoutPDT";
+import ExamDashboard from "./pages/Dashboard";
+import Schedule from "./pages/Schedule/Schedule";
+import Documents from "./pages/Documents";
 import ExamManagement from "./pages/PDT/ExamManagement";
-// đăng nhập
-import  LoginForm  from "./pages/Login";
-import  Schedule  from "./pages/Schedule/Schedule";
+import LoginForm from "./pages/Login";
+import PermissionPage from "@/pages/Admin/permission"; // Lưu ý đường dẫn alias '@'
+import Userprofile from "./pages/UserProfile.jsx";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* phòng đào tạo */}
-        <Route path="/ExamManagement" element={<ExamManagement />} />
-      
-        <Route element={<Layout />}>
-          <Route path="/Dashboard" element={<ExamDashboard />} />
-          <Route path="/exam-schedule" element={<Schedule />} />
-          <Route path="/class-schedule" element={<ClassSchedule />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/exams" element={<Exams />} />
-          <Route path="/qa" element={<QA />} />
-          <Route path="/UserProfile" element={<Userprofile />} />
-          
-        </Route>
-      </Routes>
-      {/* đăng nhập */}
-      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<LoginForm />} />
         <Route path="/login" element={<LoginForm />} />
+        <Route path="/403" element={<ForbiddenPage />} />
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute screenCode="DASHBOARD" />}>
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<ExamDashboard />} />
+            <Route path="/UserProfile" element={<Userprofile />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute screenCode="EXAM_SCHEDULE" />}>
+          <Route element={<Layout />}>
+            <Route path="/exam-schedule" element={<Schedule />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute screenCode="EXAM_MGT" />}>
+          <Route element={<LayoutPDT />}>
+            <Route path="/PDT/ExamManagement" element={<ExamManagement />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute screenCode="DOC_MGT" />}>
+          <Route element={<Layout />}>
+            <Route path="/documents" element={<Documents />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute screenCode="PERMISSION_MGT" />}>
+           {/* Giả sử PermissionPage dùng Layout chính, nếu không thì bỏ Layout ra */}
+           <Route element={<Layout />}>
+              <Route path="/permission" element={<PermissionPage />} />
+           </Route>
+        </Route>
       </Routes>
       <ToastContainer position="top-right" autoClose={2000} />
     </Router>
-  )
+  );
 }
 
-
-export default App
+export default App;

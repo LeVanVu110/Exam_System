@@ -1,0 +1,17 @@
+/* Style cho nút Menu Dashboard */
+.menu-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-alignment: CENTER_LEFT;
+    -fx-font-size: 16px;
+    -fx-padding: 15 20;
+    -fx-cursor: hand;
+    -fx-border-width: 0 0 0 0;
+}
+
+/* Hiệu ứng khi di chuột vào (Hover) */
+.menu-btn:hover {
+    -fx-background-color: #004080; /* Xanh sáng hơn */
+    -fx-border-color: transparent transparent transparent white; /* Viền trắng bên trái */
+    -fx-border-width: 0 0 0 4; /* Độ dày viền trái */
+}
