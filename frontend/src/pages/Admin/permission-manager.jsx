@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { 
-  Save, Check, Shield, Search, Layout, Loader2, Plus, X, Users
+  Save, Check, Shield, Search, Layout, Loader2, Plus, X, Users, Trash2
 } from "lucide-react";
 
 const API_URL = "http://localhost:8000/api"; 
@@ -94,7 +94,7 @@ export default function PermissionApp() {
   const canEdit = isEditable();
 
   // ==================================================================================
-  // 3. LOGIC THÊM MÀN HÌNH MỚI (MỚI THÊM)
+  // 3. LOGIC THÊM MÀN HÌNH MỚI
   // ==================================================================================
   const handleAddScreen = async () => {
     // Validate đầu vào
@@ -147,6 +147,57 @@ export default function PermissionApp() {
         }
     } catch (error) {
         console.error("Lỗi thêm màn hình:", error);
+        alert("❌ Lỗi kết nối Server");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  // ==================================================================================
+  // 🔥 3.5. LOGIC XÓA MÀN HÌNH
+  // ==================================================================================
+  const handleDeleteScreen = async (screenId, screenName) => {
+    // 1. Chỉ Admin mới được xóa
+    if (normalizeRole(currentUserRole) !== "ADMIN") {
+        alert("Bạn không có quyền xóa màn hình!");
+        return;
+    }
+
+    // 2. Xác nhận
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa màn hình "${screenName}"? \n\n⚠️ Cảnh báo: Tất cả phân quyền liên quan đến màn hình này cũng sẽ bị xóa vĩnh viễn.`)) {
+        return;
+    }
+
+    setLoading(true);
+    try {
+        const token = localStorage.getItem("ACCESS_TOKEN");
+        
+        // Gọi API DELETE /screens/{id}
+        const response = await fetch(`${API_URL}/screens/${screenId}`, {
+            method: 'DELETE',
+            headers: { 
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        if (response.ok) {
+            // Xóa khỏi state screens
+            setScreens(prev => prev.filter(s => s.screen_id !== screenId));
+            
+            // Xóa khỏi state matrix
+            setMatrix(prev => {
+                const newMatrix = { ...prev };
+                delete newMatrix[screenId];
+                return newMatrix;
+            });
+
+            alert("✅ Xóa màn hình thành công!");
+        } else {
+            const err = await response.json().catch(() => ({}));
+            alert(`❌ Lỗi: ${err.message || "Không thể xóa màn hình này (có thể do ràng buộc dữ liệu)"}`);
+        }
+    } catch (error) {
+        console.error("Lỗi xóa màn hình:", error);
         alert("❌ Lỗi kết nối Server");
     } finally {
         setLoading(false);
@@ -214,10 +265,16 @@ export default function PermissionApp() {
     fetchMatrix();
   }, [selectedRoleId, screens]);
 
+  // 🔥 ĐÃ SỬA: Đảm bảo screen_id luôn tồn tại khi cập nhật checkbox
   const handleCheckboxChange = (screenId, field) => {
     if (!canEdit) return; 
     setMatrix((prev) => {
-      const currentRow = { ...prev[screenId] };
+      // Đảm bảo currentRow luôn có screen_id, ngay cả khi nó chưa tồn tại trong state
+      const currentRow = { 
+          screen_id: screenId, // Quan trọng: Gắn lại ID
+          ...prev[screenId] 
+      };
+      
       const newValue = !currentRow[field];
       if (field === "is_all") {
         return { ...prev, [screenId]: { ...currentRow, is_view: newValue, is_add: newValue, is_edit: newValue, is_delete: newValue, is_upload: newValue, is_download: newValue, is_all: newValue } };
@@ -237,11 +294,14 @@ export default function PermissionApp() {
 
     setSaving(true);
     try {
-      const payload = Object.values(matrix).map(row => ({
-        screen_id: row.screen_id,
-        is_view: row.is_view ? 1 : 0, is_add: row.is_add ? 1 : 0, is_edit: row.is_edit ? 1 : 0,
-        is_delete: row.is_delete ? 1 : 0, is_upload: row.is_upload ? 1 : 0, is_download: row.is_download ? 1 : 0, is_all: row.is_all ? 1 : 0 
-      }));
+      // Lọc bỏ những row không có screen_id (để an toàn)
+      const payload = Object.values(matrix)
+        .filter(row => row.screen_id) 
+        .map(row => ({
+            screen_id: row.screen_id,
+            is_view: row.is_view ? 1 : 0, is_add: row.is_add ? 1 : 0, is_edit: row.is_edit ? 1 : 0,
+            is_delete: row.is_delete ? 1 : 0, is_upload: row.is_upload ? 1 : 0, is_download: row.is_download ? 1 : 0, is_all: row.is_all ? 1 : 0 
+        }));
       
       const response = await fetch(`${API_URL}/roles/${selectedRoleId}/update-matrix`, {
         method: 'POST',
@@ -368,8 +428,26 @@ export default function PermissionApp() {
                         return (
                             <tr key={screen.screen_id} className="hover:bg-blue-50/30 transition-colors group">
                             <td className="px-6 py-4">
-                                <div className="font-medium text-gray-900 group-hover:text-blue-700">{screen.screen_name}</div>
-                                <div className="text-xs text-gray-400 font-mono">{screen.screen_code}</div>
+                                <div className="flex items-center justify-between group/cell">
+                                    <div>
+                                        <div className="font-medium text-gray-900 group-hover:text-blue-700">{screen.screen_name}</div>
+                                        <div className="text-xs text-gray-400 font-mono">{screen.screen_code}</div>
+                                    </div>
+                                    
+                                    {/* 👉 Nút Xóa Màn Hình (Chỉ hiện khi hover + là Admin) */}
+                                    {normalizeRole(currentUserRole) === "ADMIN" && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Ngăn click vào row
+                                                handleDeleteScreen(screen.screen_id, screen.screen_name);
+                                            }}
+                                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform scale-90 group-hover:scale-100"
+                                            title="Xóa màn hình này"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
                             </td>
                             {["is_view", "is_add", "is_edit", "is_delete", "is_upload", "is_download"].map(field => (
                                 <CheckboxCell 
@@ -431,7 +509,8 @@ export default function PermissionApp() {
                             className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-sm shadow-sm"
                             placeholder="Ví dụ: STD_MGT"
                             value={newScreenCode}
-                            onChange={(e) => setNewScreenCode(e.target.value.toUpperCase())}
+                            // 🔧 FIX: Tự động đổi ký tự đặc biệt và khoảng trắng thành '_'
+                            onChange={(e) => setNewScreenCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '_'))}
                         />
                         <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                             <Shield className="w-3 h-3" /> Mã nên viết hoa, không dấu, dùng gạch dưới (VD: SYS_USER).

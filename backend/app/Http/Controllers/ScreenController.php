@@ -29,10 +29,25 @@ class ScreenController extends Controller
         return response()->json($screen, 201);
     }
 
-    // Xóa màn hình
+    // 🗑️ Xóa màn hình
     public function destroy($id)
     {
-        Screen::destroy($id);
-        return response()->json(['message' => 'Đã xóa màn hình']);
+        // 1. Tìm màn hình
+        $screen = \App\Models\Screen::find($id);
+
+        if (!$screen) {
+            return response()->json(['message' => 'Không tìm thấy màn hình!'], 404);
+        }
+
+        // 2. (Tùy chọn) Xóa các phân quyền liên quan trong bảng permissions_screens trước
+        // Nếu database của bạn có set "ON DELETE CASCADE" thì không cần bước này
+        \Illuminate\Support\Facades\DB::table('permissions_screens')
+            ->where('screen_id', $id)
+            ->delete();
+
+        // 3. Xóa màn hình
+        $screen->delete();
+
+        return response()->json(['message' => 'Xóa màn hình thành công!'], 200);
     }
 }

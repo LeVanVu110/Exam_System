@@ -27,7 +27,8 @@ use App\Http\Controllers\{
     CategoryUserTypeController,
     AuthLoginController,
     ExamScheduleController,
-    UserProfileController
+    UserProfileController,
+    ScreenController
 };
 
 /*
@@ -114,3 +115,5 @@ Route::prefix('exam-submissions')->group(function () {
     Route::get('/', [ExamSubmissionController::class, 'index']);
     Route::get('/download/{id}', [ExamSubmissionController::class, 'download']);
 });
+// xoá màn hình phân quyền
+Route::delete('/screens/{id}', [ScreenController::class, 'destroy']);
