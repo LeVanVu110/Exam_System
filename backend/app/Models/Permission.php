@@ -21,8 +21,16 @@ class Permission extends Model
     // Định nghĩa quan hệ ngược lại với Role
     public function roles()
     {
+        // ✅ Cần đảm bảo tên bảng 'roles_permissions' khớp với file Role.php và Database
         return $this->belongsToMany(Role::class, 'roles_permissions', 'permission_id', 'role_id')
-                    ->withPivot('is_view', 'is_add', 'is_edit', 'is_delete')
+                    ->withPivot([
+                        'is_view',
+                        'is_add',
+                        'is_edit',
+                        'is_delete',
+                        'is_upload',   // 👈 Thêm dòng này
+                        'is_download'  // 👈 Thêm dòng này
+                    ])
                     ->withTimestamps();
     }
 }

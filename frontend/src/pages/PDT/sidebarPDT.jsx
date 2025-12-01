@@ -13,19 +13,41 @@ const menuItems = [
   { icon: ShieldCheck, label: "Quản lý quyền", path: "/permission" },
 ];
 
-export default function Sidebar() {
+export default function SidebarPDT() {
   const location = useLocation();
 
-  // ✅ Lấy trạng thái đã lưu trong localStorage
+  // State trạng thái thu gọn
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
-    return saved === "true"; // nếu null → false
+    return saved === "true";
   });
 
-  // ✅ Mỗi khi collapsed thay đổi → lưu lại
+  // State thông tin user
+  const [user, setUser] = useState({ name: "Cán bộ Đào tạo", email: "pdt@edu.com" });
+
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", collapsed);
   }, [collapsed]);
+
+  // ✅ Lấy thông tin user từ localStorage khi mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem("USER_INFO");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Lỗi parse USER_INFO", e);
+      }
+    }
+  }, []);
+
+  // Hàm tạo avatar chữ cái đầu (VD: Nguyen Van A -> NA)
+  const getInitials = (name) => {
+    if (!name) return "U";
+    const parts = name.split(" ");
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
   return (
     <aside
@@ -43,16 +65,14 @@ export default function Sidebar() {
           {!collapsed && (
             <div>
               <h1 className="font-bold text-lg text-gray-900">EduPortal</h1>
-              <p className="text-xs text-gray-500">Quản lý học tập</p>
+              <p className="text-xs text-gray-500">Phòng Đào Tạo</p>
             </div>
           )}
         </div>
 
-        {/* --- Nút thu gọn --- */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute -right-3 top-6 z-50 bg-white border border-gray-300 rounded-full p-1 shadow hover:bg-gray-100 transition"
-          title={collapsed ? "Mở rộng" : "Thu gọn"}
           style={{ width: "24px", height: "24px" }}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -86,7 +106,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* --- User Profile --- */}
+      {/* --- User Profile (Động) --- */}
       <div className="p-4 border-t border-gray-300">
         <div
           className={cn(
@@ -94,15 +114,17 @@ export default function Sidebar() {
             collapsed && "justify-center"
           )}
         >
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-xs font-bold">NA</span>
+          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold">{getInitials(user.name)}</span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                Nguyễn Văn Admin
+              <p className="text-sm font-medium text-gray-900 truncate" title={user.name}>
+                {user.name}
               </p>
-              <p className="text-xs text-gray-500 truncate">admin@edu.com</p>
+              <p className="text-xs text-gray-500 truncate" title={user.email}>
+                {user.email}
+              </p>
             </div>
           )}
         </div>
