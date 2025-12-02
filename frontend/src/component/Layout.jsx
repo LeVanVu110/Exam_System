@@ -2,8 +2,8 @@ import React from 'react';
 import { Outlet } from "react-router-dom";
 
 // 1. Import cả 2 loại Sidebar
-import Sidebar from "./Sidebar"; // Sidebar mặc định (Admin/Giảng viên/Sinh viên)
-import SidebarPDT from "../pages/PDT/SidebarPDT"; // Sidebar riêng cho PDT
+import Sidebar from "./sidebar"; // Sidebar mặc định (Admin/Giảng viên/Sinh viên)
+import SidebarPDT from "../pages/PDT/sidebarPDT"; // Sidebar riêng cho PDT
 import Header from "./Header";
 
 export default function Layout() {

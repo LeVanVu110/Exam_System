@@ -15,7 +15,7 @@ function cn(...classes) {
 }
 
 // 👇 1. CẤU HÌNH MENU & MÃ MÀN HÌNH (SCREEN CODE)
-// 'screenCode' phải KHỚP CHÍNH XÁC với mã bạn nhập trong PermissionManager
+// Bạn nhớ kiểm tra mã này có khớp trong Database không nhé (VD: SCH_EXAM hay EXAM_SCHEDULE)
 const menuItems = [
   { icon: Home, label: "Trang Chủ", path: "/Dashboard", public: true }, // public: true => Luôn hiện
   { icon: Calendar, label: "Lịch dạy/Lịch thi", path: "/exam-schedule", screenCode: "EXAM_SCHEDULE" },
@@ -53,16 +53,46 @@ export default function Sidebar() {
     }
   }, []);
 
-  // 👇 3. LOGIC LẮNG NGHE SỰ KIỆN 'permissions_updated'
+  // 👇 3. LOGIC LẮNG NGHE SỰ KIỆN 'permissions_updated' (ĐÃ SỬA LỖI GIỐNG SIDEBAR PDT)
   useEffect(() => {
     const loadPermissions = () => {
       const stored = localStorage.getItem("user_permissions");
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          setPermissions(parsed);
+          
+          let validPermissions = [];
+
+          // 🛡️ FIX LỖI: Xử lý linh hoạt cả Array và Object (giống SidebarPDT)
+          if (Array.isArray(parsed)) {
+            // Case 1: Mảng chuẩn
+            validPermissions = parsed;
+          } else if (parsed && typeof parsed === "object") {
+            // Case 2: API trả về { data: [...] }
+            if (Array.isArray(parsed.data)) {
+                validPermissions = parsed.data;
+            } 
+            // Case 3: Object dạng Map { "EXAM_MGT": {...} }
+            else {
+                // Chuyển đổi Object thành Array, giữ key làm screen_code dự phòng
+                validPermissions = Object.entries(parsed).map(([key, value]) => {
+                    if (typeof value === 'object' && value !== null) {
+                        return { 
+                            ...value, 
+                            screen_code: value.screen_code || value.permission_name || key 
+                        };
+                    }
+                    return value;
+                });
+            }
+          }
+          
+          console.log("🔍 Admin Sidebar Permissions:", validPermissions);
+          setPermissions(validPermissions);
+
         } catch (e) {
           console.error("Lỗi đọc quyền trong Sidebar", e);
+          setPermissions([]); // Reset về mảng rỗng để an toàn
         }
       }
     };
@@ -79,24 +109,36 @@ export default function Sidebar() {
     };
   }, []);
 
-  // 👇 4. HÀM KIỂM TRA QUYỀN ĐỂ ẨN/HIỆN MENU
+  // 👇 4. HÀM KIỂM TRA QUYỀN ĐỂ ẨN/HIỆN MENU (ĐÃ SỬA LỖI)
   const hasPermission = (item) => {
-    // 1. Nếu là menu công khai (Trang chủ, Profile) -> Luôn hiện
+    // 1. Nếu là menu công khai -> Luôn hiện
     if (item.public) return true;
 
-    // 2. Nếu không có screenCode -> Mặc định hiện
+    // 2. Nếu không có screenCode -> Mặc định hiện (hoặc ẩn tùy bạn)
     if (!item.screenCode) return true;
 
-    // 3. Nếu chưa có dữ liệu quyền -> Tạm ẩn để bảo mật (hoặc return true nếu muốn hiện mặc định)
-    if (!permissions || permissions.length === 0) return false;
+    // 3. 🛡️ FIX LỖI: Kiểm tra chắc chắn permissions là Array
+    if (!Array.isArray(permissions) || permissions.length === 0) return false;
 
     // 4. Tìm quyền trong danh sách
     const perm = permissions.find(
-      (p) => p.screen_code === item.screenCode
+      (p) => (p.screen_code === item.screenCode) || (p.permission_name === item.screenCode)
     );
 
     // 5. Kiểm tra quyền Xem (is_view)
-    return perm && perm.is_view === 1;
+    if (perm) {
+        // So sánh lỏng (==) để chấp nhận cả "1" và 1
+        const canView = (perm.is_view == 1) || (perm.is_view === true);
+        const isActive = (perm.permission_is_active == 1) || (perm.permission_is_active === true);
+
+        // Ưu tiên check active nếu có field này
+        if (perm.permission_is_active !== undefined) {
+            return isActive;
+        }
+        return canView;
+    }
+
+    return false;
   };
 
   const getInitials = (name) => {
@@ -161,6 +203,13 @@ export default function Sidebar() {
               </Link>
             );
           })}
+          
+        {/* Nếu không có mục nào được hiển thị (do chưa phân quyền), hiện thông báo nhỏ */}
+        {menuItems.filter(hasPermission).length === 0 && !collapsed && (
+            <div className="px-4 py-2 text-xs text-gray-400 text-center">
+                Chưa có quyền truy cập chức năng nào.
+            </div>
+        )}
       </nav>
 
       <div className="p-4 border-t border-gray-300">
