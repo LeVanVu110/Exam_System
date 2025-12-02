@@ -1,9 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Screen;
+use App\Models\Permission; // 👉 Import Model Permission
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB; // 👉 Import DB Facade
 
 class ScreenController extends Controller
 {
@@ -13,41 +16,87 @@ class ScreenController extends Controller
         return response()->json(Screen::all());
     }
 
-    // Thêm màn hình mới
+    // Thêm màn hình mới (Cập nhật logic tạo quyền tự động)
     public function store(Request $request)
     {
+        // 1. Validate dữ liệu đầu vào (Frontend gửi screen_name, screen_code)
         $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|unique:screens,code|max:50', // code dùng để định danh, v.d: 'user_management'
+            'screen_name' => 'required|string|max:255',
+            'screen_code' => 'required|string|unique:screens,screen_code|max:50',
         ]);
 
-        $screen = Screen::create([
-            'name' => $request->name,
-            'code' => $request->code,
-        ]);
+        DB::beginTransaction(); // Bắt đầu transaction để đảm bảo toàn vẹn dữ liệu
+        try {
+            // 2. Tạo Màn hình (Screen)
+            $screen = Screen::create([
+                'screen_name' => $request->screen_name,
+                'screen_code' => $request->screen_code,
+                // 'category_screen_type_id' => ... (nếu cần)
+            ]);
 
-        return response()->json($screen, 201);
+            // 3. Tự động tạo Permission tương ứng
+            // Hệ thống cần permission này để phân quyền cho Role
+            $permission = Permission::create([
+                'permission_name' => $request->screen_code, // Dùng chung mã với màn hình
+                'permission_description' => $request->screen_name,
+                'permission_is_active' => 1,
+            ]);
+
+            // 4. Tạo liên kết mặc định vào bảng permissions_screens
+            // Việc này tạo ra dòng dữ liệu để Frontend có thể update (is_view, is_add...)
+            DB::table('permissions_screens')->insert([
+                'permission_id' => $permission->permission_id,
+                'screen_id'     => $screen->screen_id,
+                'is_view'       => 0, // Mặc định tắt hết quyền
+                'is_add'        => 0,
+                'is_edit'       => 0,
+                'is_delete'     => 0,
+                'is_upload'     => 0,
+                'is_download'   => 0,
+                'is_all'        => 0,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ]);
+
+            DB::commit(); // Lưu tất cả vào DB
+
+            return response()->json($screen, 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack(); // Nếu có lỗi thì hoàn tác tất cả
+            return response()->json(['message' => 'Lỗi tạo màn hình: ' . $e->getMessage()], 500);
+        }
     }
 
     // 🗑️ Xóa màn hình
     public function destroy($id)
     {
-        // 1. Tìm màn hình
-        $screen = \App\Models\Screen::find($id);
+        $screen = Screen::find($id);
 
         if (!$screen) {
             return response()->json(['message' => 'Không tìm thấy màn hình!'], 404);
         }
 
-        // 2. (Tùy chọn) Xóa các phân quyền liên quan trong bảng permissions_screens trước
-        // Nếu database của bạn có set "ON DELETE CASCADE" thì không cần bước này
-        \Illuminate\Support\Facades\DB::table('permissions_screens')
-            ->where('screen_id', $id)
-            ->delete();
+        DB::beginTransaction();
+        try {
+            // 1. Lấy mã màn hình
+            $screenCode = $screen->screen_code;
 
-        // 3. Xóa màn hình
-        $screen->delete();
+            // 2. Xóa liên kết trong permissions_screens trước
+            DB::table('permissions_screens')->where('screen_id', $id)->delete();
 
-        return response()->json(['message' => 'Xóa màn hình thành công!'], 200);
+            // 3. Xóa màn hình
+            $screen->delete();
+
+            // 4. (Tùy chọn) Xóa Permission tương ứng để sạch rác
+            // Permission::where('permission_name', $screenCode)->delete();
+
+            DB::commit();
+            return response()->json(['message' => 'Xóa màn hình thành công!'], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Lỗi xóa màn hình: ' . $e->getMessage()], 500);
+        }
     }
 }
