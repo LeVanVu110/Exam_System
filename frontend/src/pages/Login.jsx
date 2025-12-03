@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react"; // [MỚI] Import icon
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -9,6 +9,9 @@ export default function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  
+  // [MỚI] State quản lý hiển thị mật khẩu
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,12 +42,10 @@ export default function LoginForm() {
       // ✅ 1. Lưu Token
       localStorage.setItem("ACCESS_TOKEN", data.token);
 
-      // ✅ 2. [MỚI] Lưu Thông tin User (Tên & Email) để Sidebar hiển thị
-      // Dữ liệu từ Laravel (UserSeeder): user_name, user_email
-      // Dữ liệu Sidebar cần: name, email
+      // ✅ 2. Lưu Thông tin User
       const userInfo = {
-        name: data.user?.user_name || "Người dùng", // Lấy user_name từ DB
-        email: data.user?.user_email || email       // Lấy user_email từ DB (hoặc fallback về email nhập)
+        name: data.user?.user_name || "Người dùng",
+        email: data.user?.user_email || email      
       };
       localStorage.setItem("USER_INFO", JSON.stringify(userInfo));
 
@@ -60,7 +61,6 @@ export default function LoginForm() {
           },
         });
 
-        // Chỉ parse JSON nếu status là 200. Nếu 204 (No Content) thì bỏ qua
         if (permRes.ok && permRes.status !== 204) {
           const myPermissions = await permRes.json();
           localStorage.setItem("user_permissions", JSON.stringify(myPermissions));
@@ -157,7 +157,7 @@ export default function LoginForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full pl-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full pl-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -170,13 +170,26 @@ export default function LoginForm() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"} // [MỚI] Toggle type
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full pl-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full pl-10 pr-10 h-11 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     />
+                    {/* [MỚI] Nút toggle hiển thị mật khẩu */}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      tabIndex="-1"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -202,7 +215,7 @@ export default function LoginForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg disabled:opacity-70"
+                className="w-full h-11 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg disabled:opacity-70 transition-colors"
               >
                 {isLoading ? (
                   <>
