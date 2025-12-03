@@ -15,7 +15,8 @@ import Schedule from "./pages/Schedule/Schedule";
 import Documents from "./pages/Documents";
 import ExamManagement from "./pages/PDT/ExamManagement";
 import LoginForm from "./pages/Login"; // Đã sửa lại đường dẫn import này
-import PermissionPage from "./pages/Admin/permission"; // Kiểm tra lại đường dẫn này
+import PermissionPage from "./pages/Admin/permission";
+import UserPage from "./pages/Admin/User-manager"; // Kiểm tra lại đường dẫn này
 import Userprofile from "./pages/UserProfile.jsx";
 
 function App() {
@@ -34,7 +35,6 @@ function App() {
         <Route element={<ProtectedRoute screenCode="DASHBOARD" />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<ExamDashboard />} />
-            <Route path="/UserProfile" element={<Userprofile />} />
           </Route>
         </Route>
 
@@ -65,6 +65,22 @@ function App() {
            <Route element={<Layout />}>
              <Route path="/permission" element={<PermissionPage />} />
            </Route>
+        </Route>
+
+        {/* 6. Quản profile */}
+        <Route element={<ProtectedRoute screenCode="USER_PRO" />}>
+          <Route element={<Layout />}>
+            {/* Đây chính là route bạn đang cần */}
+            <Route path="/UserProfile" element={<Userprofile />} />
+          </Route>
+        </Route>
+
+        {/* 6. Quản lý người dùng */}
+        <Route element={<ProtectedRoute screenCode="USER_MAN" />}>
+          <Route element={<Layout />}>
+            {/* Đây chính là route bạn đang cần */}
+            <Route path="/UserPage" element={<UserPage />} />
+          </Route>
         </Route>
 
         {/* Catch all - 404 */}

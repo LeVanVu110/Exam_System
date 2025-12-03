@@ -18,8 +18,8 @@ class ExamSessionController extends Controller
     // 📄 Import file Excel
     public function importExcel(Request $request)
     {
-        // (Tùy chọn) Kiểm tra quyền Upload
-        if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_upload')) {
+        // 🔒 CHECK QUYỀN (Sửa EXAM_SCHEDULE -> EXAM_MGT)
+        if (!$request->user()->hasAccess('EXAM_MGT', 'is_upload')) {
             return response()->json(['message' => 'Bạn không có quyền tải lên dữ liệu!'], 403);
         }
 
@@ -65,8 +65,8 @@ class ExamSessionController extends Controller
     // 📅 Danh sách kỳ thi
     public function index(Request $request)
     {
-        // (Tùy chọn) Kiểm tra quyền Xem
-        // if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_view')) {
+        // (Tùy chọn) Kiểm tra quyền Xem (Sửa EXAM_SCHEDULE -> EXAM_MGT nếu bỏ comment)
+        // if (!$request->user()->hasAccess('EXAM_MGT', 'is_view')) {
         //     return response()->json(['message' => 'Bạn không có quyền xem danh sách này!'], 403);
         // }
 
@@ -221,9 +221,8 @@ class ExamSessionController extends Controller
     // 📤 Xuất file Excel (ĐÃ THÊM CHẶN QUYỀN)
     public function exportExcel(Request $request)
     {
-        // 🔒 CHECK QUYỀN DOWNLOAD
-        // 'EXAM_SCHEDULE': Mã màn hình trong DB (hãy đảm bảo nó khớp với bảng permissions)
-        if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_download')) {
+        // 🔒 CHECK QUYỀN DOWNLOAD (Sửa EXAM_SCHEDULE -> EXAM_MGT)
+        if (!$request->user()->hasAccess('EXAM_MGT', 'is_download')) {
             return response()->json(['message' => 'Bạn không có quyền tải xuống dữ liệu này!'], 403);
         }
 
@@ -250,11 +249,10 @@ class ExamSessionController extends Controller
     // 🧾 Xuất báo cáo PDF (ĐÃ THÊM CHẶN QUYỀN)
     public function exportReport($exam_session_id)
     {
-        // 🔒 CHECK QUYỀN DOWNLOAD
-        // Vì hàm này không có Request $request được inject, ta dùng helper request() hoặc Auth::user()
+        // 🔒 CHECK QUYỀN DOWNLOAD (Sửa EXAM_SCHEDULE -> EXAM_MGT)
         $user = request()->user() ?? Auth::user();
 
-        if (!$user || !$user->hasAccess('EXAM_SCHEDULE', 'is_download')) {
+        if (!$user || !$user->hasAccess('EXAM_MGT', 'is_download')) {
             return response()->json(['message' => 'Bạn không có quyền tải xuống báo cáo này!'], 403);
         }
 
@@ -266,8 +264,8 @@ class ExamSessionController extends Controller
     // 🗑️ Xóa 1 kỳ thi
     public function destroy($id)
     {
-        // (Tùy chọn) Kiểm tra quyền Xóa
-        if (!request()->user()->hasAccess('EXAM_SCHEDULE', 'is_delete')) {
+        // 🔒 CHECK QUYỀN XÓA (Sửa EXAM_SCHEDULE -> EXAM_MGT)
+        if (!request()->user()->hasAccess('EXAM_MGT', 'is_delete')) {
             return response()->json(['message' => 'Bạn không có quyền xóa dữ liệu này!'], 403);
         }
 
@@ -299,8 +297,8 @@ class ExamSessionController extends Controller
     // 🧹 Xóa hàng loạt kỳ thi
     public function deleteBulk(Request $request)
     {
-        // (Tùy chọn) Kiểm tra quyền Xóa
-        if (!$request->user()->hasAccess('EXAM_SCHEDULE', 'is_delete')) {
+        // 🔒 CHECK QUYỀN XÓA (Sửa EXAM_SCHEDULE -> EXAM_MGT)
+        if (!$request->user()->hasAccess('EXAM_MGT', 'is_delete')) {
             return response()->json(['message' => 'Bạn không có quyền xóa dữ liệu này!'], 403);
         }
 
