@@ -21,6 +21,7 @@ const menuItems = [
   { icon: Calendar, label: "Lịch dạy/Lịch thi", path: "/exam-schedule", screenCode: "EXAM_SCHEDULE" },
   { icon: ShieldCheck, label: "Quản lý quyền", path: "/permission", screenCode: "PERMISSION_MGT" },
   { icon: UserCircle, label: "Hồ sơ cá nhân", path: "/UserProfile", public: true },
+  { icon: UserCircle, label: "Quản lý người dùng", path: "/UserPage", public: true },
 ];
 
 export default function Sidebar() {

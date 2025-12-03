@@ -27,7 +27,8 @@ use App\Http\Controllers\{
     AuthLoginController,
     ExamScheduleController,
     UserProfileController,
-    ScreenController // Đảm bảo đã import ScreenController
+    ScreenController,
+    UserController // [QUAN TRỌNG] Import Controller mới
 };
 
 /*
@@ -57,14 +58,10 @@ Route::prefix('exam-sessions')->middleware('auth:sanctum')->group(function () {
 });
 
 // --- 3. CUSTOM ROUTES CHO HỆ THỐNG PHÂN QUYỀN ---
-
-// [SỬA LẠI ĐOẠN NÀY]
-// Sử dụng ScreenController thay vì PermissionController để tận dụng logic tạo tự động
 Route::get('/screens', [ScreenController::class, 'index']);
 Route::post('/screens', [ScreenController::class, 'store']);
 Route::delete('/screens/{id}', [ScreenController::class, 'destroy']);
 
-// Route xử lý Matrix phân quyền (RoleController)
 Route::get('/roles/{id}/screens', [RoleController::class, 'getScreensByRole']);
 Route::post('/roles/{id}/update-matrix', [RoleController::class, 'updateMatrix']);
 
@@ -78,6 +75,7 @@ Route::apiResources([
     'category-user-types' => CategoryUserTypeController::class,
     'exam-schedule' => ExamSessionController::class,
     'user-profiles'         => UserProfileController::class,
+    'users'                 => UserController::class, // [MỚI] Đăng ký route quản lý người dùng
 ]);
 
 // --- 5. OTHER ROUTES ---
@@ -96,7 +94,7 @@ Route::prefix('exam-schedules')->group(function () {
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/my-permissions', [PermissionController::class, 'myPermissions']); // Dùng PermissionController mới
+    Route::get('/my-permissions', [PermissionController::class, 'myPermissions']);
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
