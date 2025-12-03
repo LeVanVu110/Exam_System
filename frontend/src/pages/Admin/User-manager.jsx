@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react"
 import axios from "axios"
 import { 
   Search, Plus, Edit, Trash2, X, Check, Loader2, 
-  User, Shield, Mail, AlertTriangle, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Info
+  User, Shield, Mail, AlertTriangle, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Info,
+  Eye, EyeOff
 } from "lucide-react"
 
 const API_URL = "http://localhost:8000/api"; 
@@ -12,7 +13,7 @@ const API_URL = "http://localhost:8000/api";
 export default function UserManagement() {
   // --- STATE DỮ LIỆU ---
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]); // Danh sách role cho dropdown
+  const [roles, setRoles] = useState([]); 
   const [filteredUsers, setFilteredUsers] = useState([]);
   
   // --- STATE UI ---
@@ -20,6 +21,7 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // --- STATE FORM ---
   const [formData, setFormData] = useState({
@@ -36,7 +38,7 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- STATE CUSTOM UI (TOAST & MODAL) ---
+  // --- STATE CUSTOM UI ---
   const [toast, setToast] = useState(null); 
   const [confirmModal, setConfirmModal] = useState(null); 
 
@@ -54,6 +56,24 @@ export default function UserManagement() {
     };
   };
 
+  const getRoleStyle = (roleName) => {
+    const role = roleName ? roleName.toLowerCase() : "student";
+    
+    if (role === "admin" || role === "administrator" || role === "quản trị viên") {
+        return "bg-red-100 text-red-700 border-red-200";
+    }
+    if (role === "teacher" || role === "giảng viên" || role === "giáo viên") {
+        return "bg-blue-100 text-blue-700 border-blue-200";
+    }
+    if (role.includes("academic") || role.includes("đào tạo") || role.includes("pdt")) {
+        return "bg-orange-100 text-orange-700 border-orange-200";
+    }
+    if (role === "student" || role === "sinh viên") {
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    }
+    return "bg-gray-100 text-gray-700 border-gray-200";
+  };
+
   // ==================================================================================
   // 1. KHỞI TẠO & FETCH DATA
   // ==================================================================================
@@ -62,7 +82,6 @@ export default function UserManagement() {
     fetchRoles();
   }, []);
 
-  // Lọc dữ liệu khi search thay đổi
   useEffect(() => {
     if (!searchTerm) {
       setFilteredUsers(users);
@@ -75,7 +94,7 @@ export default function UserManagement() {
       );
       setFilteredUsers(filtered);
     }
-    setCurrentPage(1); // Reset về trang 1 khi tìm kiếm
+    setCurrentPage(1); 
   }, [searchTerm, users]);
 
   const fetchUsers = async () => {
@@ -106,24 +125,28 @@ export default function UserManagement() {
   };
 
   // ==================================================================================
-  // 2. XỬ LÝ FORM (THÊM / SỬA)
+  // 2. XỬ LÝ FORM
   // ==================================================================================
   const openAddModal = () => {
     setIsEditing(false);
+    setShowPassword(false); 
+    const defaultRoleId = roles.length > 0 ? roles[0].role_id : "";
     setFormData({
-      user_id: null, user_code: "", user_name: "", user_email: "", password: "", role_id: roles.length > 0 ? roles[0].role_id : "", user_is_activated: 1
+      user_id: null, user_code: "", user_name: "", user_email: "", password: "", 
+      role_id: defaultRoleId, user_is_activated: 1
     });
     setModalOpen(true);
   };
 
   const openEditModal = (user) => {
     setIsEditing(true);
+    setShowPassword(false);
     setFormData({
       user_id: user.user_id,
       user_code: user.user_code || "",
       user_name: user.user_name,
       user_email: user.user_email,
-      password: "", // Không điền password cũ để bảo mật
+      password: "", 
       role_id: user.role_id || "",
       user_is_activated: user.user_is_activated
     });
@@ -132,8 +155,6 @@ export default function UserManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate cơ bản
     if (!formData.user_name || !formData.user_email || !formData.role_id) {
         showToast("Vui lòng điền đầy đủ thông tin!", "warning");
         return;
@@ -142,20 +163,28 @@ export default function UserManagement() {
         showToast("Vui lòng nhập mật khẩu cho người dùng mới!", "warning");
         return;
     }
+    if (formData.password) {
+        if (formData.password.length < 8) {
+            showToast("Mật khẩu phải có tối thiểu 8 ký tự!", "warning");
+            return;
+        }
+        if (!/\d/.test(formData.password) || !/[\W_]/.test(formData.password)) {
+            showToast("Mật khẩu phải chứa ít nhất một chữ số và một ký tự đặc biệt!", "warning");
+            return;
+        }
+    }
 
     setLoading(true);
     try {
         if (isEditing) {
-            // Update
             await axios.put(`${API_URL}/users/${formData.user_id}`, formData, { headers: getAuthHeaders() });
             showToast("Cập nhật người dùng thành công!");
         } else {
-            // Create
             await axios.post(`${API_URL}/users`, formData, { headers: getAuthHeaders() });
             showToast("Thêm người dùng mới thành công!");
         }
         setModalOpen(false);
-        fetchUsers(); // Reload danh sách
+        fetchUsers(); 
     } catch (error) {
         const msg = error.response?.data?.message || "Có lỗi xảy ra!";
         showToast(msg, "error");
@@ -165,13 +194,15 @@ export default function UserManagement() {
   };
 
   // ==================================================================================
-  // 3. XỬ LÝ XÓA
+  // 3. XỬ LÝ XÓA [ĐÃ SỬA LỖI DOUBLE CLICK]
   // ==================================================================================
   const handleDelete = (user) => {
     setConfirmModal({
         title: "Xóa người dùng?",
         message: `Bạn có chắc muốn xóa tài khoản "${user.user_name}"? Hành động này không thể hoàn tác.`,
         onConfirm: async () => {
+            // 👇 Bắt đầu loading để disable nút Xóa, tránh click 2 lần
+            setLoading(true); 
             try {
                 await axios.delete(`${API_URL}/users/${user.user_id}`, { headers: getAuthHeaders() });
                 showToast("Đã xóa người dùng thành công!");
@@ -180,6 +211,7 @@ export default function UserManagement() {
                 const msg = error.response?.data?.message || "Lỗi khi xóa!";
                 showToast(msg, "error");
             } finally {
+                setLoading(false);
                 setConfirmModal(null);
             }
         }
@@ -196,7 +228,6 @@ export default function UserManagement() {
 
   const goToPage = (page) => setCurrentPage(page);
 
-  // Helper để tạo Avatar chữ cái đầu
   const getInitials = (name) => {
     return name ? name.charAt(0).toUpperCase() : "U";
   };
@@ -225,7 +256,10 @@ export default function UserManagement() {
                 <p className="text-gray-500 text-sm mb-6">{confirmModal.message}</p>
                 <div className="flex gap-3 justify-center">
                     <button onClick={() => setConfirmModal(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Hủy</button>
-                    <button onClick={confirmModal.onConfirm} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors">Xóa ngay</button>
+                    {/* Nút Xóa sẽ bị disable khi loading=true */}
+                    <button onClick={confirmModal.onConfirm} disabled={loading} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                        {loading && <Loader2 className="w-4 h-4 animate-spin"/>} Xóa ngay
+                    </button>
                 </div>
             </div>
         </div>
@@ -259,8 +293,25 @@ export default function UserManagement() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{isEditing ? "Mật khẩu mới (Để trống nếu không đổi)" : "Mật khẩu *"}</label>
-                        <input type="password" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" 
-                            value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••" />
+                        <div className="relative">
+                            <input 
+                                type={showPassword ? "text" : "password"} 
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm pr-10" 
+                                value={formData.password} 
+                                onChange={e => setFormData({...formData, password: e.target.value})} 
+                                placeholder="••••••" 
+                            />
+                            <button 
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            <Info className="w-3 h-3"/> Tối thiểu 8 ký tự, có số và ký tự đặc biệt.
+                        </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -361,8 +412,9 @@ export default function UserManagement() {
                                     </td>
                                     <td className="px-6 py-4 font-mono text-slate-600">{user.user_code || "—"}</td>
                                     <td className="px-6 py-4">
-                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200">
-                                            <Shield className="w-3 h-3"/> {user.role_name || "Chưa phân quyền"}
+                                        {/* 👉 Cập nhật style dynamic */}
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getRoleStyle(user.role_name || "Student")}`}>
+                                            <Shield className="w-3 h-3"/> {user.role_name || "Student"}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">

@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    /**
-     * Lấy danh sách users kèm thông tin vai trò
-     */
+    // ... (Các hàm index, show, store, update giữ nguyên như cũ) ...
     public function index(Request $request)
     {
         $query = DB::table('users')
@@ -26,10 +24,29 @@ class UserController extends Controller
                 'users.created_at',
                 'roles.role_id',
                 'roles.role_name'
-            )
-            ->orderBy('users.user_id', 'desc');
+            );
 
-        return response()->json($query->get());
+        if ($request->keyword) {
+            $keyword = $request->keyword;
+            $query->where(function($q) use ($keyword) {
+                $q->where('users.user_name', 'like', "%{$keyword}%")
+                  ->orWhere('users.user_email', 'like', "%{$keyword}%")
+                  ->orWhere('users.user_code', 'like', "%{$keyword}%");
+            });
+        }
+
+        $query->orderBy('users.user_id', 'asc');
+
+        $users = $query->get();
+
+        $users->transform(function($user) {
+            if (is_null($user->role_name)) {
+                $user->role_name = 'Student';
+            }
+            return $user;
+        });
+
+        return response()->json($users);
     }
 
     public function show($id)
@@ -37,34 +54,29 @@ class UserController extends Controller
         return response()->json(User::findOrFail($id));
     }
 
-    /**
-     * Tạo user mới và gán role
-     */
     public function store(Request $request)
     {
         $request->validate([
             'user_code' => 'nullable|string|max:25|unique:users,user_code',
             'user_name' => 'required|string|max:255',
             'user_email' => 'required|email|max:255|unique:users,user_email',
-            'user_password' => 'required|string|min:6', // Frontend gửi lên field là 'password' hoặc 'user_password' tùy form
-            'role_id' => 'required|exists:roles,role_id'
+            'password'  => 'required|string|min:6',
+            'role_id'   => 'required|exists:roles,role_id'
         ]);
 
         DB::beginTransaction();
         try {
-            // 1. Tạo User
             $userId = DB::table('users')->insertGetId([
                 'user_code' => $request->user_code,
                 'user_name' => $request->user_name,
                 'user_email' => $request->user_email,
-                'user_password' => Hash::make($request->user_password), // Hoặc $request->password
+                'user_password' => Hash::make($request->password),
                 'user_is_activated' => 1,
                 'user_activate_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            // 2. Gán Role
             DB::table('users_roles')->insert([
                 'user_id' => $userId,
                 'role_id' => $request->role_id,
@@ -81,9 +93,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Cập nhật user và role
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -105,13 +114,10 @@ class UserController extends Controller
 
             if ($request->filled('password')) {
                 $data['user_password'] = Hash::make($request->password);
-            } elseif ($request->filled('user_password')) {
-                $data['user_password'] = Hash::make($request->user_password);
             }
 
             $user->update($data);
 
-            // Cập nhật Role
             DB::table('users_roles')->updateOrInsert(
                 ['user_id' => $id],
                 ['role_id' => $request->role_id, 'updated_at' => now()]
@@ -126,19 +132,27 @@ class UserController extends Controller
         }
     }
 
+    // 👇 [ĐÃ SỬA] Hàm destroy an toàn hơn
     public function destroy($id)
     {
         if ($id == 1) return response()->json(['message' => 'Cannot delete Super Admin'], 403);
 
+        // Kiểm tra user tồn tại chưa trước khi xóa
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found or already deleted'], 404);
+        }
+
         DB::beginTransaction();
         try {
             DB::table('users_roles')->where('user_id', $id)->delete();
-            User::findOrFail($id)->delete();
+            $user->delete(); // Dùng biến $user đã find ở trên
             DB::commit();
             return response()->json(['message' => 'User deleted']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Error'], 500);
+            // Trả về lỗi chi tiết để debug
+            return response()->json(['message' => 'Error deleting user: ' . $e->getMessage()], 500);
         }
     }
 }
