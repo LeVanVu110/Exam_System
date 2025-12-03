@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Save, Check, Shield, Search, Layout, Loader2, Plus, X, Users, Trash2, 
-  AlertCircle, CheckCircle, AlertTriangle // Thêm icon AlertTriangle cho modal xóa
+  AlertCircle, CheckCircle, AlertTriangle 
 } from "lucide-react";
 
 const API_URL = "http://localhost:8000/api"; 
@@ -20,10 +20,13 @@ export default function PermissionApp() {
   const [searchTerm, setSearchTerm] = useState("");
   
   // 👉 State thông báo (Toast)
-  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: '' }
+  const [toast, setToast] = useState(null); 
 
-  // 👉 State Modal Xác Nhận Xóa (Thay thế window.confirm)
-  const [deleteModal, setDeleteModal] = useState(null); // null hoặc { id, name }
+  // 👉 State Modal Xác Nhận Xóa Màn Hình
+  const [deleteModal, setDeleteModal] = useState(null); 
+  
+  // 👉 State Modal Xác Nhận Xóa Vai Trò (Mới)
+  const [deleteRoleModal, setDeleteRoleModal] = useState(null);
 
   // 👉 1. State lưu Role của người đang đăng nhập
   const [currentUserRole, setCurrentUserRole] = useState("");
@@ -37,7 +40,6 @@ export default function PermissionApp() {
   // Hàm hiển thị thông báo
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
-    // Tự động tắt sau 3 giây
     setTimeout(() => {
       setToast(null);
     }, 3000);
@@ -110,8 +112,10 @@ export default function PermissionApp() {
   const canEdit = isEditable();
 
   // ==================================================================================
-  // 3. LOGIC THÊM MÀN HÌNH MỚI
+  // 3. LOGIC THÊM MỚI (SCREEN & ROLE)
   // ==================================================================================
+  
+  // 👉 3.1 Thêm Màn hình
   const handleAddScreen = async () => {
     if (!newScreenName.trim() || !newScreenCode.trim()) {
         showToast("Vui lòng nhập tên và mã màn hình!", "error");
@@ -163,47 +167,82 @@ export default function PermissionApp() {
     }
   };
 
-  // ==================================================================================
-  // 🔥 3.5. LOGIC XÓA MÀN HÌNH (Sử dụng Custom Modal thay vì window.confirm)
-  // ==================================================================================
-  
-  // 1. Hàm kích hoạt Modal
-  const handleDeleteScreen = (screenId, screenName) => {
-    if (normalizeRole(currentUserRole) !== "ADMIN") {
-        showToast("Bạn không có quyền xóa màn hình!", "error");
+  // 👉 3.2 Thêm Vai trò
+  const handleAddRole = async () => {
+    if (!newRoleName.trim()) {
+        showToast("Vui lòng nhập tên vai trò!", "error");
         return;
     }
-    // Thay vì window.confirm, ta lưu thông tin vào state để hiển thị Modal
-    setDeleteModal({ id: screenId, name: screenName });
-  };
-
-  // 2. Hàm thực thi xóa thật sự (Gọi khi bấm "Xóa" trong Modal)
-  const confirmDelete = async () => {
-    if (!deleteModal) return;
-    const { id, name } = deleteModal;
 
     setLoading(true);
     try {
         const token = localStorage.getItem("ACCESS_TOKEN");
         
+        const response = await fetch(`${API_URL}/roles`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ 
+                role_name: newRoleName,
+                role_description: "" 
+            })
+        });
+
+        if (response.ok) {
+            const newRole = await response.json();
+            setRoles([...roles, newRole]);
+            setSelectedRoleId(newRole.role_id);
+            setNewRoleName("");
+            setShowAddRole(false);
+            showToast("Thêm vai trò thành công!", "success");
+        } else {
+            const err = await response.json();
+            showToast(`Lỗi: ${err.message || "Không thể thêm vai trò"}`, "error");
+        }
+    } catch (error) {
+        console.error("Lỗi thêm vai trò:", error);
+        showToast("Lỗi kết nối Server", "error");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  // ==================================================================================
+  // 🔥 3.5. LOGIC XÓA (MÀN HÌNH & VAI TRÒ)
+  // ==================================================================================
+  
+  // 👉 Xóa Màn Hình
+  const handleDeleteScreen = (screenId, screenName) => {
+    if (normalizeRole(currentUserRole) !== "ADMIN") {
+        showToast("Bạn không có quyền xóa màn hình!", "error");
+        return;
+    }
+    setDeleteModal({ id: screenId, name: screenName });
+  };
+
+  const confirmDeleteScreen = async () => {
+    if (!deleteModal) return;
+    const { id } = deleteModal;
+
+    setLoading(true);
+    try {
+        const token = localStorage.getItem("ACCESS_TOKEN");
         const response = await fetch(`${API_URL}/screens/${id}`, {
             method: 'DELETE',
-            headers: { 
-                'Authorization': `Bearer ${token}` 
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
             setScreens(prev => prev.filter(s => s.screen_id !== id));
-            
             setMatrix(prev => {
                 const newMatrix = { ...prev };
                 delete newMatrix[id];
                 return newMatrix;
             });
-
             showToast("Xóa màn hình thành công!", "success");
-            setDeleteModal(null); // Đóng modal sau khi xóa thành công
+            setDeleteModal(null); 
         } else {
             const err = await response.json().catch(() => ({}));
             showToast(`Lỗi: ${err.message || "Không thể xóa màn hình này"}`, "error");
@@ -215,6 +254,61 @@ export default function PermissionApp() {
         setLoading(false);
     }
   };
+
+  // 👉 Xóa Vai Trò (Mới)
+  const handleDeleteRole = (roleId, roleName) => {
+    // 1. Check quyền
+    if (normalizeRole(currentUserRole) !== "ADMIN") {
+        showToast("Bạn không có quyền xóa vai trò!", "error");
+        return;
+    }
+    // 2. Chặn xóa các vai trò hệ thống
+    const normalizedName = normalizeRole(roleName);
+    if (["ADMIN", "PDT"].includes(normalizedName)) {
+        showToast("Không thể xóa vai trò hệ thống (Admin/PDT)!", "error");
+        return;
+    }
+    // 3. Mở modal
+    setDeleteRoleModal({ id: roleId, name: roleName });
+  };
+
+  const confirmDeleteRole = async () => {
+    if (!deleteRoleModal) return;
+    const { id } = deleteRoleModal;
+
+    setLoading(true);
+    try {
+        const token = localStorage.getItem("ACCESS_TOKEN");
+        const response = await fetch(`${API_URL}/roles/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            // Xóa khỏi danh sách roles
+            const updatedRoles = roles.filter(r => r.role_id !== id);
+            setRoles(updatedRoles);
+            
+            // Nếu đang chọn role bị xóa, chuyển về role đầu tiên nếu có
+            if (selectedRoleId === id) {
+                if (updatedRoles.length > 0) setSelectedRoleId(updatedRoles[0].role_id);
+                else setSelectedRoleId(null);
+            }
+
+            showToast("Xóa vai trò thành công!", "success");
+            setDeleteRoleModal(null); 
+        } else {
+            const err = await response.json().catch(() => ({}));
+            showToast(`Lỗi: ${err.message || "Không thể xóa vai trò này (đang có người dùng sử dụng)"}`, "error");
+        }
+    } catch (error) {
+        console.error("Lỗi xóa vai trò:", error);
+        showToast("Lỗi kết nối Server", "error");
+    } finally {
+        setLoading(false);
+    }
+  };
+
 
   // ==================================================================================
   // 4. LOGIC REFRESH QUYỀN
@@ -353,7 +447,7 @@ export default function PermissionApp() {
         </div>
       )}
 
-      {/* 🔥 CUSTOM CONFIRM DELETE MODAL (SweetAlert Style) */}
+      {/* 🔥 MODAL XÓA MÀN HÌNH */}
       {deleteModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 scale-100 animate-[zoomIn_0.2s_ease-out]">
@@ -361,27 +455,39 @@ export default function PermissionApp() {
                     <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
                         <AlertTriangle className="w-6 h-6" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Xác nhận xóa?</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Xóa màn hình?</h3>
                     <p className="text-gray-500 text-sm mb-6">
                         Bạn có chắc chắn muốn xóa màn hình <span className="font-bold text-gray-800">"{deleteModal.name}"</span>?
-                        <br/>
-                        Hành động này không thể hoàn tác.
                     </p>
-                    
                     <div className="flex gap-3 justify-center">
-                        <button 
-                            onClick={() => setDeleteModal(null)}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                        >
-                            Hủy bỏ
+                        <button onClick={() => setDeleteModal(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Hủy bỏ</button>
+                        <button onClick={confirmDeleteScreen} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2" disabled={loading}>
+                            {loading && <Loader2 className="w-4 h-4 animate-spin"/>} Xóa ngay
                         </button>
-                        <button 
-                            onClick={confirmDelete}
-                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2"
-                            disabled={loading}
-                        >
-                            {loading && <Loader2 className="w-4 h-4 animate-spin"/>}
-                            Xóa ngay
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* 🔥 MODAL XÓA VAI TRÒ */}
+      {deleteRoleModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 scale-100 animate-[zoomIn_0.2s_ease-out]">
+                <div className="p-6 text-center">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+                        <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Xóa vai trò?</h3>
+                    <p className="text-gray-500 text-sm mb-6">
+                        Bạn có chắc chắn muốn xóa vai trò <span className="font-bold text-gray-800">"{deleteRoleModal.name}"</span>?
+                        <br/>
+                        <span className="text-xs text-red-500 italic">Lưu ý: Nếu vai trò này đang có người dùng, thao tác có thể thất bại.</span>
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <button onClick={() => setDeleteRoleModal(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Hủy bỏ</button>
+                        <button onClick={confirmDeleteRole} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2" disabled={loading}>
+                            {loading && <Loader2 className="w-4 h-4 animate-spin"/>} Xóa ngay
                         </button>
                     </div>
                 </div>
@@ -406,15 +512,34 @@ export default function PermissionApp() {
 
                 <div className="p-2 overflow-y-auto flex-1 space-y-1">
                 {roles.map((role) => (
-                    <button
+                    <div
                     key={role.role_id}
                     onClick={() => setSelectedRoleId(role.role_id)}
-                    className={`w-full text-left rounded-lg p-3 text-sm transition-all ${
+                    className={`w-full flex items-center justify-between rounded-lg p-3 text-sm transition-all cursor-pointer group ${
                         selectedRoleId === role.role_id ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                     }`}
                     >
-                    <div className="font-medium">{role.role_name}</div>
-                    </button>
+                        <div className="font-medium">{role.role_name}</div>
+                        
+                        {/* 🗑️ Nút Xóa Vai Trò (Chỉ hiện cho Admin & không phải vai trò hệ thống) */}
+                        {normalizeRole(currentUserRole) === "ADMIN" && 
+                         !["ADMIN", "PDT"].includes(normalizeRole(role.role_name)) && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteRole(role.role_id, role.role_name);
+                                }}
+                                className={`p-1.5 rounded-md transition-all opacity-0 group-hover:opacity-100 ${
+                                    selectedRoleId === role.role_id 
+                                        ? "text-blue-200 hover:text-white hover:bg-blue-500" 
+                                        : "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                }`}
+                                title="Xóa vai trò"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
                 ))}
                 </div>
             </div>
@@ -581,6 +706,51 @@ export default function PermissionApp() {
                     </button>
                     <button 
                         onClick={handleAddScreen}
+                        disabled={loading}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Thêm mới
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* 👉 MODAL THÊM ROLE */}
+      {showAddRole && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
+                    <h3 className="font-semibold text-lg text-gray-800">Thêm Vai Trò Mới</h3>
+                    <button onClick={() => setShowAddRole(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-200">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-5">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên vai trò</label>
+                        <input 
+                            type="text" 
+                            className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                            placeholder="Ví dụ: Sale Manager"
+                            value={newRoleName}
+                            onChange={(e) => setNewRoleName(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                </div>
+
+                <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                    <button 
+                        onClick={() => setShowAddRole(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 rounded-lg transition-all"
+                    >
+                        Hủy
+                    </button>
+                    <button 
+                        onClick={handleAddRole}
                         disabled={loading}
                         className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >

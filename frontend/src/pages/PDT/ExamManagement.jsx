@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react" 
 import axios from "axios"
-import { Upload, Download, Search, ChevronDown, ChevronUp, Trash2, FileText } from "lucide-react"
-import Swal from "sweetalert2"
-import { toast } from "react-toastify"
+import { 
+  Upload, Download, Search, ChevronDown, ChevronUp, Trash2, FileText, 
+  ChevronLeft, ChevronRight, X, AlertTriangle, CheckCircle, AlertCircle, Info 
+} from "lucide-react"
 
 export default function ExamManagement() {
   const [file, setFile] = useState(null)
@@ -16,170 +17,167 @@ export default function ExamManagement() {
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedRows, setSelectedRows] = useState(new Set())
 
-  // --- HÀM LẤY HEADER AUTH (BEARER TOKEN) ---
-  const getAuthHeaders = () => {
-    // ⚠️ QUAN TRỌNG: Kiểm tra tab Application -> Local Storage xem key là 'ACCESS_TOKEN' hay 'token'
-    const token = localStorage.getItem("ACCESS_TOKEN"); 
-    
-    if (!token) {
-        console.warn("⚠️ Không tìm thấy 'ACCESS_TOKEN' trong localStorage. Kiểm tra lại logic Login!");
-    }
+  // --- STATE PHÂN TRANG ---
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10 
 
+  // --- STATE UI CUSTOM ---
+  const [toast, setToast] = useState(null) 
+  const [confirmModal, setConfirmModal] = useState(null) 
+
+  // --- HELPER UI ---
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  // --- HÀM LẤY HEADER AUTH ---
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("ACCESS_TOKEN"); 
+    if (!token) {
+        console.warn("⚠️ Không tìm thấy 'ACCESS_TOKEN'. Kiểm tra lại Login!");
+    }
     return {
       "Authorization": `Bearer ${token}`,
-      // Content-Type sẽ tự động được set tùy vào axios call (multipart vs json)
     };
   };
 
-  // --- HÀM HỖ TRỢ BẮT LỖI DOWNLOAD (BLOB) ---
+  // --- HÀM HỖ TRỢ BẮT LỖI DOWNLOAD ---
   const handleDownloadError = async (error) => {
     if (error.response && error.response.data instanceof Blob) {
       try {
         const text = await error.response.data.text();
         const json = JSON.parse(text);
-        toast.error(`⛔ ${json.message || "Bạn không có quyền tải xuống!"}`);
+        showToast(`⛔ ${json.message || "Bạn không có quyền tải xuống!"}`, "error");
       } catch (e) {
-        toast.error("❌ Lỗi không xác định khi tải file.");
+        showToast("❌ Lỗi không xác định khi tải file.", "error");
       }
     } else {
         if (error.response?.status === 401) {
-            toast.error("🔒 Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
+            showToast("🔒 Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!", "error");
         } else {
-            toast.error(error.response?.data?.message || "❌ Lỗi kết nối Server!");
+            showToast(error.response?.data?.message || "❌ Lỗi kết nối Server!", "error");
         }
     }
   };
 
-  // ✅ Tìm kiếm + Popup khi không có dữ liệu
-  const handleSearch = async () => {
+  // ✅ Tìm kiếm (Đã sửa để hỗ trợ override mã lớp)
+  const handleSearch = async (overrideClassCode = null) => {
     try {
       setLoading(true)
 
       const params = {}
       if (from) params.from = from
       if (to) params.to = to
-      if (classCode) params.class_code = classCode
+      
+      // 👉 Logic mới: Nếu truyền overrideClassCode (chuỗi) thì dùng nó, ngược lại dùng state classCode
+      // Cần check typeof vì sự kiện onClick sẽ truyền vào một object event
+      const activeClassCode = typeof overrideClassCode === 'string' ? overrideClassCode : classCode
+      
+      if (activeClassCode) params.class_code = activeClassCode
 
       const res = await axios.get("http://localhost:8000/api/exam-sessions", {
         params,
-        headers: getAuthHeaders() // Thêm Auth Header
+        headers: getAuthHeaders() 
       })
 
       const fetchedData = Array.isArray(res.data.data) ? res.data.data : []
       setData(fetchedData)
       setSelectedRows(new Set())
+      setCurrentPage(1) 
 
       if (fetchedData.length === 0) {
-        if (classCode || from || to) {
-            Swal.fire({
-            icon: "info",
-            title: "Không có dữ liệu!",
-            text: `Không có kết quả nào phù hợp.`,
-            confirmButtonColor: "#3085d6",
-            })
+        if (activeClassCode || from || to) {
+            showToast("Không tìm thấy kết quả nào phù hợp.", "warning");
         }
       } 
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error)
-      
       if (error.response?.status === 401) {
-          toast.error("🔒 Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại!");
-          // Tùy chọn: Tự động logout nếu cần
-          // localStorage.removeItem("ACCESS_TOKEN");
-          // window.location.href = "/login";
+          showToast("🔒 Phiên đăng nhập hết hạn.", "error");
       } else {
-          toast.error("❌ Lỗi khi tải dữ liệu!")
+          showToast("❌ Lỗi khi tải dữ liệu!", "error");
       }
     } finally {
       setLoading(false)
     }
   }
 
+  // ✅ Xử lý khi xóa mã lớp (Clear & Reload)
   const handleClearClassCode = () => {
-    setClassCode("")
+    setClassCode("") // Xóa text trong ô input
     setSelectedRows(new Set())
+    // 👉 Gọi hàm tìm kiếm ngay lập tức với tham số rỗng để load lại toàn bộ
+    handleSearch("") 
   }
 
-  const handleDeleteSingle = async (examSessionId) => {
-    const confirm = await Swal.fire({
-      title: "Xóa kỳ thi?",
-      text: "Bạn có chắc chắn muốn xóa kỳ thi này không?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Xóa",
-      cancelButtonText: "Hủy",
-    })
-
-    if (confirm.isConfirmed) {
-      try {
-        setLoading(true)
-        await axios.delete(`http://localhost:8000/api/exam-sessions/${examSessionId}`, {
-            headers: getAuthHeaders() // Thêm Auth Header
-        })
-        toast.success("✅ Xóa kỳ thi thành công!")
-        handleSearch()
-      } catch (error) {
-        if (error.response?.status === 403) {
-            toast.error(`⛔ ${error.response.data.message}`);
-        } else if (error.response?.status === 401) {
-            toast.error("🔒 Vui lòng đăng nhập lại để thực hiện!");
-        } else {
-            console.error("Lỗi khi xóa:", error)
-            toast.error("❌ Lỗi khi xóa kỳ thi!")
+  // Xử lý Xóa Đơn
+  const handleDeleteSingle = (examSessionId) => {
+    setConfirmModal({
+        title: "Xóa kỳ thi?",
+        message: "Bạn có chắc chắn muốn xóa kỳ thi này không? Hành động này không thể hoàn tác.",
+        type: "danger",
+        onConfirm: async () => {
+            try {
+                setLoading(true)
+                await axios.delete(`http://localhost:8000/api/exam-sessions/${examSessionId}`, {
+                    headers: getAuthHeaders()
+                })
+                showToast("✅ Xóa kỳ thi thành công!", "success")
+                handleSearch()
+            } catch (error) {
+                if (error.response?.status === 403) {
+                    showToast(`⛔ ${error.response.data.message}`, "error");
+                } else if (error.response?.status === 401) {
+                    showToast("🔒 Vui lòng đăng nhập lại!", "error");
+                } else {
+                    showToast("❌ Lỗi khi xóa kỳ thi!", "error");
+                }
+            } finally {
+                setLoading(false)
+                setConfirmModal(null)
+            }
         }
-      } finally {
-        setLoading(false)
-      }
-    }
+    })
   }
 
-  const handleDeleteBulk = async () => {
+  // Xử lý Xóa Nhiều
+  const handleDeleteBulk = () => {
     if (selectedRows.size === 0) {
-      toast.warning("⚠️ Vui lòng chọn ít nhất một kỳ thi để xóa!")
+      showToast("⚠️ Vui lòng chọn ít nhất một kỳ thi để xóa!", "warning")
       return
     }
 
-    const confirm = await Swal.fire({
-      title: "Xóa hàng loạt?",
-      text: `Bạn có chắc chắn muốn xóa ${selectedRows.size} kỳ thi đã chọn không?`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Xóa tất cả",
-      cancelButtonText: "Hủy",
-    })
-
-    if (confirm.isConfirmed) {
-      try {
-        setLoading(true)
-        const idsToDelete = Array.from(selectedRows)
-        await axios.post("http://localhost:8000/api/exam-sessions/delete-bulk", {
-          ids: idsToDelete,
-        }, {
-            headers: getAuthHeaders() // Thêm Auth Header
-        })
-        toast.success(`✅ Xóa ${selectedRows.size} kỳ thi thành công!`)
-        setSelectedRows(new Set())
-        handleSearch()
-      } catch (error) {
-        console.error("Lỗi khi xóa hàng loạt:", error.response || error);
-
-        if (error.response?.status === 403) {
-            toast.error(`⛔ ${error.response.data.message}`);
-        } else if (error.response?.status === 401) {
-            toast.error("🔒 Vui lòng đăng nhập lại để thực hiện!");
-        } else if (error.response?.status === 500) {
-            toast.error("❌ Lỗi Server (500): Có thể do ràng buộc dữ liệu hoặc lỗi code backend.");
-        } else {
-            toast.error("❌ Lỗi khi xóa hàng loạt!")
+    setConfirmModal({
+        title: "Xóa hàng loạt?",
+        message: `Bạn có chắc chắn muốn xóa ${selectedRows.size} kỳ thi đã chọn không?`,
+        type: "danger",
+        onConfirm: async () => {
+            try {
+                setLoading(true)
+                const idsToDelete = Array.from(selectedRows)
+                await axios.post("http://localhost:8000/api/exam-sessions/delete-bulk", {
+                  ids: idsToDelete,
+                }, {
+                    headers: getAuthHeaders()
+                })
+                showToast(`✅ Xóa ${selectedRows.size} kỳ thi thành công!`, "success")
+                setSelectedRows(new Set())
+                handleSearch()
+            } catch (error) {
+                if (error.response?.status === 403) {
+                    showToast(`⛔ ${error.response.data.message}`, "error");
+                } else if (error.response?.status === 401) {
+                    showToast("🔒 Vui lòng đăng nhập lại!", "error");
+                } else {
+                    showToast("❌ Lỗi khi xóa hàng loạt!", "error");
+                }
+            } finally {
+                setLoading(false)
+                setConfirmModal(null)
+            }
         }
-      } finally {
-        setLoading(false)
-      }
-    }
+    })
   }
 
   const toggleRowSelection = (examSessionId) => {
@@ -200,11 +198,11 @@ export default function ExamManagement() {
     }
   }
 
-  // ✅ Import Excel + Toastify
+  // Import
   const handleImport = async (e) => {
     e.preventDefault()
     if (!file) {
-      toast.warning("⚠️ Vui lòng chọn file trước khi import!")
+      showToast("⚠️ Vui lòng chọn file trước khi import!", "warning")
       return
     }
 
@@ -216,80 +214,71 @@ export default function ExamManagement() {
       const res = await axios.post("http://localhost:8000/api/exam-sessions/import", formData, {
         headers: { 
             "Content-Type": "multipart/form-data",
-            ...getAuthHeaders() // Thêm Auth Header, giữ Content-Type multipart
+            ...getAuthHeaders() 
         },
       })
 
-      toast.success(`✅ Import thành công! (${res.data.success_rows} / ${res.data.total_rows})`)
+      showToast(`✅ Import thành công! (${res.data.success_rows} / ${res.data.total_rows})`, "success")
       setFile(null)
       e.target.reset(); 
       handleSearch()
     } catch (error) {
       console.error("🔥 Chi tiết lỗi import:", error.response?.data || error)
-      
       if (error.response?.status === 403) {
-        toast.error(`⛔ ${error.response.data.message || "Bạn không có quyền thực hiện thao tác này!"}`);
+        showToast(`⛔ ${error.response.data.message || "Không có quyền!"}`, "error");
       } else if (error.response?.status === 401) {
-        toast.error("🔒 Vui lòng đăng nhập lại để Import!");
+        showToast("🔒 Vui lòng đăng nhập lại!", "error");
       } else {
-        toast.error("❌ Import thất bại! Vui lòng kiểm tra file hoặc quyền hạn.")
+        showToast("❌ Import thất bại! Kiểm tra lại file.", "error")
       }
     } finally {
       setLoading(false)
     }
   }
 
-  // ✅ Export Excel
-  const handleExport = async () => {
-    const confirm = await Swal.fire({
-      title: "Xuất file Excel?",
-      text: "Bạn có muốn xuất danh sách kỳ thi theo bộ lọc hiện tại không?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Có, xuất ngay",
-      cancelButtonText: "Hủy",
-    });
+  // Export
+  const handleExport = () => {
+    setConfirmModal({
+        title: "Xuất file Excel?",
+        message: "Bạn có muốn xuất danh sách kỳ thi theo bộ lọc hiện tại không?",
+        type: "info",
+        onConfirm: async () => {
+            showToast("📁 Đang tạo file Excel...", "info");
+            setLoading(true);
+            try {
+                const response = await axios.get(`http://localhost:8000/api/exam-sessions/export`, {
+                    params: { from, to },
+                    responseType: 'blob',
+                    headers: getAuthHeaders()
+                });
 
-    if (confirm.isConfirmed) {
-      toast.info("📁 Đang tạo file Excel...", { autoClose: 2000 });
-      setLoading(true);
-
-      try {
-        const response = await axios.get(`http://localhost:8000/api/exam-sessions/export`, {
-            params: { from, to },
-            responseType: 'blob',
-            headers: getAuthHeaders() // Thêm Auth Header
-        });
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        
-        const filename = `Lich_thi_${new Date().toISOString().slice(0,10)}.xlsx`;
-        link.setAttribute('download', filename);
-        
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        toast.success("✅ Xuất file Excel thành công!");
-
-      } catch (error) {
-         await handleDownloadError(error);
-      } finally {
-         setLoading(false);
-      }
-    }
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                const filename = `Lich_thi_${new Date().toISOString().slice(0,10)}.xlsx`;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                showToast("✅ Xuất file Excel thành công!", "success");
+            } catch (error) {
+                await handleDownloadError(error);
+            } finally {
+                setLoading(false);
+                setConfirmModal(null);
+            }
+        }
+    })
   };
 
-  // ✅ Xuất PDF
   const handleExportPDF = async (id) => {
-    toast.info("📄 Đang tạo file PDF...", { autoClose: 2000 });
+    showToast("📄 Đang tạo file PDF...", "info");
     setLoading(true);
 
     try {
         const response = await axios.get(`http://localhost:8000/api/exam-sessions/${id}/report`, {
             responseType: 'blob', 
-            headers: getAuthHeaders() // Thêm Auth Header
+            headers: getAuthHeaders()
         });
 
         const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
@@ -299,7 +288,7 @@ export default function ExamManagement() {
         document.body.appendChild(link);
         link.click();
         link.remove();
-        toast.success("✅ Tải PDF thành công!");
+        showToast("✅ Tải PDF thành công!", "success");
 
     } catch (error) {
         await handleDownloadError(error);
@@ -322,8 +311,66 @@ export default function ExamManagement() {
     setExpandedRows(newExpanded)
   }
 
+  // 👉 TÍNH TOÁN PHÂN TRANG
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+
+  const goToPage = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-10 relative">
+      
+      {/* 🔥 TOAST NOTIFICATION COMPONENT */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white font-medium animate-[slideIn_0.3s_ease-out] 
+            ${toast.type === 'error' ? 'bg-red-500' : 
+              toast.type === 'success' ? 'bg-emerald-600' : 
+              toast.type === 'warning' ? 'bg-amber-500' : 'bg-blue-600'}`}>
+            {toast.type === 'error' ? <AlertCircle className="w-5 h-5"/> : 
+             toast.type === 'success' ? <CheckCircle className="w-5 h-5"/> : 
+             toast.type === 'warning' ? <AlertTriangle className="w-5 h-5"/> : <Info className="w-5 h-5"/>}
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 hover:bg-white/20 rounded-full p-1"><X className="w-4 h-4"/></button>
+        </div>
+      )}
+
+      {/* 🔥 CUSTOM CONFIRM MODAL */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 scale-100 animate-[zoomIn_0.2s_ease-out]">
+                <div className="p-6 text-center">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 
+                        ${confirmModal.type === 'danger' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                        {confirmModal.type === 'danger' ? <AlertTriangle className="w-6 h-6" /> : <Info className="w-6 h-6" />}
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{confirmModal.title}</h3>
+                    <p className="text-gray-500 text-sm mb-6">{confirmModal.message}</p>
+                    
+                    <div className="flex gap-3 justify-center">
+                        <button 
+                            onClick={() => setConfirmModal(null)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                        >
+                            Hủy bỏ
+                        </button>
+                        <button 
+                            onClick={confirmModal.onConfirm}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2
+                                ${confirmModal.type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                            disabled={loading}
+                        >
+                            {loading ? "Đang xử lý..." : "Xác nhận"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
         <div className="w-full px-6 py-4 flex items-center justify-between">
@@ -392,7 +439,7 @@ export default function ExamManagement() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
-                onClick={handleSearch}
+                onClick={() => handleSearch()} 
                 disabled={loading}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium px-6 py-2.5 rounded-lg transition flex items-center justify-center gap-2 shadow-sm"
               >
@@ -483,9 +530,9 @@ export default function ExamManagement() {
               </thead>
 
               <tbody className="bg-white divide-y divide-slate-200">
-                {data.length > 0 ? (
-                  data.map((item) => (
-                    // SỬA LỖI KEY: Thay <> bằng <React.Fragment key={...}>
+                {/* 👉 Render currentItems thay vì toàn bộ data */}
+                {currentItems.length > 0 ? (
+                  currentItems.map((item) => (
                     <React.Fragment key={item.exam_session_id}>
                       <tr className={`hover:bg-slate-50 transition-colors ${selectedRows.has(item.exam_session_id) ? 'bg-blue-50/50' : ''}`}>
                         <td className="px-4 py-3 text-center">
@@ -578,8 +625,8 @@ export default function ExamManagement() {
                   <tr>
                     <td colSpan="11" className="text-center py-12">
                       <div className="flex flex-col items-center justify-center text-slate-400">
-                         <span className="text-4xl mb-3">📭</span>
-                         <p>Không tìm thấy dữ liệu phù hợp</p>
+                          <span className="text-4xl mb-3">📭</span>
+                          <p>Không tìm thấy dữ liệu phù hợp</p>
                       </div>
                     </td>
                   </tr>
@@ -587,8 +634,62 @@ export default function ExamManagement() {
               </tbody>
             </table>
           </div>
+
+          {/* 👉 THANH PHÂN TRANG */}
+          {data.length > 0 && (
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div className="text-sm text-slate-500">
+                    Hiển thị <span className="font-medium">{indexOfFirstItem + 1}</span> đến <span className="font-medium">{Math.min(indexOfLastItem, data.length)}</span> trong tổng số <span className="font-medium">{data.length}</span> ca thi
+                </div>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => goToPage(currentPage - 1)} 
+                        disabled={currentPage === 1}
+                        className="p-2 border border-slate-300 rounded-md hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed bg-white shadow-sm transition-all text-slate-600"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                    {/* Render Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || Math.abs(currentPage - p) <= 1) // Logic rút gọn số trang
+                        .map((page, index, array) => (
+                            <React.Fragment key={page}>
+                                {index > 0 && array[index - 1] !== page - 1 && <span className="px-2 text-slate-400">...</span>}
+                                <button
+                                    onClick={() => goToPage(page)}
+                                    className={`w-8 h-8 flex items-center justify-center rounded-md border text-sm font-medium transition-all shadow-sm ${
+                                        currentPage === page
+                                            ? "bg-blue-600 text-white border-blue-600"
+                                            : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            </React.Fragment>
+                        ))}
+                    <button 
+                        onClick={() => goToPage(currentPage + 1)} 
+                        disabled={currentPage === totalPages}
+                        className="p-2 border border-slate-300 rounded-md hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed bg-white shadow-sm transition-all text-slate-600"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+            </div>
+          )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }
