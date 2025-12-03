@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
-  Save, Check, Shield, Search, Layout, Loader2, Plus, X, Users, Trash2
+  Save, Check, Shield, Search, Layout, Loader2, Plus, X, Users, Trash2, 
+  AlertCircle, CheckCircle, AlertTriangle // Thêm icon AlertTriangle cho modal xóa
 } from "lucide-react";
 
 const API_URL = "http://localhost:8000/api"; 
@@ -18,17 +19,32 @@ export default function PermissionApp() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
+  // 👉 State thông báo (Toast)
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: '' }
+
+  // 👉 State Modal Xác Nhận Xóa (Thay thế window.confirm)
+  const [deleteModal, setDeleteModal] = useState(null); // null hoặc { id, name }
+
   // 👉 1. State lưu Role của người đang đăng nhập
   const [currentUserRole, setCurrentUserRole] = useState("");
 
   const [showAddRole, setShowAddRole] = useState(false);
-  const [showAddScreen, setShowAddScreen] = useState(false); // State hiển thị modal thêm màn hình
+  const [showAddScreen, setShowAddScreen] = useState(false); 
   const [newRoleName, setNewRoleName] = useState("");
   const [newScreenName, setNewScreenName] = useState("");
   const [newScreenCode, setNewScreenCode] = useState("");
 
+  // Hàm hiển thị thông báo
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    // Tự động tắt sau 3 giây
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
+
   // ==================================================================================
-  // 1. KHỞI TẠO: Tải data & Lấy Role từ LocalStorage
+  // 1. KHỞI TẠO
   // ==================================================================================
   useEffect(() => {
     const storedRole = localStorage.getItem("USER_ROLE") || "";
@@ -54,7 +70,7 @@ export default function PermissionApp() {
         }
       } catch (error) {
         console.error("Lỗi khởi tạo:", error);
-        alert("Không thể tải dữ liệu.");
+        showToast("Không thể tải dữ liệu.", "error");
       } finally {
         setInitialLoading(false);
       }
@@ -97,9 +113,8 @@ export default function PermissionApp() {
   // 3. LOGIC THÊM MÀN HÌNH MỚI
   // ==================================================================================
   const handleAddScreen = async () => {
-    // Validate đầu vào
     if (!newScreenName.trim() || !newScreenCode.trim()) {
-        alert("Vui lòng nhập tên và mã màn hình!");
+        showToast("Vui lòng nhập tên và mã màn hình!", "error");
         return;
     }
 
@@ -107,7 +122,6 @@ export default function PermissionApp() {
     try {
         const token = localStorage.getItem("ACCESS_TOKEN");
         
-        // Gọi API tạo màn hình
         const response = await fetch(`${API_URL}/screens`, {
             method: 'POST',
             headers: { 
@@ -123,10 +137,7 @@ export default function PermissionApp() {
         if (response.ok) {
             const newScreen = await response.json();
             
-            // 1. Cập nhật state danh sách màn hình
             setScreens([...screens, newScreen]);
-            
-            // 2. Cập nhật Matrix (khởi tạo row quyền mặc định là false cho màn hình mới)
             setMatrix(prev => ({
                 ...prev,
                 [newScreen.screen_id]: {
@@ -136,44 +147,46 @@ export default function PermissionApp() {
                 }
             }));
 
-            // 3. Reset form và đóng modal
             setNewScreenName("");
             setNewScreenCode("");
             setShowAddScreen(false);
-            alert("✅ Thêm màn hình thành công!");
+            showToast("Thêm màn hình thành công!", "success");
         } else {
             const err = await response.json();
-            alert(`❌ Lỗi: ${err.message || "Không thể thêm màn hình"}`);
+            showToast(`Lỗi: ${err.message || "Không thể thêm màn hình"}`, "error");
         }
     } catch (error) {
         console.error("Lỗi thêm màn hình:", error);
-        alert("❌ Lỗi kết nối Server");
+        showToast("Lỗi kết nối Server", "error");
     } finally {
         setLoading(false);
     }
   };
 
   // ==================================================================================
-  // 🔥 3.5. LOGIC XÓA MÀN HÌNH
+  // 🔥 3.5. LOGIC XÓA MÀN HÌNH (Sử dụng Custom Modal thay vì window.confirm)
   // ==================================================================================
-  const handleDeleteScreen = async (screenId, screenName) => {
-    // 1. Chỉ Admin mới được xóa
+  
+  // 1. Hàm kích hoạt Modal
+  const handleDeleteScreen = (screenId, screenName) => {
     if (normalizeRole(currentUserRole) !== "ADMIN") {
-        alert("Bạn không có quyền xóa màn hình!");
+        showToast("Bạn không có quyền xóa màn hình!", "error");
         return;
     }
+    // Thay vì window.confirm, ta lưu thông tin vào state để hiển thị Modal
+    setDeleteModal({ id: screenId, name: screenName });
+  };
 
-    // 2. Xác nhận
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa màn hình "${screenName}"? \n\n⚠️ Cảnh báo: Tất cả phân quyền liên quan đến màn hình này cũng sẽ bị xóa vĩnh viễn.`)) {
-        return;
-    }
+  // 2. Hàm thực thi xóa thật sự (Gọi khi bấm "Xóa" trong Modal)
+  const confirmDelete = async () => {
+    if (!deleteModal) return;
+    const { id, name } = deleteModal;
 
     setLoading(true);
     try {
         const token = localStorage.getItem("ACCESS_TOKEN");
         
-        // Gọi API DELETE /screens/{id}
-        const response = await fetch(`${API_URL}/screens/${screenId}`, {
+        const response = await fetch(`${API_URL}/screens/${id}`, {
             method: 'DELETE',
             headers: { 
                 'Authorization': `Bearer ${token}` 
@@ -181,24 +194,23 @@ export default function PermissionApp() {
         });
 
         if (response.ok) {
-            // Xóa khỏi state screens
-            setScreens(prev => prev.filter(s => s.screen_id !== screenId));
+            setScreens(prev => prev.filter(s => s.screen_id !== id));
             
-            // Xóa khỏi state matrix
             setMatrix(prev => {
                 const newMatrix = { ...prev };
-                delete newMatrix[screenId];
+                delete newMatrix[id];
                 return newMatrix;
             });
 
-            alert("✅ Xóa màn hình thành công!");
+            showToast("Xóa màn hình thành công!", "success");
+            setDeleteModal(null); // Đóng modal sau khi xóa thành công
         } else {
             const err = await response.json().catch(() => ({}));
-            alert(`❌ Lỗi: ${err.message || "Không thể xóa màn hình này (có thể do ràng buộc dữ liệu)"}`);
+            showToast(`Lỗi: ${err.message || "Không thể xóa màn hình này"}`, "error");
         }
     } catch (error) {
         console.error("Lỗi xóa màn hình:", error);
-        alert("❌ Lỗi kết nối Server");
+        showToast("Lỗi kết nối Server", "error");
     } finally {
         setLoading(false);
     }
@@ -231,7 +243,7 @@ export default function PermissionApp() {
   };
 
   // ==================================================================================
-  // 5. XỬ LÝ API LOAD MATRIX VÀ SAVE
+  // 5. XỬ lý LOAD VÀ SAVE MATRIX
   // ==================================================================================
   useEffect(() => {
     if (!selectedRoleId || screens.length === 0) return;
@@ -265,13 +277,11 @@ export default function PermissionApp() {
     fetchMatrix();
   }, [selectedRoleId, screens]);
 
-  // 🔥 ĐÃ SỬA: Đảm bảo screen_id luôn tồn tại khi cập nhật checkbox
   const handleCheckboxChange = (screenId, field) => {
     if (!canEdit) return; 
     setMatrix((prev) => {
-      // Đảm bảo currentRow luôn có screen_id, ngay cả khi nó chưa tồn tại trong state
       const currentRow = { 
-          screen_id: screenId, // Quan trọng: Gắn lại ID
+          screen_id: screenId, 
           ...prev[screenId] 
       };
       
@@ -294,7 +304,6 @@ export default function PermissionApp() {
 
     setSaving(true);
     try {
-      // Lọc bỏ những row không có screen_id (để an toàn)
       const payload = Object.values(matrix)
         .filter(row => row.screen_id) 
         .map(row => ({
@@ -314,14 +323,14 @@ export default function PermissionApp() {
       const targetRoleObj = roles.find(r => r.role_id === selectedRoleId);
       if (targetRoleObj && normalizeRole(targetRoleObj.role_name) === normalizeRole(currentUserRole)) {
           await refreshMyPermissions();
-          alert("✅ Cập nhật thành công! Các quyền hạn mới đã được áp dụng ngay lập tức.");
+          showToast("Cập nhật thành công! Các quyền hạn mới đã được áp dụng.", "success");
       } else {
-          alert("✅ Cập nhật quyền cho vai trò thành công!");
+          showToast("Cập nhật quyền cho vai trò thành công!", "success");
       }
 
     } catch (error) { 
         console.error(error);
-        alert("❌ Lỗi khi lưu!"); 
+        showToast("Lỗi khi lưu dữ liệu!", "error"); 
     } finally { 
         setSaving(false); 
     }
@@ -333,7 +342,53 @@ export default function PermissionApp() {
   if (initialLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600"/></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-slate-900 flex flex-col h-screen overflow-hidden">
+    <div className="min-h-screen bg-gray-50 font-sans text-slate-900 flex flex-col h-screen overflow-hidden relative">
+      
+      {/* 🔥 TOAST NOTIFICATION COMPONENT */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-[70] flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white font-medium animate-[slideIn_0.3s_ease-out] ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-600'}`}>
+            {toast.type === 'error' ? <AlertCircle className="w-5 h-5"/> : <CheckCircle className="w-5 h-5"/>}
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 hover:bg-white/20 rounded-full p-1"><X className="w-4 h-4"/></button>
+        </div>
+      )}
+
+      {/* 🔥 CUSTOM CONFIRM DELETE MODAL (SweetAlert Style) */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 scale-100 animate-[zoomIn_0.2s_ease-out]">
+                <div className="p-6 text-center">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+                        <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Xác nhận xóa?</h3>
+                    <p className="text-gray-500 text-sm mb-6">
+                        Bạn có chắc chắn muốn xóa màn hình <span className="font-bold text-gray-800">"{deleteModal.name}"</span>?
+                        <br/>
+                        Hành động này không thể hoàn tác.
+                    </p>
+                    
+                    <div className="flex gap-3 justify-center">
+                        <button 
+                            onClick={() => setDeleteModal(null)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                        >
+                            Hủy bỏ
+                        </button>
+                        <button 
+                            onClick={confirmDelete}
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2"
+                            disabled={loading}
+                        >
+                            {loading && <Loader2 className="w-4 h-4 animate-spin"/>}
+                            Xóa ngay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <div className="p-6 pb-2">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 h-[calc(100vh-8rem)] max-w-7xl mx-auto w-full">
@@ -375,7 +430,6 @@ export default function PermissionApp() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {/* 👉 Nút Thêm Màn Hình */}
                     {normalizeRole(currentUserRole) === "ADMIN" && (
                         <button 
                             onClick={() => setShowAddScreen(true)} 
@@ -481,7 +535,7 @@ export default function PermissionApp() {
 
       {/* 👉 MODAL THÊM MÀN HÌNH */}
       {showAddScreen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
                     <h3 className="font-semibold text-lg text-gray-800">Thêm Màn Hình Mới</h3>
@@ -537,6 +591,18 @@ export default function PermissionApp() {
             </div>
         </div>
       )}
+
+      {/* Style animation cho toast và modal */}
+      <style>{`
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
 
     </div>
   );
