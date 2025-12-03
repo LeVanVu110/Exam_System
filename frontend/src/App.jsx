@@ -67,7 +67,7 @@ function App() {
         </Route>
 
         {/* 6. Quản profile */}
-        <Route element={<ProtectedRoute screenCode="USER_PRO1" />}>
+        <Route element={<ProtectedRoute screenCode="USER_PRO" />}>
           <Route element={<Layout />}>
             {/* Đây chính là route bạn đang cần */}
             <Route path="/UserProfile" element={<Userprofile />} />
