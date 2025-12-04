@@ -61,7 +61,7 @@ export default function ExamManagement() {
     }
   };
 
-  // ✅ Tìm kiếm (Đã sửa để hỗ trợ override mã lớp)
+  // ✅ Tìm kiếm
   const handleSearch = async (overrideClassCode = null) => {
     try {
       setLoading(true)
@@ -70,8 +70,6 @@ export default function ExamManagement() {
       if (from) params.from = from
       if (to) params.to = to
       
-      // 👉 Logic mới: Nếu truyền overrideClassCode (chuỗi) thì dùng nó, ngược lại dùng state classCode
-      // Cần check typeof vì sự kiện onClick sẽ truyền vào một object event
       const activeClassCode = typeof overrideClassCode === 'string' ? overrideClassCode : classCode
       
       if (activeClassCode) params.class_code = activeClassCode
@@ -86,7 +84,13 @@ export default function ExamManagement() {
       setSelectedRows(new Set())
       setCurrentPage(1) 
 
-      if (fetchedData.length === 0) {
+      // 👇 Đã thêm: Logic hiển thị thông báo kết quả tìm kiếm
+      if (fetchedData.length > 0) {
+        // Chỉ hiện thông báo nếu người dùng có nhập điều kiện lọc (ngày hoặc mã lớp)
+        if (activeClassCode || from || to) {
+            showToast(`✅ Tìm thấy ${fetchedData.length} ca thi phù hợp!`, "success");
+        }
+      } else {
         if (activeClassCode || from || to) {
             showToast("Không tìm thấy kết quả nào phù hợp.", "warning");
         }
@@ -103,11 +107,10 @@ export default function ExamManagement() {
     }
   }
 
-  // ✅ Xử lý khi xóa mã lớp (Clear & Reload)
+  // ✅ Xử lý khi xóa mã lớp
   const handleClearClassCode = () => {
-    setClassCode("") // Xóa text trong ô input
+    setClassCode("") 
     setSelectedRows(new Set())
-    // 👉 Gọi hàm tìm kiếm ngay lập tức với tham số rỗng để load lại toàn bộ
     handleSearch("") 
   }
 
@@ -228,6 +231,8 @@ export default function ExamManagement() {
         showToast(`⛔ ${error.response.data.message || "Không có quyền!"}`, "error");
       } else if (error.response?.status === 401) {
         showToast("🔒 Vui lòng đăng nhập lại!", "error");
+      } else if (error.response?.data?.message) {
+        showToast(`❌ ${error.response.data.message}`, "error")
       } else {
         showToast("❌ Import thất bại! Kiểm tra lại file.", "error")
       }
@@ -386,7 +391,7 @@ export default function ExamManagement() {
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <div className="w-full max-w-[95%] mx-auto px-4 py-8 space-y-6">
         {/* Filter Section */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
@@ -508,7 +513,7 @@ export default function ExamManagement() {
             <table className="min-w-full table-fixed divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="w-10 px-4 py-3 text-center">
+                  <th className="w-12 px-2 py-3 text-center">
                     <input
                       type="checkbox"
                       checked={data.length > 0 && selectedRows.size === data.length}
@@ -516,26 +521,26 @@ export default function ExamManagement() {
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </th>
-                  <th className="w-10 px-2 py-3"></th>
-                  <th className="w-32 px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Mã ca thi</th>
-                  <th className="w-28 px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Mã lớp</th>
-                  <th className="w-48 px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Môn học</th>
-                  <th className="w-32 px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Ngày thi</th>
-                  <th className="w-32 px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Tình trạng</th>
-                  <th className="w-40 px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">GV 1</th>
-                  <th className="w-40 px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">GV 2</th>
-                  <th className="w-28 px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Báo cáo</th>
-                  <th className="w-24 px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Thao tác</th>
+                  <th className="w-12 px-2 py-3"></th>
+                  <th className="w-40 px-2 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Mã ca thi</th>
+                  <th className="w-36 px-2 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Mã lớp</th>
+                  {/* 👇 Đã sửa: Tăng độ rộng cột Môn học */}
+                  <th className="min-w-[250px] px-2 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Môn học</th>
+                  <th className="w-32 px-2 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Ngày thi</th>
+                  <th className="w-32 px-2 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Tình trạng</th>
+                  <th className="w-48 px-2 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">GV 1</th>
+                  <th className="w-48 px-2 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">GV 2</th>
+                  <th className="w-24 px-2 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Báo cáo</th>
+                  <th className="w-24 px-2 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Thao tác</th>
                 </tr>
               </thead>
 
               <tbody className="bg-white divide-y divide-slate-200">
-                {/* 👉 Render currentItems thay vì toàn bộ data */}
                 {currentItems.length > 0 ? (
                   currentItems.map((item) => (
                     <React.Fragment key={item.exam_session_id}>
                       <tr className={`hover:bg-slate-50 transition-colors ${selectedRows.has(item.exam_session_id) ? 'bg-blue-50/50' : ''}`}>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-3 text-center">
                           <input
                             type="checkbox"
                             checked={selectedRows.has(item.exam_session_id)}
@@ -555,13 +560,14 @@ export default function ExamManagement() {
                             )}
                           </button>
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.exam_code}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{item.class_code}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600 truncate" title={item.subject_name}>{item.subject_name}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">{item.exam_date}</td>
-                        <td className="px-4 py-3 text-sm">
+                        <td className="px-2 py-3 text-sm font-medium text-slate-900 truncate" title={item.exam_code}>{item.exam_code}</td>
+                        <td className="px-2 py-3 text-sm text-slate-600 truncate" title={item.class_code}>{item.class_code}</td>
+                        {/* 👇 Đã sửa: Cho phép xuống dòng (whitespace-normal) */}
+                        <td className="px-2 py-3 text-sm text-slate-600 font-medium whitespace-normal" title={item.subject_name}>{item.subject_name}</td>
+                        <td className="px-2 py-3 text-sm text-slate-600 whitespace-nowrap">{item.exam_date}</td>
+                        <td className="px-2 py-3 text-sm">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium ${item.status === "Hoàn thành"
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${item.status === "Hoàn thành"
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               : item.status === "Đang diễn ra"
                                 ? "bg-blue-100 text-blue-800 border border-blue-200"
@@ -571,9 +577,9 @@ export default function ExamManagement() {
                             {item.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600 truncate" title={item.teacher1_name}>{item.teacher1_name || "—"}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600 truncate" title={item.teacher2_name}>{item.teacher2_name || "—"}</td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-3 text-sm text-slate-600 truncate" title={item.teacher1_name}>{item.teacher1_name || "—"}</td>
+                        <td className="px-2 py-3 text-sm text-slate-600 truncate" title={item.teacher2_name}>{item.teacher2_name || "—"}</td>
+                        <td className="px-2 py-3 text-center">
                           <button
                             onClick={() => handleExportPDF(item.exam_session_id)}
                             className="text-slate-500 hover:text-blue-600 transition-colors"
@@ -583,7 +589,7 @@ export default function ExamManagement() {
                           </button>
                         </td>
 
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-3 text-center">
                           <button
                             onClick={() => handleDeleteSingle(item.exam_session_id)}
                             disabled={loading}
@@ -597,7 +603,7 @@ export default function ExamManagement() {
 
                       {expandedRows.has(item.exam_session_id) && (
                         <tr className="bg-slate-50/70 border-b border-slate-200">
-                          <td colSpan="11" className="px-4 py-4">
+                          <td colSpan="11" className="px-2 py-4">
                             <div className="ml-14 grid grid-cols-2 md:grid-cols-4 gap-6 text-sm bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
                               <div>
                                 <p className="text-slate-500 text-xs mb-1 uppercase font-semibold">Phòng thi</p>
@@ -609,7 +615,7 @@ export default function ExamManagement() {
                               </div>
                               <div>
                                 <p className="text-slate-500 text-xs mb-1 uppercase font-semibold">Thời gian</p>
-                                <p className="font-medium text-slate-800">{item.exam_time} ({item.exam_duration} phút)</p>
+                                <p className="font-medium text-slate-800">{item.exam_start_time ? item.exam_start_time.slice(0,5) : ''} - {item.exam_end_time ? item.exam_end_time.slice(0,5) : ''} ({item.exam_duration} phút)</p>
                               </div>
                               <div>
                                 <p className="text-slate-500 text-xs mb-1 uppercase font-semibold">Khoa coi thi</p>
