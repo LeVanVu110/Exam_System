@@ -375,7 +375,7 @@ class ExamSessionController extends Controller
                 'assigned_teacher1_id' => $teacher1Id,
                 'assigned_teacher2_id' => $teacher2Id,
 
-                'status' => $item['status'] ?? 'Scheduled',
+                'status' => $item['status'] ?? 'Đã lên lịch',
 
                 // Các trường khác
                 'class_code' => $item['class_code'] ?? null,
