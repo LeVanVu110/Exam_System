@@ -21,7 +21,7 @@ use Carbon\Carbon;
 
 class ExamSessionController extends Controller
 {
-    // ✅ 1. IMPORT EXCEL - PHIÊN BẢN FIX LỖI GIỜ THI (transformTime)
+    // ✅ 1. IMPORT EXCEL
     public function importExcel(Request $request)
     {
         set_time_limit(300);
@@ -90,24 +90,20 @@ class ExamSessionController extends Controller
                         $t2Name = $teacherNames[1] ?? null;
                         $teacher2Id = $this->resolveTeacherId($t2Name, $existingTeachersMap, $nextUserCodeInt, $newTeachers);
 
-                        // --- XỬ LÝ THỜI GIAN (FIXED) ---
-                        // Lấy giá trị giờ từ nhiều key có thể
+                        // --- XỬ LÝ THỜI GIAN ---
                         $startTimeValue = $row['gio_thi'] ?? ($row['bat_dau'] ?? ($row['gio'] ?? null));
                         $duration = (int)($row['tg_thi'] ?? ($row['thoi_luong'] ?? 90));
-
-                        // Chuẩn hóa giờ bắt đầu bằng hàm thông minh transformTime
                         $startTimeFormatted = $this->transformTime($startTimeValue);
 
-                        // Tính giờ kết thúc
                         try {
                             $startTimeObj = Carbon::createFromFormat('H:i:s', $startTimeFormatted);
                             $endTimeObj = $startTimeObj->copy()->addMinutes($duration);
                             $endTimeFormatted = $endTimeObj->format('H:i:s');
                         } catch (\Exception $e) {
-                            $endTimeFormatted = '00:00:00'; // Fallback
+                            $endTimeFormatted = '00:00:00';
                         }
 
-                        // --- XỬ LÝ TRÙNG MÃ (TẠO MỚI) ---
+                        // --- XỬ LÝ TRÙNG MÃ ---
                         $baseExamCode = substr(trim($row['lop_hp'] ?? ($row['ma_hp'] ?? $row['ma_mon'])), 0, 40);
                         $finalExamCode = $baseExamCode;
 
@@ -128,11 +124,12 @@ class ExamSessionController extends Controller
                             'subject_name'    => $this->safeSubstr($row['ten_hp'] ?? ($row['ten_mon'] ?? 'Chưa có tên'), 255),
                             'exam_date'       => $this->transformDate($row['ngay_thi'] ?? ($row['ngay'] ?? null)),
 
-                            // Lưu giờ chuẩn xác
+                            // ✅ FIX LỖI EXCEL: Lưu vào cả exam_time để export đọc được
+                            'exam_time'       => $startTimeFormatted,
                             'exam_start_time' => $startTimeFormatted,
                             'exam_end_time'   => $endTimeFormatted,
-                            'exam_duration'   => $duration,
 
+                            'exam_duration'   => $duration,
                             'exam_room'       => $this->safeSubstr($row['phong_thi'] ?? ($row['phong'] ?? null), 50),
                             'class_code'      => $this->safeSubstr($row['lop_hp'] ?? ($row['ma_lop'] ?? null), 50),
                             'student_count'   => $row['so_sv'] ?? ($row['sl_sv'] ?? 0),
@@ -172,49 +169,33 @@ class ExamSessionController extends Controller
     // 🛠️ Helper MỚI: Xử lý giờ thông minh
     private function transformTime($value)
     {
-        if (empty($value)) return '07:00:00'; // Mặc định nếu trống
-
+        if (empty($value)) return '07:00:00';
         try {
-            // Trường hợp 1: Excel Serial Number (dạng số, vd: 0.33333 -> 08:00:00)
             if (is_numeric($value)) {
                 return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('H:i:s');
             }
-
-            // Trường hợp 2: Chuỗi (vd: "08h00", "8:00", "08g30")
             $value = trim($value);
-            // Thay thế h, g, p thành :
             $value = preg_replace('/[hgp]/i', ':', $value);
-            // Xóa ký tự lạ
             $value = preg_replace('/[^0-9:]/', '', $value);
-
-            // Nếu chỉ có giờ (VD: "8") -> thêm ":00"
             if (is_numeric($value)) {
                 $value .= ':00';
             }
-
-            // Carbon parse sẽ tự hiểu các định dạng H:i
             return Carbon::parse($value)->format('H:i:s');
         } catch (\Exception $e) {
-            return '07:00:00'; // Fallback an toàn
+            return '07:00:00';
         }
     }
 
-    // Helper: Cắt chuỗi an toàn
     private function safeSubstr($string, $length) {
-        if (empty($string)) return ''; // ✅ FIX: Trả về chuỗi rỗng thay vì null để CONCAT hoạt động
+        if (empty($string)) return '';
         return mb_substr($string, 0, $length, 'UTF-8');
     }
 
-    // Helper: Tìm hoặc Tạo GV
     private function resolveTeacherId($fullName, &$map, &$nextCodeInt, &$newCount)
     {
         if (empty($fullName)) return null;
-
         $key = mb_strtolower(trim($fullName), 'UTF-8');
-
-        if (isset($map[$key])) {
-            return $map[$key];
-        }
+        if (isset($map[$key])) return $map[$key];
 
         $parts = explode(' ', trim($fullName));
         if (count($parts) < 2) {
@@ -226,7 +207,6 @@ class ExamSessionController extends Controller
         }
 
         $newUserCode = 'U' . str_pad($nextCodeInt++, 4, '0', STR_PAD_LEFT);
-
         $nameSlug = Str::slug($firstName . $lastName);
         $usernameStub = substr($nameSlug, 0, 15);
         $finalUsername = $usernameStub . rand(100, 999);
@@ -252,7 +232,6 @@ class ExamSessionController extends Controller
 
         $map[$key] = $teacher->teacher_id;
         $newCount++;
-
         return $teacher->teacher_id;
     }
 
@@ -269,7 +248,7 @@ class ExamSessionController extends Controller
         }
     }
 
-    // --- CÁC HÀM CƠ BẢN KHÁC (GIỮ NGUYÊN) ---
+    // --- CÁC HÀM CƠ BẢN KHÁC ---
 
     public function index(Request $request)
     {
@@ -280,7 +259,6 @@ class ExamSessionController extends Controller
             ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
             ->select(
                 'exam_sessions.*',
-                // ✅ FIX QUAN TRỌNG: Dùng COALESCE để tránh NULL khi ghép chuỗi
                 DB::raw("TRIM(CONCAT(COALESCE(up1.user_lastname, ''), ' ', COALESCE(up1.user_firstname, ''))) as teacher1_name"),
                 DB::raw("TRIM(CONCAT(COALESCE(up2.user_lastname, ''), ' ', COALESCE(up2.user_firstname, ''))) as teacher2_name")
             );
@@ -303,7 +281,6 @@ class ExamSessionController extends Controller
                 ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
                 ->select(
                     'exam_sessions.*',
-                    // ✅ FIX SQL:
                     DB::raw("TRIM(CONCAT(COALESCE(up1.user_lastname, ''), ' ', COALESCE(up1.user_firstname, ''))) as teacher1_name"),
                     DB::raw("TRIM(CONCAT(COALESCE(up2.user_lastname, ''), ' ', COALESCE(up2.user_firstname, ''))) as teacher2_name")
                 )
@@ -333,7 +310,6 @@ class ExamSessionController extends Controller
                 ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
                 ->select(
                     'exam_sessions.*',
-                    // ✅ FIX SQL:
                     DB::raw("TRIM(CONCAT(COALESCE(up1.user_lastname, ''), ' ', COALESCE(up1.user_firstname, ''))) as teacher1_name"),
                     DB::raw("TRIM(CONCAT(COALESCE(up2.user_lastname, ''), ' ', COALESCE(up2.user_firstname, ''))) as teacher2_name")
                 )
@@ -386,82 +362,76 @@ class ExamSessionController extends Controller
         return Excel::download(new ExamScheduleExport($request->from, $request->to), 'lich_thi.xlsx');
     }
 
-    // ✅ CẬP NHẬT: Hàm Xuất PDF "Siêu bền" (Kết hợp Eloquent + Query Builder thủ công)
+    // ✅ CẬP NHẬT: Hàm Xuất PDF Sửa Lỗi Tên Giáo Viên & Giờ Thi
     public function exportReport($id)
     {
         $user = request()->user() ?? Auth::user();
         if (!$user || !$user->hasAccess('EXAM_MGT', 'is_download')) return response()->json(['message' => 'Không có quyền!'], 403);
 
-        // 1. Thử load bằng Eloquent Relation
         $exam = ExamSession::with(['assignedTeacher1.userProfile', 'assignedTeacher2.userProfile'])->find($id);
 
         if (!$exam) {
             return response()->json(['message' => 'Không tìm thấy ca thi!'], 404);
         }
 
-        // 2. Xử lý hiển thị Giờ & Ngày (Format chuẩn Việt Nam)
-        try {
-            $start = $exam->exam_start_time ? Carbon::parse($exam->exam_start_time)->format('H:i') : '...';
-            $end   = $exam->exam_end_time ? Carbon::parse($exam->exam_end_time)->format('H:i') : '...';
-            $date  = $exam->exam_date ? Carbon::parse($exam->exam_date)->format('d/m/Y') : '...';
-
-            $timeStr = "$start - $end";
-        } catch (\Exception $e) {
-            $timeStr = $exam->exam_start_time . ' - ' . $exam->exam_end_time;
-            $date = $exam->exam_date;
-        }
-
-        // Gán dữ liệu đã format vào model để View sử dụng
-        $exam->formatted_time = $timeStr;
-        $exam->formatted_date = $date;
-        // Gán đè vào thuộc tính gốc phòng khi View gọi trực tiếp
-        $exam->exam_time = $timeStr;
-
-        // 3. Xử lý Tên giáo viên (Logic Fallback: Relation -> Query Thủ công)
+        // 2. Lấy tên giáo viên (Thủ công nếu Relation fail)
         $t1Name = '';
-        $t2Name = '';
-
-        // Lấy tên GV1
         if ($exam->assignedTeacher1 && $exam->assignedTeacher1->userProfile) {
-            $t1Name = $exam->assignedTeacher1->userProfile->user_lastname . ' ' . $exam->assignedTeacher1->userProfile->user_firstname;
+            $p = $exam->assignedTeacher1->userProfile;
+            $t1Name = trim(($p->user_lastname ?? '') . ' ' . ($p->user_firstname ?? ''));
         } elseif ($exam->assigned_teacher1_id) {
-            // Nếu Relation fail, query thủ công
             $t1Name = $this->getTeacherNameById($exam->assigned_teacher1_id);
         }
 
-        // Lấy tên GV2
+        $t2Name = '';
         if ($exam->assignedTeacher2 && $exam->assignedTeacher2->userProfile) {
-            $t2Name = $exam->assignedTeacher2->userProfile->user_lastname . ' ' . $exam->assignedTeacher2->userProfile->user_firstname;
+            $p = $exam->assignedTeacher2->userProfile;
+            $t2Name = trim(($p->user_lastname ?? '') . ' ' . ($p->user_firstname ?? ''));
         } elseif ($exam->assigned_teacher2_id) {
-            // Nếu Relation fail, query thủ công
             $t2Name = $this->getTeacherNameById($exam->assigned_teacher2_id);
         }
 
-        // Gán tên vào model
         $exam->teacher1_name = $t1Name;
         $exam->teacher2_name = $t2Name;
 
-        // Chuỗi danh sách giáo viên (dùng cho dòng "Cán bộ coi thi")
-        $teachers = array_filter([$t1Name, $t2Name]); // Loại bỏ tên rỗng
+        $teachers = array_filter([$t1Name, $t2Name]);
         $exam->teacher_names = implode(', ', $teachers);
+
+        // Gán vào nhiều biến để View PDF chắc chắn nhận được
+        $exam->setAttribute('teachers', $exam->teacher_names);
+        $exam->setAttribute('invigilators', $exam->teacher_names);
+
+        // 3. Format Giờ thi
+        try {
+            $start = $exam->exam_start_time ? Carbon::parse($exam->exam_start_time)->format('H:i') : '';
+            $end   = $exam->exam_end_time ? Carbon::parse($exam->exam_end_time)->format('H:i') : '';
+            $date  = $exam->exam_date ? Carbon::parse($exam->exam_date)->format('d/m/Y') : '';
+            $timeStr = $start . ($end ? ' - ' . $end : '');
+        } catch (\Exception $e) {
+            $timeStr = $exam->exam_start_time;
+            $date = $exam->exam_date;
+        }
+
+        $exam->formatted_time = $timeStr;
+        $exam->formatted_date = $date;
+        $exam->exam_time = $timeStr;
 
         $pdf = Pdf::loadView('reports.exam_result', compact('exam'));
         return $pdf->download('bao_cao_ky_thi_' . $exam->exam_code . '.pdf');
     }
 
-    // 🛠️ Helper: Lấy tên giáo viên thủ công (Phòng trường hợp Relation lỗi)
+    // 🛠️ Helper: Truy vấn tên giáo viên thủ công
     private function getTeacherNameById($teacherId)
     {
+        if (!$teacherId) return '';
+
         $profile = DB::table('teachers')
             ->join('user_profiles', 'teachers.user_profile_id', '=', 'user_profiles.user_profile_id')
             ->where('teachers.teacher_id', $teacherId)
-            ->select('user_lastname', 'user_firstname')
+            ->select(DB::raw("TRIM(CONCAT(COALESCE(user_lastname,''), ' ', COALESCE(user_firstname,''))) as full_name"))
             ->first();
 
-        if ($profile) {
-            return trim($profile->user_lastname . ' ' . $profile->user_firstname);
-        }
-        return '';
+        return $profile ? $profile->full_name : '';
     }
 
     public function saveImported(Request $request) {
