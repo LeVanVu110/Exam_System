@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 // ✅ IMPORT: SweetAlert2
 import Swal from "sweetalert2";
 
@@ -19,10 +19,12 @@ const CardTitle = ({ children, className }) => (
 const CardContent = ({ children, className }) => (
   <div className={className}>{children}</div>
 );
-const Button = ({ children, onClick, className = "" }) => (
+const Button = ({ children, onClick, className = "", disabled = false, type = "button" }) => (
   <button
+    type={type}
     onClick={onClick}
-    className={`px-4 py-2 font-medium rounded-lg transition duration-150 ${className}`}
+    disabled={disabled}
+    className={`px-4 py-2 font-medium rounded-lg transition duration-150 ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
   >
     {children}
   </button>
@@ -31,7 +33,7 @@ const Button = ({ children, onClick, className = "" }) => (
 const Modal = ({ children, isOpen, onClose, title }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-center backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex justify-center items-center backdrop-blur-sm bg-black bg-opacity-30">
       <Card className="max-w-xl w-full mx-4">
         <div className="flex justify-between items-center border-b pb-3 mb-4">
           <CardTitle className="text-xl">{title}</CardTitle>
@@ -62,7 +64,16 @@ const useFetch = (url, dependencies = []) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(url);
+        // Thêm headers Authorization nếu có token
+        const token = localStorage.getItem('ACCESS_TOKEN');
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(url, { headers });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -82,6 +93,7 @@ const useFetch = (url, dependencies = []) => {
 
 // Component AllTeachersModal (giữ nguyên)
 const AllTeachersModal = ({ isOpen, onClose, teachers, currentUserId }) => {
+  // Lọc ra các user khác (không phải user hiện tại)
   const otherUsers = teachers.filter(
     (user) => user.user_profile_id !== currentUserId
   );
@@ -142,13 +154,49 @@ const AllTeachersModal = ({ isOpen, onClose, teachers, currentUserId }) => {
   );
 };
 
+// ==========================================================
+// [SỬA ĐỔI] HÀM HELPER ĐỌC ID TỪ LOCALSTORAGE
+// ==========================================================
+const getProfileIdFromStorage = () => {
+  try {
+    const userInfoStr = localStorage.getItem('USER_INFO');
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr);
+      
+      // Lấy user_profile_id đã được lưu từ Login.jsx
+      const profileId = userInfo.user_profile_id; 
+      
+      // Kiểm tra và trả về số nguyên, hoặc null
+      // Dùng Number() để đảm bảo chuyển đổi (nếu là chuỗi số)
+      return profileId ? Number(profileId) : null; 
+    }
+  } catch (e) {
+    console.error("Lỗi khi đọc USER_INFO từ localStorage:", e);
+  }
+  return null; 
+};
+
 // Component chính để hiển thị User Profile
 export default function UserProfile() {
   const API_URL_ALL = "http://localhost:8000/api/user-profiles";
-  const CURRENT_USER_PROFILE_ID = 2;
+  
+  // ✅ THAY THẾ GIÁ TRỊ CỐ ĐỊNH: Lấy ID từ localStorage
+  const CURRENT_USER_PROFILE_ID = getProfileIdFromStorage(); 
 
-  const { data: allProfiles, loading, error, refetch } = useFetch(API_URL_ALL);
+  // Kiểm tra nếu ID không hợp lệ, không cần gọi API
+  if (CURRENT_USER_PROFILE_ID === null || isNaN(CURRENT_USER_PROFILE_ID)) {
+    return (
+        <div className="p-8 text-center text-red-600 bg-red-50 border border-red-200 rounded-lg max-w-xl mx-auto mt-10">
+            <p className="font-bold mb-2">Lỗi truy cập hồ sơ:</p>
+            <p>Không tìm thấy ID hồ sơ người dùng trong hệ thống (localStorage). Vui lòng đảm bảo bạn đã đăng nhập hoặc kiểm tra `Login.jsx` đã lưu `user_profile_id` chưa.</p>
+        </div>
+    );
+  }
 
+  // Khởi tạo useFetch với dependencies là ID động
+  const { data: allProfiles, loading, error, refetch } = useFetch(API_URL_ALL, [CURRENT_USER_PROFILE_ID]);
+
+  // ✅ SỬ DỤNG ID ĐỘNG ĐỂ LỌC VÀ TẠO URL API
   const profile = React.useMemo(() => {
     if (allProfiles && Array.isArray(allProfiles)) {
       return allProfiles.find(
@@ -156,10 +204,11 @@ export default function UserProfile() {
       );
     }
     return null;
-  }, [allProfiles]);
+  }, [allProfiles, CURRENT_USER_PROFILE_ID]); // Thêm CURRENT_USER_PROFILE_ID vào dependencies
 
   const API_URL_UPDATE = `${API_URL_ALL}/${CURRENT_USER_PROFILE_ID}`;
 
+  // ... (Các state khác giữ nguyên)
   const [isEditing, setIsEditing] = React.useState(false);
   const [isViewingTeachers, setIsViewingTeachers] = React.useState(false);
   const [editFormData, setEditFormData] = React.useState({});
@@ -252,8 +301,10 @@ export default function UserProfile() {
 
     const formData = new FormData();
 
-    formData.append("_method", "PUT");
+    // IMPORTANT: Laravel/PHP cần _method PUT cho các API PUT/PATCH khi dùng FormData
+    formData.append("_method", "PUT"); 
 
+    // Append các trường dữ liệu
     formData.append("user_firstname", editFormData.user_firstname);
     formData.append("user_lastname", editFormData.user_lastname);
     formData.append("user_phone", editFormData.user_phone);
@@ -262,16 +313,29 @@ export default function UserProfile() {
       editFormData.user_sex !== -1 ? parseInt(editFormData.user_sex) : ""
     );
     formData.append("address", editFormData.address);
-    formData.append("updated_at", editFormData.updated_at);
+    // [QUAN TRỌNG] Gửi updated_at hiện tại để kiểm tra xung đột
+    formData.append("updated_at", editFormData.updated_at); 
 
     const newFile = fileInputRef.current?.files[0];
     if (newFile) {
       formData.append("user_avatar_file", newFile);
     }
+    
+    // Lấy token để gửi
+    const token = localStorage.getItem('ACCESS_TOKEN');
+    if (!token) {
+        setSaveError("Không tìm thấy ACCESS_TOKEN. Vui lòng đăng nhập lại.");
+        setIsSaving(false);
+        return;
+    }
+
 
     try {
       const response = await fetch(API_URL_UPDATE, {
-        method: "POST",
+        method: "POST", // Vẫn dùng POST vì _method=PUT trong FormData
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -306,8 +370,8 @@ export default function UserProfile() {
         text: err.message,
         confirmButtonText: "Đóng",
       }).then(() => {
-        // Nếu lỗi là do dữ liệu đã thay đổi ở tab khác
-        if (err.message.includes("tab khác")) {
+        // Nếu lỗi là do dữ liệu đã thay đổi ở tab khác (Optimistic Locking)
+        if (err.message.includes("tab khác") || err.message.includes("cập nhật")) {
           handleCloseEdit(); // đóng modal
           refetch(); // tải dữ liệu mới nhất
         }
@@ -429,7 +493,7 @@ export default function UserProfile() {
               {profile.user?.user_email || "Email không có"}
             </p>
             <div className="inline-block bg-indigo-200 text-indigo-900 px-3 py-1 rounded-full text-xs font-bold">
-              {profile.category_user_type?.user_type_name ||
+              {profile.roles?.role_name ||
                 "Loại người dùng không xác định"}
             </div>
           </div>
@@ -676,4 +740,3 @@ export default function UserProfile() {
     </div>
   );
 }
-
