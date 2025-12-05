@@ -4,18 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Storage;
 
 class UserProfileController extends Controller
 {
     public function index()
     {
-        return response()->json(UserProfile::with(['user', 'categoryUserType'])->get());
+        return response()->json(UserProfile::with(['user', 'roles'])->get());
     }
 
     public function show($id)
     {
-        $profile = UserProfile::with(['user', 'categoryUserType'])->findOrFail($id);
+        $profile = UserProfile::with(['user', 'roles'])->findOrFail($id);
         return response()->json($profile);
     }
 
@@ -23,7 +23,7 @@ class UserProfileController extends Controller
     {
         $data = $request->validate([
             'user_id' => 'required|integer',
-            'category_user_type_id' => 'required|integer',
+            'role_id' => 'required|integer',
             'user_firstname' => 'nullable|string|max:55',
             'user_lastname' => 'nullable|string|max:55',
             'user_phone' => 'nullable|string|max:15',
