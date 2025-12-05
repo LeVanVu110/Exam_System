@@ -28,6 +28,28 @@ public class LoginController {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
+        String requiredDomain = "@gmail.com";
+        
+        // Kiểm tra xem username (email) có kết thúc bằng "@gmail.com" không
+        if (!username.toLowerCase().endsWith(requiredDomain)) {
+            messageLabel.setText("Email phải có đuôi là " + requiredDomain + ".");
+            messageLabel.setStyle("-fx-text-fill: red;");
+            return; // Dừng hàm, không gửi yêu cầu đăng nhập
+        }
+        // 1. Kiểm tra trường rỗng (Email)
+        if (username.isEmpty()) {
+            messageLabel.setText("Vui lòng nhập Email.");
+            messageLabel.setStyle("-fx-text-fill: red;");
+            return; 
+        }
+
+        // 2. Kiểm tra trường rỗng (Mật khẩu)
+        if (password.isEmpty()) {
+            messageLabel.setText("Vui lòng nhập Mật khẩu.");
+            messageLabel.setStyle("-fx-text-fill: red;");
+            return; 
+        }
+
         messageLabel.setText("Đang đăng nhập...");
         messageLabel.setStyle("-fx-text-fill: gray;");
 
