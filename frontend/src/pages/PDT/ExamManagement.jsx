@@ -63,6 +63,12 @@ export default function ExamManagement() {
 
   // ✅ Tìm kiếm
   const handleSearch = async (overrideClassCode = null) => {
+    // 👇 THÊM MỚI: Kiểm tra ngày hợp lệ
+    if (from && to && new Date(from) > new Date(to)) {
+        showToast("⚠️ Ngày bắt đầu không được lớn hơn ngày kết thúc!", "warning");
+        return; // Dừng ngay, không gọi API
+    }
+
     try {
       setLoading(true)
 
@@ -129,7 +135,13 @@ export default function ExamManagement() {
                 showToast("✅ Xóa kỳ thi thành công!", "success")
                 handleSearch()
             } catch (error) {
-                if (error.response?.status === 403) {
+                // 👇 CẬP NHẬT: Bắt lỗi 404 (Không tìm thấy)
+                if (error.response?.status === 404) {
+                    showToast("⚠️ Kỳ thi này không còn tồn tại (có thể đã bị xóa ở tab khác)!", "warning");
+                    // Tự động tải lại danh sách để đồng bộ dữ liệu
+                    handleSearch(); 
+                } 
+                else if (error.response?.status === 403) {
                     showToast(`⛔ ${error.response.data.message}`, "error");
                 } else if (error.response?.status === 401) {
                     showToast("🔒 Vui lòng đăng nhập lại!", "error");
@@ -243,6 +255,12 @@ export default function ExamManagement() {
 
   // Export
   const handleExport = () => {
+    // 👇 THÊM MỚI: Kiểm tra trước khi mở modal xác nhận
+    if (from && to && new Date(from) > new Date(to)) {
+        showToast("⚠️ Ngày bắt đầu không được lớn hơn ngày kết thúc!", "warning");
+        return;
+    }
+    
     setConfirmModal({
         title: "Xuất file Excel?",
         message: "Bạn có muốn xuất danh sách kỳ thi theo bộ lọc hiện tại không?",

@@ -358,40 +358,61 @@ class ExamSessionController extends Controller
 
     public function exportExcel(Request $request)
     {
-        if (!$request->user()->hasAccess('EXAM_MGT', 'is_download')) return response()->json(['message' => 'Không có quyền!'], 403);
+        if (!$request->user()->hasAccess('EXAM_MGT', 'is_download')) return response()->json(['message' => 'Không có quyền để tải!'], 403);
         return Excel::download(new ExamScheduleExport($request->from, $request->to), 'lich_thi.xlsx');
     }
 
-    // ✅ CẬP NHẬT: Hàm Xuất PDF sử dụng Query Builder và Object Casting
+   // ✅ CẬP NHẬT: Xuất PDF sử dụng JOIN trực tiếp (Giống hàm index để đảm bảo có dữ liệu)
     public function exportReport($id)
     {
         $user = request()->user() ?? Auth::user();
-        if (!$user || !$user->hasAccess('EXAM_MGT', 'is_download')) return response()->json(['message' => 'Không có quyền!'], 403);
+        if (!$user || !$user->hasAccess('EXAM_MGT', 'is_download')) {
+            return response()->json(['message' => 'Không có quyền để tải!'], 403);
+        }
 
-        $exam = ExamSession::find($id);
-        if (!$exam) return response()->json(['message' => 'Không tìm thấy ca thi!'], 404);
+        // 1. Dùng Query Builder JOIN trực tiếp để lấy tên (Thay vì dùng Relation dễ bị lỗi null)
+        $exam = ExamSession::query()
+            ->leftJoin('teachers as t1', 'exam_sessions.assigned_teacher1_id', '=', 't1.teacher_id')
+            ->leftJoin('user_profiles as up1', 't1.user_profile_id', '=', 'up1.user_profile_id')
+            ->leftJoin('teachers as t2', 'exam_sessions.assigned_teacher2_id', '=', 't2.teacher_id')
+            ->leftJoin('user_profiles as up2', 't2.user_profile_id', '=', 'up2.user_profile_id')
+            ->where('exam_sessions.exam_session_id', $id)
+            ->select(
+                'exam_sessions.*',
+                // Lấy tên GV1: Ghép Họ + Tên
+                DB::raw("TRIM(CONCAT(COALESCE(up1.user_lastname, ''), ' ', COALESCE(up1.user_firstname, ''))) as t1_full_name"),
+                // Lấy tên GV2: Ghép Họ + Tên
+                DB::raw("TRIM(CONCAT(COALESCE(up2.user_lastname, ''), ' ', COALESCE(up2.user_firstname, ''))) as t2_full_name")
+            )
+            ->first();
 
-        // 1. Lấy tên GV thủ công để chắc chắn có dữ liệu
-        // Lộ trình: assigned_teacher_id -> teachers table -> user_profiles table
-        $t1 = $this->getTeacherName($exam->assigned_teacher1_id);
-        $t2 = $this->getTeacherName($exam->assigned_teacher2_id);
+        if (!$exam) {
+            return response()->json(['message' => 'Không tìm thấy ca thi!'], 404);
+        }
 
-        // 2. Chuyển đổi Model thành Array/Object để dễ dàng thêm thuộc tính
-        $examData = $exam->toArray();
+        // 2. Xử lý chuỗi tên giáo viên hiển thị
+        $teachers = [];
 
-        // Thêm các trường tên giáo viên vào
-        $examData['teacher1_name'] = $t1;
-        $examData['teacher2_name'] = $t2;
+        // Kiểm tra và thêm tên giáo viên 1 nếu có
+        if (!empty($exam->t1_full_name)) {
+            $teachers[] = $exam->t1_full_name;
+        }
 
-        // Tạo chuỗi danh sách giáo viên
-        $teachersArr = array_filter([$t1, $t2]);
-        $teacherStr = !empty($teachersArr) ? implode(', ', $teachersArr) : "---";
+        // Kiểm tra và thêm tên giáo viên 2 nếu có
+        if (!empty($exam->t2_full_name)) {
+            $teachers[] = $exam->t2_full_name;
+        }
 
-        $examData['teacher_names'] = $teacherStr;
-        $examData['teachers']      = $teacherStr; // Alias cho view
-        $examData['invigilators']  = $teacherStr; // Alias cho view
+        // Nối mảng thành chuỗi: "GV A, GV B"
+        $teacherStr = !empty($teachers) ? implode(', ', $teachers) : "";
 
-        // 3. Format Thời gian
+        // 3. Gán dữ liệu vào object để View sử dụng
+        // Lưu ý: View của bạn có thể đang gọi $exam->teacher_names hoặc $exam->assigned_teachers
+        $exam->teacher_names = $teacherStr;
+        $exam->teachers      = $teacherStr; // Alias dự phòng
+        $exam->invigilators  = $teacherStr; // Alias tiếng Anh nếu dùng
+
+        // 4. Format Thời gian & Ngày thi (Giữ nguyên logic cũ của bạn)
         try {
             $start = $exam->exam_start_time ? Carbon::parse($exam->exam_start_time)->format('H:i') : '';
             $end   = $exam->exam_end_time ? Carbon::parse($exam->exam_end_time)->format('H:i') : '';
@@ -402,13 +423,42 @@ class ExamSessionController extends Controller
             $date = $exam->exam_date;
         }
 
-        $examData['formatted_time'] = $timeStr;
-        $examData['formatted_date'] = $date;
-        $examData['exam_time']      = $timeStr; // Alias cho view
+        $exam->formatted_time = $timeStr;
+        $exam->formatted_date = $date;
+        // Gán đè exam_time để hiển thị đẹp nếu view dùng biến này
+        $exam->exam_time      = $timeStr;
 
-        // 4. Truyền object (cast từ array) sang View PDF
-        $pdf = Pdf::loadView('reports.exam_result', ['exam' => (object)$examData]);
+        // 5. Xuất PDF
+        // Đảm bảo file view 'reports.exam_result' tồn tại
+        $pdf = Pdf::loadView('reports.exam_result', compact('exam'));
+
+        // Config font unicode nếu cần thiết
+        $pdf->setOptions([
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'DejaVu Sans' // Font hỗ trợ tiếng Việt tốt trong dompdf
+        ]);
+
         return $pdf->download('bao_cao_ky_thi_' . $exam->exam_code . '.pdf');
+    }
+     private function resolveTeacherNameFromModel($teacher) {
+        if ($teacher && $teacher->userProfile) {
+            return trim(($teacher->userProfile->user_lastname ?? '') . ' ' . ($teacher->userProfile->user_firstname ?? ''));
+        }
+        return null;
+    }
+
+    // Helper: Lấy tên từ Query Builder (Dự phòng)
+    private function getTeacherNameById($teacherId)
+    {
+        if (!$teacherId) return '';
+
+        $profile = DB::table('teachers')
+            ->join('user_profiles', 'teachers.user_profile_id', '=', 'user_profiles.user_profile_id')
+            ->where('teachers.teacher_id', $teacherId)
+            ->select(DB::raw("TRIM(CONCAT(COALESCE(user_lastname,''), ' ', COALESCE(user_firstname,''))) as full_name"))
+            ->first();
+
+        return $profile ? $profile->full_name : '';
     }
 
     // 🛠️ Helper: Truy vấn tên giáo viên thủ công (Query Builder)
