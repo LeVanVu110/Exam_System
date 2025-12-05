@@ -30,7 +30,7 @@ class ExamSessionSeeder extends Seeder
                 'exam_room' => 'P101',
                 'total_students' => 12,
                 'total_computers' => 12,
-                'status' => 'Scheduled',
+                'status' => 'Đã lên lịch',
                 'assigned_teacher1_id' => 3,
                 'assigned_teacher2_id' => 1,
                 'actual_teacher1_id' => null,
@@ -48,12 +48,12 @@ class ExamSessionSeeder extends Seeder
                 'exam_room' => 'P101',
                 'total_students' => 0,
                 'total_computers' => 0,
-                'status' => 'Scheduled',
+                'status' => 'Đã lên lịch',
                 'assigned_teacher1_id' => 1,
                 'assigned_teacher2_id' => 2,
                 'actual_teacher1_id' => null,
                 'actual_teacher2_id' => null,
-                
+
             ],
         ]);
     }

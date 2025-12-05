@@ -46,15 +46,22 @@ Route::delete('/students/{id}', [StudentController::class, 'destroy']);
 
 // --- 2. EXAM SESSION ROUTES ---
 Route::prefix('exam-sessions')->middleware('auth:sanctum')->group(function () {
+    // 1. Các route tĩnh (static) phải đặt lên TRƯỚC
     Route::get('/', [ExamSessionController::class, 'index']);
     Route::get('/today', [ExamSessionController::class, 'todayExams']);
     Route::get('/search', [ExamSessionController::class, 'searchByRoom']);
-    Route::get('/{id}', [ExamSessionController::class, 'show']);
+
+    // ✅ QUAN TRỌNG: Đưa Import/Export lên trên route /{id}
     Route::post('/import', [ExamSessionController::class, 'importExcel']);
     Route::get('/export', [ExamSessionController::class, 'exportExcel']);
+
+    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);
+
+    // 2. Các route động (dynamic params) đặt ở CUỐI cùng
+    // Nếu đặt /{id} ở trên, nó sẽ "ăn" mất các chữ "export", "import"
+    Route::get('/{id}', [ExamSessionController::class, 'show']);
     Route::get('/{id}/report', [ExamSessionController::class, 'exportReport']);
     Route::delete('/{id}', [ExamSessionController::class, 'destroy']);
-    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);
 });
 
 // --- 3. CUSTOM ROUTES CHO HỆ THỐNG PHÂN QUYỀN ---

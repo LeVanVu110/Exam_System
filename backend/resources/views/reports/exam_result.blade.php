@@ -81,7 +81,7 @@
         </tr>
         <tr>
             <th>Giảng viên coi thi</th>
-            <td>{{ $exam->exam_teacher ?? '---' }}</td>
+            <td>{{ $exam->teacher_names ?? '---' }}</td>
         </tr>
         <tr>
             <th>Trạng thái</th>
