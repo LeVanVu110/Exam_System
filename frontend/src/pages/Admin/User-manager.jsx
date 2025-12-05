@@ -188,38 +188,27 @@ export default function UserManagement() {
     setModalOpen(true);
   };
 
-  // 👉 LOGIC MỚI: Check dữ liệu trước khi mở modal sửa
+  // 👉 Check dữ liệu trước khi mở modal sửa
   const handleEditClick = async (user) => {
-    // 1. Set loading cho dòng đang click
     setEditLoadingId(user.user_id);
-
     try {
-        // 2. Fetch dữ liệu mới nhất từ server
         const res = await axios.get(`${API_URL}/users/${user.user_id}`, { headers: getAuthHeaders() });
         const latestUser = res.data;
-
-        // 3. So sánh dữ liệu hiển thị (user) vs dữ liệu mới nhất (latestUser)
-        // Chuẩn hóa null -> "" để so sánh chính xác
         const currentCode = user.user_code || "";
         const latestCode = latestUser.user_code || "";
 
-        // Kiểm tra lệch pha (Stale Data)
         const isStale = 
             user.user_name !== latestUser.user_name ||
             user.user_email !== latestUser.user_email ||
             currentCode !== latestCode ||
             user.user_is_activated !== latestUser.user_is_activated;
-            // Lưu ý: role_id có thể không có trong API get detail tuỳ backend, 
-            // nên tạm thời so sánh các trường chính.
 
         if (isStale) {
             showToast("Dữ liệu đã bị thay đổi từ tab khác. Đang tải lại...", "error");
-            // 4. Nếu lệch, tự động reload danh sách và chặn mở modal
             await fetchUsers();
             return; 
         }
 
-        // 5. Nếu khớp, mở modal bình thường
         setIsEditing(true);
         setShowPassword(false);
         setFormData({
@@ -249,7 +238,12 @@ export default function UserManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🛡️ CHỐT CHẶN: Nếu đang loading thì return ngay lập tức
+    // Ngăn chặn việc click liên tiếp tạo nhiều request khi mạng lag
+    if (loading) return;
     
+    // Check lỗi trước khi submit (Validation cuối cùng)
     const hasErrors = Object.values(formErrors).some(err => err !== "");
     if (hasErrors) {
         showToast("Vui lòng sửa các lỗi (màu đỏ) trước khi lưu!", "warning");
@@ -266,6 +260,7 @@ export default function UserManagement() {
         return;
     }
     
+    // Check trùng lần cuối
     if (formData.user_code && formData.user_code.trim()) {
         const isDuplicate = users.some(u => 
             u.user_code && 
@@ -306,7 +301,9 @@ export default function UserManagement() {
         }
     }
 
+    // Bắt đầu khóa loading
     setLoading(true);
+    
     try {
         if (isEditing) {
             await axios.put(`${API_URL}/users/${formData.user_id}`, formData, { headers: getAuthHeaders() });
