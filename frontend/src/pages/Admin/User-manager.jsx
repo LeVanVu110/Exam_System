@@ -34,6 +34,9 @@ export default function UserManagement() {
     user_is_activated: 1
   });
 
+  // --- STATE LỖI FORM ---
+  const [formErrors, setFormErrors] = useState({});
+
   // --- STATE PHÂN TRANG ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -125,8 +128,65 @@ export default function UserManagement() {
   };
 
   // ==================================================================================
-  // 2. XỬ LÝ FORM
+  // 2. XỬ LÝ FORM & VALIDATION
   // ==================================================================================
+  
+  // 👉 Hàm xử lý thay đổi input + Validation realtime
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Cập nhật giá trị
+    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Validate ngay lập tức
+    let errorMsg = "";
+
+    // Rule: Mã nhân viên (varchar 25) + Check Trùng
+    if (name === "user_code") {
+        if (value.length > 25) {
+             errorMsg = `Đã nhập quá giới hạn (${value.length}/25 ký tự)`;
+        } else if (value.trim()) {
+            // 👇 LOGIC MỚI: Kiểm tra trùng mã trong danh sách users hiện có
+            const isDuplicate = users.some(u => 
+                u.user_code && // user có mã
+                u.user_code.toLowerCase() === value.trim().toLowerCase() && // trùng mã (không phân biệt hoa thường)
+                (!isEditing || u.user_id !== formData.user_id) // bỏ qua chính user đang sửa
+            );
+            
+            if (isDuplicate) {
+                errorMsg = "Mã nhân viên này đã tồn tại!";
+            }
+        }
+    }
+
+    // Rule: Tên nhân viên (varchar 25)
+    if (name === "user_name") {
+        if (value.length > 25) errorMsg = `Tên quá dài (${value.length}/25 ký tự)`;
+    }
+
+    // Rule: Email (varchar 255)
+    if (name === "user_email") {
+        if (value.length > 255) errorMsg = "Email quá dài (tối đa 255 ký tự)";
+    }
+
+    // Rule: Password
+    if (name === "password") {
+        if (value && value.length > 255) {
+            errorMsg = "Mật khẩu quá dài (tối đa 255 ký tự)";
+        } else if (value && value.length < 8) {
+            errorMsg = "Mật khẩu phải có ít nhất 8 ký tự";
+        } else if (value && (!/\d/.test(value) || !/[\W_]/.test(value))) {
+            errorMsg = "Mật khẩu phải chứa ít nhất một số và một ký tự đặc biệt";
+        }
+    }
+
+    // Cập nhật state lỗi
+    setFormErrors(prev => ({
+        ...prev,
+        [name]: errorMsg
+    }));
+  };
+
   const openAddModal = () => {
     setIsEditing(false);
     setShowPassword(false); 
@@ -135,6 +195,7 @@ export default function UserManagement() {
       user_id: null, user_code: "", user_name: "", user_email: "", password: "", 
       role_id: defaultRoleId, user_is_activated: 1
     });
+    setFormErrors({}); // Reset lỗi khi mở modal
     setModalOpen(true);
   };
 
@@ -150,26 +211,68 @@ export default function UserManagement() {
       role_id: user.role_id || "",
       user_is_activated: user.user_is_activated
     });
+    setFormErrors({}); // Reset lỗi khi mở modal
     setModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check lỗi trước khi submit (Validation cuối cùng)
+    const hasErrors = Object.values(formErrors).some(err => err !== "");
+    if (hasErrors) {
+        showToast("Vui lòng sửa các lỗi (màu đỏ) trước khi lưu!", "warning");
+        return;
+    }
+
+    // Check trường bắt buộc
     if (!formData.user_name || !formData.user_email || !formData.role_id) {
         showToast("Vui lòng điền đầy đủ thông tin!", "warning");
         return;
     }
+
+    // Validate thủ công một lần nữa để chắc chắn
+    if (formData.user_code && formData.user_code.length > 25) {
+        setFormErrors(prev => ({ ...prev, user_code: "Mã nhân viên quá dài!" }));
+        return;
+    }
+    // Check trùng lần cuối trước khi gửi
+    if (formData.user_code && formData.user_code.trim()) {
+        const isDuplicate = users.some(u => 
+            u.user_code && 
+            u.user_code.toLowerCase() === formData.user_code.trim().toLowerCase() && 
+            (!isEditing || u.user_id !== formData.user_id)
+        );
+        if (isDuplicate) {
+            setFormErrors(prev => ({ ...prev, user_code: "Mã nhân viên đã tồn tại!" }));
+            showToast("Mã nhân viên bị trùng, vui lòng kiểm tra lại!", "warning");
+            return;
+        }
+    }
+
+    if (formData.user_name.length > 25) {
+        setFormErrors(prev => ({ ...prev, user_name: "Tên nhân viên quá dài!" }));
+        return;
+    }
+
     if (!isEditing && !formData.password) {
         showToast("Vui lòng nhập mật khẩu cho người dùng mới!", "warning");
         return;
     }
     if (formData.password) {
+        if (formData.password.length > 255) {
+            setFormErrors(prev => ({ ...prev, password: "Mật khẩu quá dài (tối đa 255 ký tự)" }));
+            showToast("Mật khẩu không hợp lệ!", "warning");
+            return;
+        }
         if (formData.password.length < 8) {
-            showToast("Mật khẩu phải có tối thiểu 8 ký tự!", "warning");
+            setFormErrors(prev => ({ ...prev, password: "Mật khẩu phải có ít nhất 8 ký tự" }));
+            showToast("Mật khẩu không hợp lệ!", "warning");
             return;
         }
         if (!/\d/.test(formData.password) || !/[\W_]/.test(formData.password)) {
-            showToast("Mật khẩu phải chứa ít nhất một chữ số và một ký tự đặc biệt!", "warning");
+            setFormErrors(prev => ({ ...prev, password: "Mật khẩu phải chứa ít nhất một số và một ký tự đặc biệt" }));
+            showToast("Mật khẩu không hợp lệ!", "warning");
             return;
         }
     }
@@ -186,15 +289,29 @@ export default function UserManagement() {
         setModalOpen(false);
         fetchUsers(); 
     } catch (error) {
+        // Xử lý lỗi từ Backend trả về
         const msg = error.response?.data?.message || "Có lỗi xảy ra!";
-        showToast(msg, "error");
+        
+        if (error.response?.data?.errors) {
+            const serverErrors = error.response.data.errors;
+            const newErrors = {};
+            if (serverErrors.user_code) newErrors.user_code = serverErrors.user_code[0];
+            if (serverErrors.user_name) newErrors.user_name = serverErrors.user_name[0];
+            if (serverErrors.user_email) newErrors.user_email = serverErrors.user_email[0];
+            if (serverErrors.password) newErrors.password = serverErrors.password[0];
+            
+            setFormErrors(prev => ({ ...prev, ...newErrors }));
+            showToast("Vui lòng kiểm tra lại thông tin nhập!", "error");
+        } else {
+            showToast(msg, "error");
+        }
     } finally {
         setLoading(false);
     }
   };
 
   // ==================================================================================
-  // 3. XỬ LÝ XÓA [ĐÃ CẬP NHẬT LOGIC CHECK 404]
+  // 3. XỬ LÝ XÓA
   // ==================================================================================
   const handleDelete = (user) => {
     setConfirmModal({
@@ -208,11 +325,8 @@ export default function UserManagement() {
                 fetchUsers();
             } catch (error) {
                 console.error("Delete Error:", error);
-                
-                // --- LOGIC MỚI: BẮT LỖI 404 (KHÔNG TỒN TẠI) ---
                 if (error.response && error.response.status === 404) {
                     showToast("Người dùng không tồn tại để xóa (đã được xóa trước đó)!", "error");
-                    // Quan trọng: Tải lại danh sách để UI đồng bộ với server
                     fetchUsers();
                 } else {
                     const msg = error.response?.data?.message || "Lỗi khi xóa!";
@@ -264,7 +378,6 @@ export default function UserManagement() {
                 <p className="text-gray-500 text-sm mb-6">{confirmModal.message}</p>
                 <div className="flex gap-3 justify-center">
                     <button onClick={() => setConfirmModal(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Hủy</button>
-                    {/* Nút Xóa sẽ bị disable khi loading=true */}
                     <button onClick={confirmModal.onConfirm} disabled={loading} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors flex items-center gap-2">
                         {loading && <Loader2 className="w-4 h-4 animate-spin"/>} Xóa ngay
                     </button>
@@ -284,29 +397,75 @@ export default function UserManagement() {
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Mã nhân viên *</label>
-                            <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" 
-                                value={formData.user_code} onChange={e => setFormData({...formData, user_code: e.target.value})} disabled={isEditing} placeholder="NV001" />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Mã nhân viên * <span className="text-xs text-gray-400 font-normal">(Max 25)</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="user_code"
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 outline-none transition-all shadow-sm
+                                    ${formErrors.user_code ? "border-red-500 focus:ring-red-200 focus:border-red-500" : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"}`}
+                                value={formData.user_code} 
+                                onChange={handleInputChange} 
+                                disabled={isEditing} 
+                                placeholder="U0001" 
+                            />
+                            {/* 👉 Hiển thị lỗi Code */}
+                            {formErrors.user_code && (
+                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3"/> {formErrors.user_code}
+                                </p>
+                            )}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên *</label>
-                            <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" 
-                                value={formData.user_name} onChange={e => setFormData({...formData, user_name: e.target.value})} placeholder="Nguyễn Văn A" />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Họ và tên * <span className="text-xs text-gray-400 font-normal">(Max 25)</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="user_name"
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 outline-none transition-all shadow-sm
+                                    ${formErrors.user_name ? "border-red-500 focus:ring-red-200 focus:border-red-500" : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"}`}
+                                value={formData.user_name} 
+                                onChange={handleInputChange} 
+                                placeholder="Nguyễn Văn A" 
+                            />
+                            {/* 👉 Hiển thị lỗi Name */}
+                            {formErrors.user_name && (
+                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3"/> {formErrors.user_name}
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" 
-                            value={formData.user_email} onChange={e => setFormData({...formData, user_email: e.target.value})} placeholder="email@example.com" />
+                        <input 
+                            type="email" 
+                            name="user_email"
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 outline-none transition-all shadow-sm
+                                ${formErrors.user_email ? "border-red-500 focus:ring-red-200 focus:border-red-500" : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"}`}
+                            value={formData.user_email} 
+                            onChange={handleInputChange} 
+                            placeholder="email@example.com" 
+                        />
+                        {/* 👉 Hiển thị lỗi Email */}
+                        {formErrors.user_email && (
+                            <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3"/> {formErrors.user_email}
+                            </p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{isEditing ? "Mật khẩu mới (Để trống nếu không đổi)" : "Mật khẩu *"}</label>
                         <div className="relative">
                             <input 
                                 type={showPassword ? "text" : "password"} 
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm pr-10" 
+                                name="password"
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 outline-none transition-all shadow-sm pr-10
+                                    ${formErrors.password ? "border-red-500 focus:ring-red-200 focus:border-red-500" : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"}`}
                                 value={formData.password} 
-                                onChange={e => setFormData({...formData, password: e.target.value})} 
+                                onChange={handleInputChange} 
                                 placeholder="••••••" 
                             />
                             <button 
@@ -317,23 +476,38 @@ export default function UserManagement() {
                                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                            <Info className="w-3 h-3"/> Tối thiểu 8 ký tự, có số và ký tự đặc biệt.
-                        </p>
+                        {/* 👉 Hiển thị lỗi Password (Ưu tiên hiện lỗi trước) */}
+                        {formErrors.password ? (
+                            <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3"/> {formErrors.password}
+                            </p>
+                        ) : (
+                            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                <Info className="w-3 h-3"/> Tối thiểu 8 ký tự, có số và ký tự đặc biệt.
+                            </p>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò *</label>
-                            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm"
-                                value={formData.role_id} onChange={e => setFormData({...formData, role_id: e.target.value})}>
+                            <select 
+                                name="role_id"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm"
+                                value={formData.role_id} 
+                                onChange={handleInputChange}
+                            >
                                 <option value="">-- Chọn vai trò --</option>
                                 {roles.map(r => <option key={r.role_id} value={r.role_id}>{r.role_name}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm"
-                                value={formData.user_is_activated} onChange={e => setFormData({...formData, user_is_activated: parseInt(e.target.value)})}>
+                            <select 
+                                name="user_is_activated"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white shadow-sm"
+                                value={formData.user_is_activated} 
+                                onChange={handleInputChange}
+                            >
                                 <option value={1}>Hoạt động</option>
                                 <option value={0}>Vô hiệu hóa</option>
                             </select>
@@ -341,7 +515,13 @@ export default function UserManagement() {
                     </div>
                     <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-2">
                         <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">Hủy</button>
-                        <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm transition-colors">
+                        {/* 👉 Disable nút nếu loading hoặc có lỗi */}
+                        <button 
+                            type="submit" 
+                            disabled={loading || Object.values(formErrors).some(err => err !== "")} 
+                            className={`px-4 py-2 text-white rounded-lg flex items-center gap-2 shadow-sm transition-colors
+                                ${loading || Object.values(formErrors).some(err => err !== "") ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                        >
                             {loading && <Loader2 className="w-4 h-4 animate-spin"/>} {isEditing ? "Cập nhật" : "Thêm mới"}
                         </button>
                     </div>
@@ -420,7 +600,6 @@ export default function UserManagement() {
                                     </td>
                                     <td className="px-6 py-4 font-mono text-slate-600">{user.user_code || "—"}</td>
                                     <td className="px-6 py-4">
-                                        {/* 👉 Cập nhật style dynamic */}
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getRoleStyle(user.role_name || "Student")}`}>
                                             <Shield className="w-3 h-3"/> {user.role_name || "Student"}
                                         </span>

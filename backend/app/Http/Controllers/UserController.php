@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    // ... (Các hàm index, show, store, update giữ nguyên như cũ) ...
+    // ... (Các hàm index, show giữ nguyên như cũ) ...
     public function index(Request $request)
     {
         $query = DB::table('users')
@@ -56,12 +56,24 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validate dữ liệu đầu vào
         $request->validate([
+            // max:25 phải khớp với migration varchar(25)
             'user_code' => 'nullable|string|max:25|unique:users,user_code',
-            'user_name' => 'required|string|max:255',
+            // Quan trọng: user_name trong DB là 25, code cũ để 255 là SAI
+            'user_name' => 'required|string|max:25|unique:users,user_name',
             'user_email' => 'required|email|max:255|unique:users,user_email',
-            'password'  => 'required|string|min:6',
+            'password'  => 'required|string|min:6|max:255',
             'role_id'   => 'required|exists:roles,role_id'
+        ], [
+            // 2. Custom thông báo lỗi tiếng Việt
+            'user_code.max' => 'Mã user không được vượt quá 25 ký tự.',
+            'user_code.unique' => 'Mã user này đã tồn tại.',
+            'user_name.max' => 'Tên đăng nhập không được vượt quá 25 ký tự.', // Quan trọng
+            'user_name.unique' => 'Tên đăng nhập này đã được sử dụng.',
+            'user_email.max' => 'Email không được vượt quá 255 ký tự.',
+            'user_email.unique' => 'Email này đã được sử dụng.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
         ]);
 
         DB::beginTransaction();
@@ -95,10 +107,21 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Validate Update
         $request->validate([
-            'user_name' => 'required|string|max:255',
-            'user_email' => "required|email|unique:users,user_email,{$id},user_id",
+            // Sửa max:25 cho khớp DB (cũ là 255 -> lỗi)
+            // Thêm unique nhưng bỏ qua ID hiện tại ({$id}) để không báo lỗi chính mình
+            'user_name' => "required|string|max:25|unique:users,user_name,{$id},user_id",
+            'user_email' => "required|email|max:255|unique:users,user_email,{$id},user_id",
+            // Code cũ thiếu validate user_code ở đây!
+            'user_code' => "nullable|string|max:25|unique:users,user_code,{$id},user_id",
             'role_id' => 'required|exists:roles,role_id'
+        ], [
+            'user_name.max' => 'Tên user không được vượt quá 25 ký tự.',
+            'user_name.unique' => 'Tên user đã tồn tại.',
+            'user_email.unique' => 'Email đã tồn tại.',
+            'user_code.max' => 'Mã user quá dài (tối đa 25 ký tự).',
+            'user_code.unique' => 'Mã user đã tồn tại.',
         ]);
 
         DB::beginTransaction();
@@ -113,6 +136,8 @@ class UserController extends Controller
             ];
 
             if ($request->filled('password')) {
+                // Validate password nếu có gửi lên
+                $request->validate(['password' => 'string|min:6']);
                 $data['user_password'] = Hash::make($request->password);
             }
 
@@ -132,12 +157,10 @@ class UserController extends Controller
         }
     }
 
-    // 👇 [ĐÃ SỬA] Hàm destroy an toàn hơn
     public function destroy($id)
     {
         if ($id == 1) return response()->json(['message' => 'Cannot delete Super Admin'], 403);
 
-        // Kiểm tra user tồn tại chưa trước khi xóa
         $user = User::find($id);
         if (!$user) {
             return response()->json(['message' => 'User not found or already deleted'], 404);
@@ -146,12 +169,11 @@ class UserController extends Controller
         DB::beginTransaction();
         try {
             DB::table('users_roles')->where('user_id', $id)->delete();
-            $user->delete(); // Dùng biến $user đã find ở trên
+            $user->delete();
             DB::commit();
             return response()->json(['message' => 'User deleted']);
         } catch (\Exception $e) {
             DB::rollBack();
-            // Trả về lỗi chi tiết để debug
             return response()->json(['message' => 'Error deleting user: ' . $e->getMessage()], 500);
         }
     }
