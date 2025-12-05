@@ -39,7 +39,7 @@ class UserProfile extends Model
         return $this->hasOne(Teacher::class, 'user_profile_id', 'user_profile_id');
     }
     // Quan hệ với bảng roles
-    public function roleUserType()
+    public function roles()
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
