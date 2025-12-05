@@ -97,10 +97,15 @@ export default function ExamManagement() {
             showToast(`✅ Tìm thấy ${fetchedData.length} ca thi phù hợp!`, "success");
         }
       } else {
-        if (activeClassCode || from || to) {
-            showToast("Không tìm thấy kết quả nào phù hợp.", "warning");
+        // Nếu KHÔNG có dữ liệu (kết quả rỗng)
+        if (activeClassCode) {
+            // 🎯 Trường hợp 1: Có nhập Mã lớp -> Báo lỗi cụ thể theo yêu cầu của bạn
+            showToast("⚠️ Không tìm thấy ca thi có mã này!", "warning");
+        } else if (from || to) {
+            // 🎯 Trường hợp 2: Chỉ nhập ngày (không nhập mã lớp)
+            showToast("⚠️ Không tìm thấy kết quả nào trong khoảng thời gian này.", "warning");
         }
-      } 
+      }
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error)
       if (error.response?.status === 401) {
