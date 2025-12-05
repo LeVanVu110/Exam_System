@@ -16,15 +16,20 @@ return new class extends Migration
             $table->unsignedInteger('role_id');
             $table->unsignedInteger('permission_id');
 
-            // --- CẬP NHẬT: Thêm các cột quyền chi tiết ---
+            // --- CÁC QUYỀN CƠ BẢN ---
             $table->boolean('is_view')->default(0);
             $table->boolean('is_add')->default(0);
             $table->boolean('is_edit')->default(0);
             $table->boolean('is_delete')->default(0);
+
+            // ✅ THÊM 2 DÒNG NÀY (BẮT BUỘC) ĐỂ HẾT LỖI 1054
+            $table->boolean('is_upload')->default(0);
+            $table->boolean('is_download')->default(0);
             // ---------------------------------------------
 
             $table->timestamps();
 
+            // Đảm bảo không trùng cặp role-permission
             $table->unique(['role_id', 'permission_id']);
         });
     }

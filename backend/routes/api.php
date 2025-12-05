@@ -11,7 +11,6 @@ use App\Http\Controllers\Api\{
     ExamController,
     ExamSessionController,
     AuthController,
-    // [QUAN TRỌNG] Import Controller mới và đặt tên khác (Alias) để không trùng
     ExamSubmissionController
 };
 
@@ -23,11 +22,13 @@ use App\Http\Controllers\{
     PermissionController,
     UserRoleController,
     RolePermissionController,
-    UserPermissionController , // Controller cũ (không có Alias) dùng cho trang quản trị
+    UserPermissionController,
     CategoryUserTypeController,
     AuthLoginController,
     ExamScheduleController,
-    UserProfileController
+    UserProfileController,
+    ScreenController,
+    UserController // [QUAN TRỌNG] Import Controller mới
 };
 
 /*
@@ -44,30 +45,35 @@ Route::put('/students/{id}', [StudentController::class, 'update']);
 Route::delete('/students/{id}', [StudentController::class, 'destroy']);
 
 // --- 2. EXAM SESSION ROUTES ---
-Route::prefix('exam-sessions')->group(function () {
+Route::prefix('exam-sessions')->middleware('auth:sanctum')->group(function () {
+    // 1. Các route tĩnh (static) phải đặt lên TRƯỚC
     Route::get('/', [ExamSessionController::class, 'index']);
     Route::get('/today', [ExamSessionController::class, 'todayExams']);
     Route::get('/search', [ExamSessionController::class, 'searchByRoom']);
-    Route::get('/{id}', [ExamSessionController::class, 'show']);
+
+    // ✅ QUAN TRỌNG: Đưa Import/Export lên trên route /{id}
     Route::post('/import', [ExamSessionController::class, 'importExcel']);
     Route::get('/export', [ExamSessionController::class, 'exportExcel']);
+
+    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);
+
+    // 2. Các route động (dynamic params) đặt ở CUỐI cùng
+    // Nếu đặt /{id} ở trên, nó sẽ "ăn" mất các chữ "export", "import"
+    Route::get('/{id}', [ExamSessionController::class, 'show']);
     Route::get('/{id}/report', [ExamSessionController::class, 'exportReport']);
     Route::delete('/{id}', [ExamSessionController::class, 'destroy']);
-    Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);
 });
 
-// --- 3. CUSTOM ROUTES CHO HỆ THỐNG PHÂN QUYỀN (REACT APP) ---
+// --- 3. CUSTOM ROUTES CHO HỆ THỐNG PHÂN QUYỀN ---
+Route::get('/screens', [ScreenController::class, 'index']);
+Route::post('/screens', [ScreenController::class, 'store']);
+Route::delete('/screens/{id}', [ScreenController::class, 'destroy']);
 
-// [QUAN TRỌNG] Route này dùng Controller API (có Alias)
-
-
-Route::get('/screens', [PermissionController::class, 'getScreens']);
-Route::post('/screens', [PermissionController::class, 'storeScreen']);
-Route::get('/permissions/{id}/screens', [PermissionController::class, 'getMatrix']);
-Route::post('/permissions/{id}/update-matrix', [PermissionController::class, 'updateMatrix']);
+Route::get('/roles/{id}/screens', [RoleController::class, 'getScreensByRole']);
+Route::post('/roles/{id}/update-matrix', [RoleController::class, 'updateMatrix']);
 
 
-// --- 4. CRUD RESOURCES (Dùng Controller thường) ---
+// --- 4. CRUD RESOURCES ---
 Route::apiResources([
     'roles' => RoleController::class,
     'permissions' => PermissionController::class,
@@ -76,12 +82,12 @@ Route::apiResources([
     'category-user-types' => CategoryUserTypeController::class,
     'exam-schedule' => ExamSessionController::class,
     'user-profiles'         => UserProfileController::class,
-    // Bỏ 'exam-schedule' vì ExamSession có nhiều routes custom, dùng group bên dưới
+    'users'                 => UserController::class, // [MỚI] Đăng ký route quản lý người dùng
 ]);
 
 // --- 5. OTHER ROUTES ---
 Route::post('exam-schedule/save', [ExamSessionController::class, 'saveImported']);
-// Group lặp lại cho exam-schedules (nếu bạn cần giữ legacy)
+
 Route::prefix('exam-schedules')->group(function () {
     Route::get('/', [ExamSessionController::class, 'index']);
     Route::post('/import', [ExamSessionController::class, 'importExcel']);
@@ -91,20 +97,13 @@ Route::prefix('exam-schedules')->group(function () {
     Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);
 });
 
-// Đăng nhập
+// Đăng nhập / Đăng xuất
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
-
-    // API Lấy quyền
-    Route::get('/my-permissions', [UserPermissionController::class, 'getMyPermissions']);
-
-    // API Đăng xuất
+    Route::get('/my-permissions', [PermissionController::class, 'myPermissions']);
     Route::post('/logout', [AuthController::class, 'logout']);
-
-    // Thêm các API khác cần xác thực vào đây...
 });
-
 
 Route::prefix('exam-submissions')->group(function () {
     Route::post('/upload', [ExamSubmissionController::class, 'upload']);

@@ -10,7 +10,16 @@ class RolePermission extends Model
     use HasFactory;
     protected $table = 'roles_permissions';
     protected $primaryKey = 'role_permission_id';
-    protected $fillable = ['role_id', 'permission_id'];
+    protected $fillable = [
+        'role_id',
+        'permission_id',
+        'is_view',
+        'is_add',
+        'is_edit',
+        'is_delete',
+        'is_upload',   // 👈 Phải có dòng này
+        'is_download', // 👈 Phải có dòng này
+    ];
 
     public function role()
     {
