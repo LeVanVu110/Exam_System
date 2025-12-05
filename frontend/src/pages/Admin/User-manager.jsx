@@ -44,6 +44,8 @@ export default function UserManagement() {
   // --- STATE CUSTOM UI ---
   const [toast, setToast] = useState(null); 
   const [confirmModal, setConfirmModal] = useState(null); 
+  // State loading riêng cho nút Edit để tránh conflict với loading bảng
+  const [editLoadingId, setEditLoadingId] = useState(null);
 
   // --- HELPER ---
   const showToast = (message, type = 'success') => {
@@ -131,45 +133,36 @@ export default function UserManagement() {
   // 2. XỬ LÝ FORM & VALIDATION
   // ==================================================================================
   
-  // 👉 Hàm xử lý thay đổi input + Validation realtime
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    // Cập nhật giá trị
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Validate ngay lập tức
     let errorMsg = "";
 
-    // Rule: Mã nhân viên (varchar 25) + Check Trùng
+    // Validate Mã nhân viên + Check Trùng
     if (name === "user_code") {
         if (value.length > 25) {
              errorMsg = `Đã nhập quá giới hạn (${value.length}/25 ký tự)`;
         } else if (value.trim()) {
-            // 👇 LOGIC MỚI: Kiểm tra trùng mã trong danh sách users hiện có
             const isDuplicate = users.some(u => 
-                u.user_code && // user có mã
-                u.user_code.toLowerCase() === value.trim().toLowerCase() && // trùng mã (không phân biệt hoa thường)
-                (!isEditing || u.user_id !== formData.user_id) // bỏ qua chính user đang sửa
+                u.user_code && 
+                u.user_code.toLowerCase() === value.trim().toLowerCase() && 
+                (!isEditing || u.user_id !== formData.user_id)
             );
-            
             if (isDuplicate) {
                 errorMsg = "Mã nhân viên này đã tồn tại!";
             }
         }
     }
 
-    // Rule: Tên nhân viên (varchar 25)
     if (name === "user_name") {
         if (value.length > 25) errorMsg = `Tên quá dài (${value.length}/25 ký tự)`;
     }
 
-    // Rule: Email (varchar 255)
     if (name === "user_email") {
         if (value.length > 255) errorMsg = "Email quá dài (tối đa 255 ký tự)";
     }
 
-    // Rule: Password
     if (name === "password") {
         if (value && value.length > 255) {
             errorMsg = "Mật khẩu quá dài (tối đa 255 ký tự)";
@@ -180,11 +173,7 @@ export default function UserManagement() {
         }
     }
 
-    // Cập nhật state lỗi
-    setFormErrors(prev => ({
-        ...prev,
-        [name]: errorMsg
-    }));
+    setFormErrors(prev => ({ ...prev, [name]: errorMsg }));
   };
 
   const openAddModal = () => {
@@ -195,48 +184,88 @@ export default function UserManagement() {
       user_id: null, user_code: "", user_name: "", user_email: "", password: "", 
       role_id: defaultRoleId, user_is_activated: 1
     });
-    setFormErrors({}); // Reset lỗi khi mở modal
+    setFormErrors({}); 
     setModalOpen(true);
   };
 
-  const openEditModal = (user) => {
-    setIsEditing(true);
-    setShowPassword(false);
-    setFormData({
-      user_id: user.user_id,
-      user_code: user.user_code || "",
-      user_name: user.user_name,
-      user_email: user.user_email,
-      password: "", 
-      role_id: user.role_id || "",
-      user_is_activated: user.user_is_activated
-    });
-    setFormErrors({}); // Reset lỗi khi mở modal
-    setModalOpen(true);
+  // 👉 LOGIC MỚI: Check dữ liệu trước khi mở modal sửa
+  const handleEditClick = async (user) => {
+    // 1. Set loading cho dòng đang click
+    setEditLoadingId(user.user_id);
+
+    try {
+        // 2. Fetch dữ liệu mới nhất từ server
+        const res = await axios.get(`${API_URL}/users/${user.user_id}`, { headers: getAuthHeaders() });
+        const latestUser = res.data;
+
+        // 3. So sánh dữ liệu hiển thị (user) vs dữ liệu mới nhất (latestUser)
+        // Chuẩn hóa null -> "" để so sánh chính xác
+        const currentCode = user.user_code || "";
+        const latestCode = latestUser.user_code || "";
+
+        // Kiểm tra lệch pha (Stale Data)
+        const isStale = 
+            user.user_name !== latestUser.user_name ||
+            user.user_email !== latestUser.user_email ||
+            currentCode !== latestCode ||
+            user.user_is_activated !== latestUser.user_is_activated;
+            // Lưu ý: role_id có thể không có trong API get detail tuỳ backend, 
+            // nên tạm thời so sánh các trường chính.
+
+        if (isStale) {
+            showToast("Dữ liệu đã bị thay đổi từ tab khác. Đang tải lại...", "error");
+            // 4. Nếu lệch, tự động reload danh sách và chặn mở modal
+            await fetchUsers();
+            return; 
+        }
+
+        // 5. Nếu khớp, mở modal bình thường
+        setIsEditing(true);
+        setShowPassword(false);
+        setFormData({
+            user_id: user.user_id,
+            user_code: user.user_code || "",
+            user_name: user.user_name,
+            user_email: user.user_email,
+            password: "", 
+            role_id: user.role_id || "",
+            user_is_activated: user.user_is_activated
+        });
+        setFormErrors({});
+        setModalOpen(true);
+
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+             showToast("Người dùng này đã bị xóa bởi người khác!", "error");
+             fetchUsers();
+        } else {
+             console.error("Lỗi kiểm tra phiên bản:", error);
+             showToast("Không thể kiểm tra dữ liệu. Vui lòng thử lại!", "error");
+        }
+    } finally {
+        setEditLoadingId(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Check lỗi trước khi submit (Validation cuối cùng)
     const hasErrors = Object.values(formErrors).some(err => err !== "");
     if (hasErrors) {
         showToast("Vui lòng sửa các lỗi (màu đỏ) trước khi lưu!", "warning");
         return;
     }
 
-    // Check trường bắt buộc
     if (!formData.user_name || !formData.user_email || !formData.role_id) {
         showToast("Vui lòng điền đầy đủ thông tin!", "warning");
         return;
     }
 
-    // Validate thủ công một lần nữa để chắc chắn
     if (formData.user_code && formData.user_code.length > 25) {
         setFormErrors(prev => ({ ...prev, user_code: "Mã nhân viên quá dài!" }));
         return;
     }
-    // Check trùng lần cuối trước khi gửi
+    
     if (formData.user_code && formData.user_code.trim()) {
         const isDuplicate = users.some(u => 
             u.user_code && 
@@ -289,9 +318,7 @@ export default function UserManagement() {
         setModalOpen(false);
         fetchUsers(); 
     } catch (error) {
-        // Xử lý lỗi từ Backend trả về
         const msg = error.response?.data?.message || "Có lỗi xảy ra!";
-        
         if (error.response?.data?.errors) {
             const serverErrors = error.response.data.errors;
             const newErrors = {};
@@ -299,7 +326,6 @@ export default function UserManagement() {
             if (serverErrors.user_name) newErrors.user_name = serverErrors.user_name[0];
             if (serverErrors.user_email) newErrors.user_email = serverErrors.user_email[0];
             if (serverErrors.password) newErrors.password = serverErrors.password[0];
-            
             setFormErrors(prev => ({ ...prev, ...newErrors }));
             showToast("Vui lòng kiểm tra lại thông tin nhập!", "error");
         } else {
@@ -310,9 +336,6 @@ export default function UserManagement() {
     }
   };
 
-  // ==================================================================================
-  // 3. XỬ LÝ XÓA
-  // ==================================================================================
   const handleDelete = (user) => {
     setConfirmModal({
         title: "Xóa người dùng?",
@@ -341,7 +364,7 @@ export default function UserManagement() {
   };
 
   // ==================================================================================
-  // 4. PHÂN TRANG
+  // 4. PHÂN TRANG & RENDER
   // ==================================================================================
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -408,9 +431,8 @@ export default function UserManagement() {
                                 value={formData.user_code} 
                                 onChange={handleInputChange} 
                                 disabled={isEditing} 
-                                placeholder="U0001" 
+                                placeholder="NV001" 
                             />
-                            {/* 👉 Hiển thị lỗi Code */}
                             {formErrors.user_code && (
                                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                     <AlertCircle className="w-3 h-3"/> {formErrors.user_code}
@@ -430,7 +452,6 @@ export default function UserManagement() {
                                 onChange={handleInputChange} 
                                 placeholder="Nguyễn Văn A" 
                             />
-                            {/* 👉 Hiển thị lỗi Name */}
                             {formErrors.user_name && (
                                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                     <AlertCircle className="w-3 h-3"/> {formErrors.user_name}
@@ -449,7 +470,6 @@ export default function UserManagement() {
                             onChange={handleInputChange} 
                             placeholder="email@example.com" 
                         />
-                        {/* 👉 Hiển thị lỗi Email */}
                         {formErrors.user_email && (
                             <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3"/> {formErrors.user_email}
@@ -476,7 +496,6 @@ export default function UserManagement() {
                                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
                         </div>
-                        {/* 👉 Hiển thị lỗi Password (Ưu tiên hiện lỗi trước) */}
                         {formErrors.password ? (
                             <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3"/> {formErrors.password}
@@ -515,7 +534,6 @@ export default function UserManagement() {
                     </div>
                     <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-2">
                         <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">Hủy</button>
-                        {/* 👉 Disable nút nếu loading hoặc có lỗi */}
                         <button 
                             type="submit" 
                             disabled={loading || Object.values(formErrors).some(err => err !== "")} 
@@ -580,7 +598,7 @@ export default function UserManagement() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {loading ? (
+                        {loading && !editLoadingId ? (
                             <tr><td colSpan="5" className="py-12 text-center text-gray-500"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2"/>Đang tải dữ liệu...</td></tr>
                         ) : currentItems.length === 0 ? (
                             <tr><td colSpan="5" className="py-12 text-center text-gray-400">Không tìm thấy người dùng nào.</td></tr>
@@ -611,8 +629,14 @@ export default function UserManagement() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <button onClick={() => openEditModal(user)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Chỉnh sửa">
-                                                <Edit className="w-4 h-4"/>
+                                            {/* 👉 Nút Sửa gọi hàm handleEditClick mới */}
+                                            <button 
+                                                onClick={() => handleEditClick(user)} 
+                                                disabled={editLoadingId === user.user_id}
+                                                className={`p-2 rounded-lg transition-all ${editLoadingId === user.user_id ? "text-blue-400 cursor-not-allowed" : "text-slate-400 hover:text-blue-600 hover:bg-blue-50"}`} 
+                                                title="Chỉnh sửa"
+                                            >
+                                                {editLoadingId === user.user_id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Edit className="w-4 h-4"/>}
                                             </button>
                                             <button onClick={() => handleDelete(user)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa">
                                                 <Trash2 className="w-4 h-4"/>
