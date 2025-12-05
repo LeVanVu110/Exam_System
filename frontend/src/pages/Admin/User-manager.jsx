@@ -194,22 +194,30 @@ export default function UserManagement() {
   };
 
   // ==================================================================================
-  // 3. XỬ LÝ XÓA [ĐÃ SỬA LỖI DOUBLE CLICK]
+  // 3. XỬ LÝ XÓA [ĐÃ CẬP NHẬT LOGIC CHECK 404]
   // ==================================================================================
   const handleDelete = (user) => {
     setConfirmModal({
         title: "Xóa người dùng?",
         message: `Bạn có chắc muốn xóa tài khoản "${user.user_name}"? Hành động này không thể hoàn tác.`,
         onConfirm: async () => {
-            // 👇 Bắt đầu loading để disable nút Xóa, tránh click 2 lần
             setLoading(true); 
             try {
                 await axios.delete(`${API_URL}/users/${user.user_id}`, { headers: getAuthHeaders() });
                 showToast("Đã xóa người dùng thành công!");
                 fetchUsers();
             } catch (error) {
-                const msg = error.response?.data?.message || "Lỗi khi xóa!";
-                showToast(msg, "error");
+                console.error("Delete Error:", error);
+                
+                // --- LOGIC MỚI: BẮT LỖI 404 (KHÔNG TỒN TẠI) ---
+                if (error.response && error.response.status === 404) {
+                    showToast("Người dùng không tồn tại để xóa (đã được xóa trước đó)!", "error");
+                    // Quan trọng: Tải lại danh sách để UI đồng bộ với server
+                    fetchUsers();
+                } else {
+                    const msg = error.response?.data?.message || "Lỗi khi xóa!";
+                    showToast(msg, "error");
+                }
             } finally {
                 setLoading(false);
                 setConfirmModal(null);
