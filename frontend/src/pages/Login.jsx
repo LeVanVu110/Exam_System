@@ -45,7 +45,8 @@ export default function LoginForm() {
       // ✅ 2. Lưu Thông tin User
       const userInfo = {
         name: data.user?.user_name || "Người dùng",
-        email: data.user?.user_email || email      
+        email: data.user?.user_email || email,
+        user_profile_id: data.user?.user_id
       };
       localStorage.setItem("USER_INFO", JSON.stringify(userInfo));
 

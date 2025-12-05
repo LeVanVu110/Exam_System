@@ -24,10 +24,11 @@ export default function ExamManagement() {
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const [activeTab, setActiveTab] = useState("search");
 
   // ✅ PHÂN TRANG: State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; // Đặt 8 mục trên mỗi trang
+  const itemsPerPage = 5; // Đặt 8 mục trên mỗi trang
 
   // ✅ PHÂN TRANG: Tính toán dữ liệu hiển thị
   const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -46,6 +47,14 @@ export default function ExamManagement() {
 
   // ✅ Tìm kiếm + Popup khi không có dữ liệu
   const handleSearch = async () => {
+    // Thêm kiểm tra ngày
+    if (from && to && new Date(from) > new Date(to)) {
+      // Thay Swal.fire bằng toast.error
+      toast.error(
+        "❌ Lỗi: Ngày bắt đầu (Từ ngày) không được muộn hơn Ngày kết thúc (Đến ngày)!"
+      );
+      return; // Dừng hàm nếu ngày không hợp lệ
+    }
     try {
       setLoading(true);
 
@@ -291,120 +300,163 @@ export default function ExamManagement() {
       </div>
 
       <div className="w-full px-6 py-8">
-        {/* Filter Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Search className="w-5 h-5 text-blue-600" />
-            Tìm kiếm và Lọc
-          </h2>
+        
+        {/* ✅ KHỐI NÚT CHUYỂN ĐỔI (TABS) ĐÃ CẬP NHẬT */}
+        <div className="mb-6 flex space-x-4 border-b border-slate-200">
+          <button
+            onClick={() => setActiveTab("search")}
+            className={`py-2 px-4 text-lg font-medium transition duration-300 ${
+              activeTab === "search"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-slate-500 hover:text-blue-500"
+            }`}
+          >
+            🔍 Tìm kiếm và Lọc
+          </button>
+          <button
+            onClick={() => setActiveTab("import")}
+            className={`py-2 px-4 text-lg font-medium transition duration-300 ${
+              activeTab === "import"
+                ? "text-purple-600 border-b-2 border-purple-600"
+                : "text-slate-500 hover:text-purple-500"
+            }`}
+          >
+            ⬆️ Import Dữ Liệu
+          </button>
+          
+          {/* ✅ NÚT MỚI: ẨN */}
+          <button
+            onClick={() => setActiveTab("hide")}
+            className={`py-2 px-4 text-lg font-medium transition duration-300 ${
+              activeTab === "hide"
+                ? "text-slate-900 border-b-2 border-slate-900"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            ❌ Ẩn (Không hiển thị)
+          </button>
+        </div>
+        {/* KẾT THÚC KHỐI NÚT CHUYỂN ĐỔI */}
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Từ ngày
-                </label>
-                <input
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Đến ngày
-                </label>
-                <input
-                  type="date"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Mã lớp
-                </label>
-                <div className="flex gap-2">
+        {/* ✅ HIỂN THỊ NỘI DUNG TƯƠNG ỨNG */}
+        
+        {/* Filter Section (Chỉ hiện khi activeTab là 'search') */}
+        {activeTab === "search" && (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6 animate-fadeIn">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Search className="w-5 h-5 text-blue-600" />
+              Tìm kiếm và Lọc
+            </h2>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Từ ngày
+                  </label>
                   <input
-                    type="text"
-                    value={classCode}
-                    onChange={(e) => setClassCode(e.target.value)}
-                    placeholder="Nhập mã lớp..."
-                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    type="date"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   />
-                  {classCode && (
-                    <button
-                      onClick={handleClearClassCode}
-                      className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition"
-                      title="Xóa mã lớp"
-                    >
-                      ✕
-                    </button>
-                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Đến ngày
+                  </label>
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Mã lớp
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={classCode}
+                      onChange={(e) => setClassCode(e.target.value)}
+                      placeholder="Nhập mã lớp..."
+                      className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    />
+                    {classCode && (
+                      <button
+                        onClick={handleClearClassCode}
+                        className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition"
+                        title="Xóa mã lớp"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                onClick={handleSearch}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-medium px-6 py-2 rounded-lg transition flex items-center justify-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Tìm kiếm
-              </button>
-              <button
-                onClick={handleExport}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 rounded-lg transition flex items-center justify-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Xuất Excel
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <button
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-medium px-6 py-2 rounded-lg transition flex items-center justify-center gap-2"
+                >
+                  <Search className="w-4 h-4" />
+                  Tìm kiếm
+                </button>
+                <button
+                  onClick={handleExport}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 rounded-lg transition flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Xuất Excel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Import Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Upload className="w-5 h-5 text-purple-600" />
-            Import Dữ Liệu
-          </h2>
+        {/* Import Section (Chỉ hiện khi activeTab là 'import') */}
+        {activeTab === "import" && (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6 animate-fadeIn">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Upload className="w-5 h-5 text-purple-600" />
+              Import Dữ Liệu
+            </h2>
 
-          <form
-            onSubmit={handleImport}
-            className="flex flex-col md:flex-row items-end gap-4"
-          >
-            <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Chọn file Excel
-              </label>
-              <input
-                type="file"
-                onChange={(e) => setFile(e.target.files[0])}
-                accept=".xlsx,.xls,.csv"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-              />
-              {file && (
-                <p className="text-xs text-slate-500 mt-1">📄 {file.name}</p>
-              )}
-            </div>
-            <button
-              type="submit"
-              disabled={loading || !file}
-              className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white font-medium px-6 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap w-full md:w-auto"
+            <form
+              onSubmit={handleImport}
+              className="flex flex-col md:flex-row items-end gap-4"
             >
-              <Upload className="w-4 h-4" />
-              Import
-            </button>
-          </form>
-        </div>
+              <div className="flex-1 w-full">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Chọn file Excel
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setFile(e.target.files[0])}
+                  accept=".xlsx,.xls,.csv"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                />
+                {file && (
+                  <p className="text-xs text-slate-500 mt-1">📄 {file.name}</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !file}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white font-medium px-6 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap w-full md:w-auto"
+              >
+                <Upload className="w-4 h-4" />
+                Import
+              </button>
+            </form>
+          </div>
+        )}
 
-        {/* Data Table Section */}
-        {/* ✅ Bảng dữ liệu */}
+        {/* Data Table Section (Luôn hiện) */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">
@@ -427,7 +479,7 @@ export default function ExamManagement() {
                   <th className="w-8 px-2 py-2">
                     <input
                       type="checkbox"
-                      // ✅ ĐÃ CẬP NHẬT: So sánh với toàn bộ data.length
+                      // ✅ So sánh với toàn bộ data.length
                       checked={
                         data.length > 0 && selectedRows.size === data.length
                       }
