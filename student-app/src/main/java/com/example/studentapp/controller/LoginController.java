@@ -8,11 +8,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import javafx.scene.control.CheckBox;
 import org.json.JSONObject;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.prefs.Preferences;
 
 public class LoginController {
 
@@ -22,6 +24,37 @@ public class LoginController {
     private PasswordField passwordField;
     @FXML
     private Label messageLabel;
+    // ✅ 1. KHAI BÁO CHECKBOX
+    @FXML
+    private CheckBox rememberCheckBox;
+
+    // ✅ 2. KHAI BÁO BIẾN PREFERENCES VÀ KEYS
+    private Preferences prefs;
+    private static final String PREF_NODE_NAME = "com/example/studentapp/login";
+    private static final String PREF_USER = "username";
+    private static final String PREF_PASS = "password";
+    private static final String PREF_REMEMBER = "rememberMe";
+
+    // ✅ 3. HÀM INITIALIZE - TẢI DỮ LIỆU ĐÃ LƯU
+    @FXML
+    public void initialize() {
+        prefs = Preferences.userRoot().node(PREF_NODE_NAME);
+
+        // Tải thông tin đã lưu
+        String savedUsername = prefs.get(PREF_USER, "");
+        boolean savedRemember = prefs.getBoolean(PREF_REMEMBER, false);
+
+        // DEBUG: Kiểm tra dữ liệu đọc được
+        System.out.println("DEBUG: initialize() được gọi.");
+        System.out.println("DEBUG: Username đã lưu: " + savedUsername);
+        System.out.println("DEBUG: Checkbox đã lưu: " + savedRemember);
+
+        // usernameField.setText(savedUsername);
+        rememberCheckBox.setSelected(savedRemember);
+        passwordField.setText("");
+
+        
+    }
 
     @FXML
     private void handleLogin() {
@@ -29,7 +62,7 @@ public class LoginController {
         String password = passwordField.getText();
 
         String requiredDomain = "@gmail.com";
-        
+
         // Kiểm tra xem username (email) có kết thúc bằng "@gmail.com" không
         if (!username.toLowerCase().endsWith(requiredDomain)) {
             messageLabel.setText("Email phải có đuôi là " + requiredDomain + ".");
@@ -40,14 +73,14 @@ public class LoginController {
         if (username.isEmpty()) {
             messageLabel.setText("Vui lòng nhập Email.");
             messageLabel.setStyle("-fx-text-fill: red;");
-            return; 
+            return;
         }
 
         // 2. Kiểm tra trường rỗng (Mật khẩu)
         if (password.isEmpty()) {
             messageLabel.setText("Vui lòng nhập Mật khẩu.");
             messageLabel.setStyle("-fx-text-fill: red;");
-            return; 
+            return;
         }
 
         messageLabel.setText("Đang đăng nhập...");
@@ -59,10 +92,20 @@ public class LoginController {
 
                 Platform.runLater(() -> {
                     try {
-                        if (response.getBoolean("success")) {
-                            JSONObject user = response.getJSONObject("user");
-                            String role = user.getString("user_role");
-
+                        if (response.has("role")) { // Kiểm tra xem trường 'role' có tồn tại không
+                            // ✅ SỬA 2: Lấy role trực tiếp từ phản hồi gốc (response)
+                            String role = response.getString("role");
+                            if (rememberCheckBox.isSelected()) {
+                                prefs.put(PREF_USER, username);
+                                prefs.put(PREF_PASS, password); 
+                                prefs.putBoolean(PREF_REMEMBER, true);
+                            }else {
+                            // XÓA (Nếu người dùng bỏ chọn)
+                            prefs.remove(PREF_USER);
+                            prefs.remove(PREF_PASS);
+                            prefs.putBoolean(PREF_REMEMBER, false);
+                            System.out.println("DEBUG: Đã xóa thông tin đăng nhập.");
+                        }
                             loadMainView(role);
 
                         } else {
