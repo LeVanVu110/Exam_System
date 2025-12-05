@@ -24,7 +24,7 @@ class UserProfileSeeder extends Seeder
         foreach (User::all() as $user) {
             UserProfile::create([
                 'user_id' => $user->user_id,
-                'category_user_type_id' => rand(1, 3),
+                'role_id' => rand(1, 3),
                 'user_firstname' => $faker->firstName,
                 'user_lastname' => $faker->lastName,
                 'user_phone' => $faker->phoneNumber,

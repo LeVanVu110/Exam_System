@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('user_profiles', function (Blueprint $table) {
             $table->increments('user_profile_id');
             $table->unsignedInteger('user_id');
-            $table->unsignedInteger('category_user_type_id')->nullable();
+            $table->unsignedInteger('role_id')->nullable();
             $table->string('user_firstname', 55)->nullable();
             $table->string('user_lastname', 55)->nullable();
             $table->string('user_phone', 30)->nullable();
