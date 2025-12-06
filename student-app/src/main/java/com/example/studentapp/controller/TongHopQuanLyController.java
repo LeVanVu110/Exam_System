@@ -33,13 +33,13 @@ public class TongHopQuanLyController implements Initializable {
     @FXML
     private TableColumn<CaThi, String> ngayThiColumn;
     @FXML
-    private TableColumn<CaThi, String> caThiColumn; // Mới
+    private TableColumn<CaThi, String> caThiColumn;
     @FXML
-    private TableColumn<CaThi, String> phongThiColumn; // Mới
+    private TableColumn<CaThi, String> phongThiColumn;
     @FXML
-    private TableColumn<CaThi, String> cbctColumn; // Mới
+    private TableColumn<CaThi, String> cbctColumn;
     @FXML
-    private TableColumn<CaThi, String> trangThaiColumn; // Mới
+    private TableColumn<CaThi, String> trangThaiColumn;
 
     // --- Form chi tiết ---
     @FXML
@@ -55,14 +55,20 @@ public class TongHopQuanLyController implements Initializable {
     @FXML
     private TextField phongThiField;
     @FXML
-    private TextField cbctField; // Mới
+    private TextField cbctField;
     @FXML
-    private TextField soLuongField; // Mới
+    private TextField soLuongField;
     @FXML
-    private TextField trangThaiField; // Mới
+    private TextField trangThaiField;
 
     private final ObservableList<CaThi> caThiList = FXCollections.observableArrayList();
-    private static final String API_URL = "http://127.0.0.1:8006/api/exam-sessions";
+
+    // ✅ ĐÃ SỬA: Sửa cổng 8006 về 8000 và dùng 127.0.0.1
+    private static final String API_URL = "http://127.0.0.1:8000/api/exam-sessions";
+
+    // ⚠️ LẤY TỪ ApiService HOẶC DÁN TRỰC TIẾP TOKEN VÀO ĐÂY NẾU BẠN CHƯA CÓ FILE
+    // CHUNG
+    private static final String API_TOKEN = "Bearer 1|si3WyoJM0f2uHHFoyVyLmfsY3N3Hipe3FPN2Lkmw2e67bf45";
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -87,7 +93,14 @@ public class TongHopQuanLyController implements Initializable {
 
     private void loadDataFromApi() {
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_URL)).GET().build();
+
+        // ✅ ĐÃ THÊM: Header Authorization và Accept
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(API_URL))
+                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
 
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
@@ -101,6 +114,9 @@ public class TongHopQuanLyController implements Initializable {
     private void processApiResponse(String jsonResponse) {
         Gson gson = new Gson();
         try {
+            // Thêm debug để theo dõi
+            System.out.println("TongHopController - SERVER TRẢ VỀ: " + jsonResponse);
+
             JsonElement element = gson.fromJson(jsonResponse, JsonElement.class);
             JsonArray jsonArray = null;
 
@@ -118,8 +134,8 @@ public class TongHopQuanLyController implements Initializable {
                         try {
                             JsonObject obj = item.getAsJsonObject();
 
-                            // === MAPPING DỮ LIỆU MỚI ===
-                            String maHP = getJsonString(obj, "class_code"); // Lấy mã lớp
+                            // === MAPPING DỮ LIỆU ===
+                            String maHP = getJsonString(obj, "class_code");
                             String tenHP = getJsonString(obj, "subject_name");
                             String ngayThi = formatDate(getJsonString(obj, "exam_date"));
 
@@ -148,6 +164,7 @@ public class TongHopQuanLyController implements Initializable {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            showError("Lỗi Parse JSON", e.getMessage());
         }
     }
 
