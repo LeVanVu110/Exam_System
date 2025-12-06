@@ -77,11 +77,42 @@ const ExamDashboard = () => {
       .padStart(2, "0")}`;
   };
 
-  // Fetch API
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/exam-schedule");
+        // 1. Lấy token từ localStorage
+        const token = localStorage.getItem("ACCESS_TOKEN");
+
+        // 2. Kiểm tra nếu không có token thì "đuổi" về login ngay (tránh gọi API lỗi)
+        if (!token) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const res = await fetch("http://localhost:8000/api/exam-schedules", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // Xử lý khi token hết hạn (401)
+        if (res.status === 401) {
+          alert("Phiên đăng nhập hết hạn!");
+          localStorage.clear();
+          window.location.href = "/";
+          return;
+        }
+
+        if (!res.ok) {
+          // Log text lỗi để debug nếu không phải JSON
+          const text = await res.text();
+          console.error("API Error:", text);
+          return;
+        }
+
         const json = await res.json();
         setExamSessions(json.data || []);
       } catch (e) {
@@ -95,7 +126,7 @@ const ExamDashboard = () => {
 
   //1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
   // const { summary, chartData, todaysSchedule, emptyReportsSessions } = useMemo(() => {
-//   const teacherSessions = examSessions.filter(
+  //   const teacherSessions = examSessions.filter(
 
   //     (s) => s.exam_teacher && s.exam_teacher.includes(USER_NAME)
   //   );
@@ -146,54 +177,55 @@ const ExamDashboard = () => {
   // }, [examSessions, selectedDate]);
   // end 1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
   // 2. --- Tổng hợp dữ liệu (useMemo để cache) Lọc tất Giảng Viên CHỉ Định
-  const { summary, chartData, todaysSchedule, emptyReportsSessions } = useMemo(() => {
-  // ❌ Không lọc theo USER_NAME nữa — thống kê toàn bộ dữ liệu
-  const allSessions = examSessions;
+  const { summary, chartData, todaysSchedule, emptyReportsSessions } =
+    useMemo(() => {
+      // ❌ Không lọc theo USER_NAME nữa — thống kê toàn bộ dữ liệu
+      const allSessions = examSessions;
 
-  const today = new Date(selectedDate);
-  let completedCount = 0,
-    upcomingCount = 0;
-  const warningSessions = [];
+      const today = new Date(selectedDate);
+      let completedCount = 0,
+        upcomingCount = 0;
+      const warningSessions = [];
 
-  allSessions.forEach((session) => {
-    const date = new Date(session.exam_date);
-    if (date < today) completedCount++;
-    else upcomingCount++;
-    if (!session.actual_teacher1_id && !session.actual_teacher2_id)
-      warningSessions.push(session);
-  });
+      allSessions.forEach((session) => {
+        const date = new Date(session.exam_date);
+        if (date < today) completedCount++;
+        else upcomingCount++;
+        if (!session.actual_teacher1_id && !session.actual_teacher2_id)
+          warningSessions.push(session);
+      });
 
-  const monthlyCounts = {};
-  allSessions.forEach((s) => {
-    if (s.exam_date) {
-      const m = s.exam_date.substring(5, 7);
-      monthlyCounts[m] = (monthlyCounts[m] || 0) + 1;
-    }
-  });
+      const monthlyCounts = {};
+      allSessions.forEach((s) => {
+        if (s.exam_date) {
+          const m = s.exam_date.substring(5, 7);
+          monthlyCounts[m] = (monthlyCounts[m] || 0) + 1;
+        }
+      });
 
-  return {
-    summary: {
-      userName: "Toàn hệ thống",
-      totalAssigned: allSessions.length,
-      totalCompleted: completedCount,
-      totalUpcoming: upcomingCount,
-      emptyReports: warningSessions.length,
-    },
-    chartData: {
-      barChartData: Object.keys(monthlyCounts).map((m) => ({
-        name: `T${parseInt(m)}`,
-        "Số ca thi": monthlyCounts[m],
-      })),
-      pieChartData: [
-        { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
-        { name: "Sắp tới", value: upcomingCount, fill: "#ffc107" },
-      ],
-    },
-    todaysSchedule: allSessions.filter((i) => i.exam_date === selectedDate),
-    emptyReportsSessions: warningSessions,
-  };
-}, [examSessions, selectedDate]);
-//end 2
+      return {
+        summary: {
+          userName: "Toàn hệ thống",
+          totalAssigned: allSessions.length,
+          totalCompleted: completedCount,
+          totalUpcoming: upcomingCount,
+          emptyReports: warningSessions.length,
+        },
+        chartData: {
+          barChartData: Object.keys(monthlyCounts).map((m) => ({
+            name: `T${parseInt(m)}`,
+            "Số ca thi": monthlyCounts[m],
+          })),
+          pieChartData: [
+            { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
+            { name: "Sắp tới", value: upcomingCount, fill: "#ffc107" },
+          ],
+        },
+        todaysSchedule: allSessions.filter((i) => i.exam_date === selectedDate),
+        emptyReportsSessions: warningSessions,
+      };
+    }, [examSessions, selectedDate]);
+  //end 2
 
   if (loading)
     return (
@@ -268,7 +300,7 @@ const ExamDashboard = () => {
                   >
                     <td className="toggle-icon">
                       <i
-className={`fas fa-chevron-${
+                        className={`fas fa-chevron-${
                           expandedSessionId === session.exam_session_id
                             ? "up"
                             : "down"
@@ -280,7 +312,10 @@ className={`fas fa-chevron-${
                     <td>{session.exam_room}</td>
                     <td>
                       {session.exam_time?.substring(0, 5)} -{" "}
-                      {calculateEndTime(session.exam_time, session.exam_duration)}
+                      {calculateEndTime(
+                        session.exam_time,
+                        session.exam_duration
+                      )}
                     </td>
                     <td>{session.exam_teacher}</td>
                   </tr>
@@ -290,8 +325,8 @@ className={`fas fa-chevron-${
                         <div className="detail-content">
                           <p>
                             <b>Phòng:</b> {session.exam_room} |{" "}
-                            <b>Số lượng SV:</b> {session.student_count || "N/A"} |{" "}
-                            <b>Khoa:</b> {session.exam_faculty || "N/A"} |{" "}
+                            <b>Số lượng SV:</b> {session.student_count || "N/A"}{" "}
+                            | <b>Khoa:</b> {session.exam_faculty || "N/A"} |{" "}
                             <b>Thời lượng:</b> {session.exam_duration} phút
                           </p>
                         </div>
@@ -344,7 +379,7 @@ className={`fas fa-chevron-${
             </ResponsiveContainer>
           </div>
         </div>
-<div className="warnings-container">
+        <div className="warnings-container">
           <h2>⚠️ Cảnh báo</h2>
           {summary.emptyReports > 0 ? (
             <div className="warning-box">

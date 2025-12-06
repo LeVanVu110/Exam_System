@@ -18,7 +18,7 @@ class RolePermissionSeeder extends Seeder
         // Danh sách quyền cho từng vai trò
         $rolePermissions = [
             // 1. Admin: Có tất cả quyền
-            1 => [1, 2, 3, 4, 5],
+            1 => [1, 2, 3, 4, 5, 6, 7],
 
             // 2. Teacher: Chỉ xem dashboard và lịch thi
             2 => [1, 2],
@@ -27,7 +27,7 @@ class RolePermissionSeeder extends Seeder
             3 => [1, 2],
 
             // 4. Academic Affairs Office (PDT): Có tất cả quyền
-            4 => [1, 2, 3, 4, 5],
+            4 => [1, 2, 3, 4, 5, 6, 7],
         ];
 
         foreach ($rolePermissions as $roleId => $permissions) {

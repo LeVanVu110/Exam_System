@@ -27,8 +27,8 @@ class ExamSessionController extends Controller
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_upload') || 
-                 $request->user()->hasAccess('EXAM_SCHEDULE', 'is_upload');
+        $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_upload') ||
+            $request->user()->hasAccess('EXAM_SCHEDULE', 'is_upload');
 
         if (!$hasAccess) {
             return response()->json(['message' => 'Bạn không có quyền tải lên dữ liệu!'], 403);
@@ -162,7 +162,6 @@ class ExamSessionController extends Controller
                 'success_rows' => $successCount,
                 'new_teachers_created' => $newTeachers,
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
@@ -189,7 +188,8 @@ class ExamSessionController extends Controller
         }
     }
 
-    private function safeSubstr($string, $length) {
+    private function safeSubstr($string, $length)
+    {
         if (empty($string)) return '';
         return mb_substr($string, 0, $length, 'UTF-8');
     }
@@ -202,8 +202,8 @@ class ExamSessionController extends Controller
 
         $parts = explode(' ', trim($fullName));
         if (count($parts) < 2) {
-             $firstName = $fullName;
-             $lastName = '';
+            $firstName = $fullName;
+            $lastName = '';
         } else {
             $firstName = array_pop($parts);
             $lastName = implode(' ', $parts);
@@ -219,8 +219,20 @@ class ExamSessionController extends Controller
             'user_code' => $newUserCode,
             'user_name' => $finalUsername,
             'user_email' => $emailSlug,
-            'user_password' => Hash::make('123456'),
+            'user_password' =>'123456',
             'user_is_activated' => 1,
+        ]);
+
+        // ✅ 2. GÁN ROLE "TEACHER" CHO USER MỚI
+        // Tìm role_id của 'teacher' (hoặc fix cứng là 2 theo DB của bạn)
+        $teacherRole = DB::table('roles')->where('role_name', 'teacher')->first();
+        $roleId = $teacherRole ? $teacherRole->role_id : 2; // Mặc định là 2 nếu không tìm thấy
+
+        DB::table('users_roles')->insert([
+            'user_id' => $user->user_id,
+            'role_id' => $roleId,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $userProfile = UserProfile::forceCreate([
@@ -339,7 +351,7 @@ class ExamSessionController extends Controller
     public function destroy($id)
     {
         $hasAccess = request()->user()->hasAccess('EXAM_MGT', 'is_delete') ||
-                 request()->user()->hasAccess('EXAM_SCHEDULE', 'is_delete');
+            request()->user()->hasAccess('EXAM_SCHEDULE', 'is_delete');
 
         if (!$hasAccess) {
             return response()->json(['message' => 'Bạn không có quyền xóa!'], 403);
@@ -354,36 +366,38 @@ class ExamSessionController extends Controller
 
     public function deleteBulk(Request $request)
     {
-        $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_delete') || 
-                 $request->user()->hasAccess('EXAM_SCHEDULE', 'is_delete');
+        $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_delete') ||
+            $request->user()->hasAccess('EXAM_SCHEDULE', 'is_delete');
 
         if (!$hasAccess) {
             return response()->json(['message' => 'Bạn không có quyền tải lên dữ liệu!'], 403);
         }
-        
+
         $ids = $request->input('ids', []);
-        
+
         ExamSession::whereIn('exam_session_id', $ids)->delete();
         return response()->json(['success' => true, 'message' => 'Đã xóa hàng loạt thành công']);
     }
 
     public function exportExcel(Request $request)
     {
-       $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_download') || 
-                 $request->user()->hasAccess('EXAM_SCHEDULE', 'is_download');
+        $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_download') ||
+            $request->user()->hasAccess('EXAM_SCHEDULE', 'is_download');
 
         if (!$hasAccess) {
             return response()->json(['message' => 'Không có quyền để tải!'], 403);
         }
-    
+
         return Excel::download(new ExamScheduleExport($request->from, $request->to), 'lich_thi.xlsx');
     }
 
-   // ✅ CẬP NHẬT: Xuất PDF sử dụng JOIN trực tiếp (Giống hàm index để đảm bảo có dữ liệu)
+    // ✅ CẬP NHẬT: Xuất PDF sử dụng JOIN trực tiếp (Giống hàm index để đảm bảo có dữ liệu)
     public function exportReport($id)
     {
+        $user = request()->user();
+
         $hasAccess = $user && (
-            $user->hasAccess('EXAM_MGT', 'is_download') || 
+            $user->hasAccess('EXAM_MGT', 'is_download') ||
             $user->hasAccess('EXAM_SCHEDULE', 'is_download')
         );
 
@@ -461,7 +475,8 @@ class ExamSessionController extends Controller
 
         return $pdf->download('bao_cao_ky_thi_' . $exam->exam_code . '.pdf');
     }
-     private function resolveTeacherNameFromModel($teacher) {
+    private function resolveTeacherNameFromModel($teacher)
+    {
         if ($teacher && $teacher->userProfile) {
             return trim(($teacher->userProfile->user_lastname ?? '') . ' ' . ($teacher->userProfile->user_firstname ?? ''));
         }
@@ -496,7 +511,8 @@ class ExamSessionController extends Controller
         return $profile ? $profile->full_name : '';
     }
 
-    public function saveImported(Request $request) {
+    public function saveImported(Request $request)
+    {
         return response()->json(['message' => 'Logic đã được chuyển sang importExcel']);
     }
 }
