@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 // ✅ IMPORT: SweetAlert2
 import Swal from "sweetalert2";
 import { Lock, Shield } from "lucide-react";
@@ -20,12 +26,20 @@ const CardTitle = ({ children, className }) => (
 const CardContent = ({ children, className }) => (
   <div className={className}>{children}</div>
 );
-const Button = ({ children, onClick, className = "", disabled = false, type = "button" }) => (
+const Button = ({
+  children,
+  onClick,
+  className = "",
+  disabled = false,
+  type = "button",
+}) => (
   <button
     type={type}
     onClick={onClick}
     disabled={disabled}
-    className={`px-4 py-2 font-medium rounded-lg transition duration-150 ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    className={`px-4 py-2 font-medium rounded-lg transition duration-150 ${className} ${
+      disabled ? "opacity-50 cursor-not-allowed" : ""
+    }`}
   >
     {children}
   </button>
@@ -66,14 +80,14 @@ const useFetch = (url, dependencies = []) => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('ACCESS_TOKEN');
+        const token = localStorage.getItem("ACCESS_TOKEN");
         const headers = {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         };
         if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+          headers["Authorization"] = `Bearer ${token}`;
         }
-        
+
         const response = await fetch(url, { headers });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -157,45 +171,47 @@ const AllTeachersModal = ({ isOpen, onClose, teachers, currentUserId }) => {
 // --- HELPER LOCALSTORAGE ---
 const getProfileIdFromStorage = () => {
   try {
-    const userInfoStr = localStorage.getItem('USER_INFO');
+    const userInfoStr = localStorage.getItem("USER_INFO");
     if (userInfoStr) {
       const userInfo = JSON.parse(userInfoStr);
-      const profileId = userInfo.user_profile_id; 
-      return profileId ? Number(profileId) : null; 
+      const profileId = userInfo.user_profile_id;
+      return profileId ? Number(profileId) : null;
     }
   } catch (e) {
     console.error("Lỗi khi đọc USER_INFO từ localStorage:", e);
   }
-  return null; 
+  return null;
 };
 
 // 👇 MÃ MÀN HÌNH ĐỂ CHECK QUYỀN
-const SCREEN_CODE = "USER_PRO"; 
+const SCREEN_CODE = "USER_PRO";
 
 // ==============================================================================
 // MAIN COMPONENT
 // ==============================================================================
 export default function UserProfile() {
-  const API_URL_ALL = "http://localhost:8000/api/user-profiles";
-  
+
+  const API_BASE_URL = "http://localhost:8000";
+  const API_URL_ALL = `${API_BASE_URL}/api/user-profiles`;
+
   // 1. Lấy ID Profile hiện tại
-  const CURRENT_USER_PROFILE_ID = getProfileIdFromStorage(); 
+  const CURRENT_USER_PROFILE_ID = getProfileIdFromStorage();
 
   // 👉 2. STATE QUYỀN HẠN
   const [permissions, setPermissions] = useState({
-      is_view: false, // Quyền xem danh sách người khác
-      is_edit: false, // Quyền sửa hồ sơ
-      is_add: false,
-      is_delete: false
+    is_view: false, // Quyền xem danh sách người khác
+    is_edit: false, // Quyền sửa hồ sơ
+    is_add: false,
+    is_delete: false,
   });
 
   // Check ID hợp lệ
   if (CURRENT_USER_PROFILE_ID === null || isNaN(CURRENT_USER_PROFILE_ID)) {
     return (
-        <div className="p-8 text-center text-red-600 bg-red-50 border border-red-200 rounded-lg max-w-xl mx-auto mt-10">
-            <p className="font-bold mb-2">Lỗi truy cập hồ sơ:</p>
-            <p>Không tìm thấy ID hồ sơ. Vui lòng đăng nhập lại.</p>
-        </div>
+      <div className="p-8 text-center text-red-600 bg-red-50 border border-red-200 rounded-lg max-w-xl mx-auto mt-10">
+        <p className="font-bold mb-2">Lỗi truy cập hồ sơ:</p>
+        <p>Không tìm thấy ID hồ sơ. Vui lòng đăng nhập lại.</p>
+      </div>
     );
   }
 
@@ -203,31 +219,36 @@ export default function UserProfile() {
   useEffect(() => {
     const storedPerms = localStorage.getItem("user_permissions");
     if (storedPerms) {
-        try {
-            const parsedPerms = JSON.parse(storedPerms);
-            
-            // Tìm quyền của màn hình USER_PRO
-            let myPerm = {};
-            if (Array.isArray(parsedPerms)) {
-                myPerm = parsedPerms.find(p => p.screen_code === SCREEN_CODE) || {};
-            } else {
-                myPerm = parsedPerms[SCREEN_CODE] || {};
-            }
+      try {
+        const parsedPerms = JSON.parse(storedPerms);
 
-            setPermissions({
-                is_view: !!myPerm.is_view,
-                is_edit: !!myPerm.is_edit,
-                is_add: !!myPerm.is_add,
-                is_delete: !!myPerm.is_delete
-            });
-        } catch (e) {
-            console.error("Lỗi đọc quyền:", e);
+        // Tìm quyền của màn hình USER_PRO
+        let myPerm = {};
+        if (Array.isArray(parsedPerms)) {
+          myPerm = parsedPerms.find((p) => p.screen_code === SCREEN_CODE) || {};
+        } else {
+          myPerm = parsedPerms[SCREEN_CODE] || {};
         }
+
+        setPermissions({
+          is_view: !!myPerm.is_view,
+          is_edit: !!myPerm.is_edit,
+          is_add: !!myPerm.is_add,
+          is_delete: !!myPerm.is_delete,
+        });
+      } catch (e) {
+        console.error("Lỗi đọc quyền:", e);
+      }
     }
   }, []);
 
   // API Call
-  const { data: allProfiles, loading, error, refetch } = useFetch(API_URL_ALL, [CURRENT_USER_PROFILE_ID]);
+  const {
+    data: allProfiles,
+    loading,
+    error,
+    refetch,
+  } = useFetch(API_URL_ALL, [CURRENT_USER_PROFILE_ID]);
 
   // Lọc Profile của chính mình
   const profile = useMemo(() => {
@@ -278,12 +299,12 @@ export default function UserProfile() {
   const handleEditClick = () => {
     // 👉 Check quyền Edit trước khi mở form
     if (!permissions.is_edit) {
-        Swal.fire({
-            icon: "error",
-            title: "Không có quyền",
-            text: "Bạn không có quyền chỉnh sửa hồ sơ này.",
-        });
-        return;
+      Swal.fire({
+        icon: "error",
+        title: "Không có quyền",
+        text: "Bạn không có quyền chỉnh sửa hồ sơ này.",
+      });
+      return;
     }
     setSaveError(null);
     setIsEditing(true);
@@ -332,28 +353,31 @@ export default function UserProfile() {
     setSaveError(null);
 
     const formData = new FormData();
-    formData.append("_method", "PUT"); 
+    formData.append("_method", "PUT");
     formData.append("user_firstname", editFormData.user_firstname);
     formData.append("user_lastname", editFormData.user_lastname);
     formData.append("user_phone", editFormData.user_phone);
-    formData.append("user_sex", editFormData.user_sex !== -1 ? parseInt(editFormData.user_sex) : "");
+    formData.append(
+      "user_sex",
+      editFormData.user_sex !== -1 ? parseInt(editFormData.user_sex) : ""
+    );
     formData.append("address", editFormData.address);
-    formData.append("updated_at", editFormData.updated_at); 
+    formData.append("updated_at", editFormData.updated_at);
 
     const newFile = fileInputRef.current?.files[0];
     if (newFile) formData.append("user_avatar_file", newFile);
-    
-    const token = localStorage.getItem('ACCESS_TOKEN');
+
+    const token = localStorage.getItem("ACCESS_TOKEN");
     if (!token) {
-        setSaveError("Không tìm thấy ACCESS_TOKEN.");
-        setIsSaving(false);
-        return;
+      setSaveError("Không tìm thấy ACCESS_TOKEN.");
+      setIsSaving(false);
+      return;
     }
 
     try {
       const response = await fetch(API_URL_UPDATE, {
         method: "POST",
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
@@ -364,13 +388,21 @@ export default function UserProfile() {
 
       refetch();
       handleCloseEdit();
-      Swal.fire({ icon: "success", title: "Thành công!", text: "Hồ sơ đã được cập nhật." });
+      Swal.fire({
+        icon: "success",
+        title: "Thành công!",
+        text: "Hồ sơ đã được cập nhật.",
+      });
     } catch (err) {
       console.error(err);
       setSaveError(err.message);
       Swal.fire({ icon: "error", title: "Lỗi", text: err.message }).then(() => {
-        if (err.message.includes("thay đổi") || err.message.includes("cập nhật")) {
-          handleCloseEdit(); refetch();
+        if (
+          err.message.includes("thay đổi") ||
+          err.message.includes("cập nhật")
+        ) {
+          handleCloseEdit();
+          refetch();
         }
       });
     } finally {
@@ -395,14 +427,26 @@ export default function UserProfile() {
     );
   }
 
-  const fullName = `${profile.user_firstname || ""} ${profile.user_lastname || ""}`.trim() || "Người dùng";
+  const fullName =
+    `${profile.user_firstname || ""} ${profile.user_lastname || ""}`.trim() ||
+    "Người dùng";
 
   const getAvatarUrl = () => {
+    // 1. Ưu tiên hiển thị ảnh Preview người dùng vừa chọn (trước khi upload)
     if (avatarPreview) return avatarPreview;
-    if (profile.user_avatar && profile.user_avatar.includes("storage/")) {
-      return `http://localhost:8000/${profile.user_avatar}`;
+
+    // 2. Nếu có ảnh trong DB
+    if (profile && profile.user_avatar) {
+      // Trường hợp 1: Ảnh nội bộ (có chữ 'storage/') -> Nối thêm domain
+      if (profile.user_avatar.includes("storage/")) {
+        return `${API_BASE_URL}/${profile.user_avatar}`;
+      }
+      // Trường hợp 2: Ảnh link ngoài (ví dụ login bằng Google/Facebook) -> Trả về nguyên gốc
+      return profile.user_avatar;
     }
-    return profile.user_avatar || "https://placehold.co/150x150/e0e7ff/3730a3?text=AVT";
+
+    // 3. Ảnh mặc định nếu chưa có gì
+    return "https://placehold.co/150x150/e0e7ff/3730a3?text=AVT";
   };
 
   return (
@@ -412,14 +456,13 @@ export default function UserProfile() {
           Hồ Sơ Người Dùng
         </h1>
         <div className="space-x-4 flex items-center">
-          
           {/* 👉 Nút Xem Giảng viên khác: Chỉ hiện nếu có quyền VIEW */}
           {permissions.is_view && (
             <Button
               onClick={() => setIsViewingTeachers(true)}
               className="bg-purple-600 text-white hover:bg-purple-700 shadow-md flex items-center gap-2"
             >
-              <Shield className="w-4 h-4"/> Xem danh sách người dùng
+              <Shield className="w-4 h-4" /> Xem danh sách người dùng
             </Button>
           )}
 
@@ -442,8 +485,13 @@ export default function UserProfile() {
             <img
               src={getAvatarUrl()}
               alt="Avatar"
-              className="w-40 h-40 object-cover rounded-full border-4 border-white shadow-lg mb-4 transition duration-300 hover:scale-[1.05]"
-              onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/150x150/e0e7ff/3730a3?text=AVT"; }}
+              className="w-40 h-40 object-cover rounded-full border-4 border-white shadow-lg mb-4"
+              onError={(e) => {
+                // Xử lý nếu ảnh bị lỗi (404) thì về ảnh mặc định
+                e.target.onerror = null;
+                e.target.src =
+                  "https://placehold.co/150x150/e0e7ff/3730a3?text=Error";
+              }}
             />
             <CardTitle className="text-center mb-1 text-indigo-800">
               {fullName}
@@ -465,13 +513,35 @@ export default function UserProfile() {
           <CardContent className="space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
               <DetailItem label="Mã User" value={profile.user?.user_code} />
-              <DetailItem label="Tên đăng nhập" value={profile.user?.user_name} />
+              <DetailItem
+                label="Tên đăng nhập"
+                value={profile.user?.user_name}
+              />
               <DetailItem label="Họ tên" value={fullName} />
               <DetailItem label="Điện thoại" value={profile.user_phone} />
-              <DetailItem label="Giới tính" value={profile.user_sex === 1 ? "Nam" : profile.user_sex === 0 ? "Nữ" : "Chưa rõ"} />
+              <DetailItem
+                label="Giới tính"
+                value={
+                  profile.user_sex === 1
+                    ? "Nam"
+                    : profile.user_sex === 0
+                    ? "Nữ"
+                    : "Chưa rõ"
+                }
+              />
               <DetailItem label="Địa chỉ" value={profile.address} />
-              <DetailItem label="Ngày tạo hồ sơ" value={profile.created_at ? new Date(profile.created_at).toLocaleDateString("vi-VN") : "N/A"} />
-              <DetailItem label="Lần đăng nhập cuối" value={profile.user?.user_last_login || "Chưa bao giờ"} />
+              <DetailItem
+                label="Ngày tạo hồ sơ"
+                value={
+                  profile.created_at
+                    ? new Date(profile.created_at).toLocaleDateString("vi-VN")
+                    : "N/A"
+                }
+              />
+              <DetailItem
+                label="Lần đăng nhập cuối"
+                value={profile.user?.updated_at || "Chưa bao giờ"}
+              />
             </div>
           </CardContent>
         </Card>
@@ -484,42 +554,128 @@ export default function UserProfile() {
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2">
             <DetailItem label="ID Profile" value={profile.user_profile_id} />
             <DetailItem label="ID User" value={profile.user_id} />
-            <DetailItem label="Loại User ID" value={profile.category_user_type_id} />
-            <DetailItem label="Tình trạng kích hoạt" value={profile.user?.user_is_activated === 1 ? "Đã kích hoạt" : "Chưa kích hoạt"} />
-            <DetailItem label="Tình trạng cấm" value={profile.user?.user_is_banned === 0 ? "Bình thường" : "Đã bị cấm"} />
-            <DetailItem label="Device Token" value={profile.user_device_token} />
+            <DetailItem
+              label="Loại User ID"
+              value={profile.category_user_type_id}
+            />
+            <DetailItem
+              label="Tình trạng kích hoạt"
+              value={
+                profile.user?.user_is_activated === 1
+                  ? "Đã kích hoạt"
+                  : "Chưa kích hoạt"
+              }
+            />
+            <DetailItem
+              label="Tình trạng cấm"
+              value={
+                profile.user?.user_is_banned === 0 ? "Bình thường" : "Đã bị cấm"
+              }
+            />
+            <DetailItem
+              label="Device Token"
+              value={profile.user_device_token}
+            />
           </CardContent>
         </Card>
       </div>
 
       {/* Modal Chỉnh sửa Hồ sơ */}
-      <Modal isOpen={isEditing} onClose={handleCloseEdit} title="Chỉnh sửa Hồ sơ Cá nhân">
+      <Modal
+        isOpen={isEditing}
+        onClose={handleCloseEdit}
+        title="Chỉnh sửa Hồ sơ Cá nhân"
+      >
         <form onSubmit={handleFormSubmit} className="space-y-4">
           <div className="flex flex-col items-center space-y-3 p-4 border rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700">Ảnh đại diện</label>
-            <img src={getAvatarUrl()} alt="Avatar Preview" className="w-24 h-24 object-cover rounded-full border-2 border-indigo-300" />
-            <input type="file" id="user_avatar_file" name="user_avatar_file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500" />
+            <label className="block text-sm font-medium text-gray-700">
+              Ảnh đại diện
+            </label>
+            <img
+              src={getAvatarUrl()}
+              alt="Avatar Preview"
+              className="w-24 h-24 object-cover rounded-full border-2 border-indigo-300"
+            />
+            <input
+              type="file"
+              id="user_avatar_file"
+              name="user_avatar_file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="mt-1 block w-full text-sm text-gray-500"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="user_lastname" className="block text-sm font-medium text-gray-700">Họ</label>
-              <input type="text" id="user_lastname" name="user_lastname" value={editFormData.user_lastname} onChange={handleFormChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" maxLength="55" />
+              <label
+                htmlFor="user_lastname"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Họ
+              </label>
+              <input
+                type="text"
+                id="user_lastname"
+                name="user_lastname"
+                value={editFormData.user_lastname}
+                onChange={handleFormChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                maxLength="55"
+              />
             </div>
             <div>
-              <label htmlFor="user_firstname" className="block text-sm font-medium text-gray-700">Tên</label>
-              <input type="text" id="user_firstname" name="user_firstname" value={editFormData.user_firstname} onChange={handleFormChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" maxLength="55" />
+              <label
+                htmlFor="user_firstname"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Tên
+              </label>
+              <input
+                type="text"
+                id="user_firstname"
+                name="user_firstname"
+                value={editFormData.user_firstname}
+                onChange={handleFormChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                maxLength="55"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="user_phone" className="block text-sm font-medium text-gray-700">Điện thoại</label>
-              <input type="tel" id="user_phone" name="user_phone" value={editFormData.user_phone} onChange={handleFormChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" maxLength="15" />
+              <label
+                htmlFor="user_phone"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Điện thoại
+              </label>
+              <input
+                type="tel"
+                id="user_phone"
+                name="user_phone"
+                value={editFormData.user_phone}
+                onChange={handleFormChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                maxLength="15"
+              />
             </div>
             <div>
-              <label htmlFor="user_sex" className="block text-sm font-medium text-gray-700">Giới tính</label>
-              <select id="user_sex" name="user_sex" value={editFormData.user_sex} onChange={handleFormChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+              <label
+                htmlFor="user_sex"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Giới tính
+              </label>
+              <select
+                id="user_sex"
+                name="user_sex"
+                value={editFormData.user_sex}
+                onChange={handleFormChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              >
                 <option value={-1}>Chưa rõ</option>
                 <option value={1}>Nam</option>
                 <option value={0}>Nữ</option>
@@ -528,15 +684,45 @@ export default function UserProfile() {
           </div>
 
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700">Địa chỉ</label>
-            <input type="text" id="address" name="address" value={editFormData.address} onChange={handleFormChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" maxLength="255" />
+            <label
+              htmlFor="address"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Địa chỉ
+            </label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={editFormData.address}
+              onChange={handleFormChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              maxLength="255"
+            />
           </div>
 
-          {saveError && <div className="text-red-600 bg-red-100 p-3 rounded-md text-sm"><p className="font-semibold">Lỗi:</p><p>{saveError}</p></div>}
+          {saveError && (
+            <div className="text-red-600 bg-red-100 p-3 rounded-md text-sm">
+              <p className="font-semibold">Lỗi:</p>
+              <p>{saveError}</p>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" onClick={handleCloseEdit} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Hủy</Button>
-            <Button type="submit" className={`text-white shadow-md ${isSaving ? "bg-green-400" : "bg-green-600 hover:bg-green-700"}`} disabled={isSaving}>
+            <Button
+              type="button"
+              onClick={handleCloseEdit}
+              className="bg-gray-200 text-gray-800 hover:bg-gray-300"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              className={`text-white shadow-md ${
+                isSaving ? "bg-green-400" : "bg-green-600 hover:bg-green-700"
+              }`}
+              disabled={isSaving}
+            >
               {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </div>
