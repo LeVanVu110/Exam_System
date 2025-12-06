@@ -239,4 +239,49 @@
     background-position: 200px 0;
   }
 }
+/* Container chính cho phần biểu đồ và cảnh báo */
+.charts-warnings-section {
+    display: flex; /* Bật Flexbox để xếp container biểu đồ và cảnh báo cạnh nhau */
+    flex-wrap: wrap; /* Cho phép xuống dòng nếu màn hình quá nhỏ */
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Container chứa hai biểu đồ */
+.charts-container {
+    display: flex; /* Bật Flexbox để xếp các biểu đồ cạnh nhau */
+    flex-wrap: wrap; 
+    gap: 20px; 
+    /* Đảm bảo chiếm gần hết chiều rộng, chừa chỗ cho warnings */
+    flex-basis: 100%; /* Trên màn hình lớn, có thể đặt 70% hoặc 100% */ 
+}
+
+/* Biểu đồ con (Mỗi biểu đồ) */
+.chart-item {
+    flex: 1 1 45%; /* ⭐️ KEY CHANGE: Chiếm gần 50% mỗi cái */
+    /* Giải thích flex:
+       - flex-grow: 1 (cho phép mở rộng)
+       - flex-shrink: 1 (cho phép thu hẹp)
+       - flex-basis: 45% (chiều rộng cơ bản là 45%, để lại 10% (5% gap + 5% gap) cho khoảng cách và padding/margin)
+    */
+    min-width: 300px; /* Đảm bảo không quá nhỏ trên màn hình điện thoại */
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Điều chỉnh lại Warnings Container (nếu nó nằm bên dưới) */
+.warnings-container {
+    flex-basis: 100%; /* Nếu muốn warning nằm dưới cùng, hãy để 100% */
+    /* Hoặc nếu muốn warnings nằm cạnh biểu đồ: flex-basis: 25%; min-width: 200px; */
+}
+
+/* Điều chỉnh tiêu đề biểu đồ nếu cần */
+.chart-item h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.1rem;
+}
 

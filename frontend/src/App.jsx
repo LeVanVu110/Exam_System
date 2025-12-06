@@ -12,7 +12,6 @@ import Layout from "./component/Layout"; // Hoặc ./components/Layout
 import LayoutPDT from "./pages/PDT/LayoutPDT";
 import ExamDashboard from "./pages/Dashboard";
 import Schedule from "./pages/Schedule/Schedule";
-import Documents from "./pages/Documents";
 import ExamManagement from "./pages/PDT/ExamManagement";
 import LoginForm from "./pages/Login"; // Đã sửa lại đường dẫn import này
 import PermissionPage from "./pages/Admin/permission";
@@ -53,12 +52,7 @@ function App() {
           </Route>
         </Route>
 
-        {/* 4. Tài liệu (Giáo viên) */}
-        <Route element={<ProtectedRoute screenCode="DOC_MGT" />}>
-          <Route element={<Layout />}>
-            <Route path="/documents" element={<Documents />} />
-          </Route>
-        </Route>
+      
 
         {/* 5. Phân quyền (Admin) */}
         <Route element={<ProtectedRoute screenCode="PERMISSION_MGT" />}>
