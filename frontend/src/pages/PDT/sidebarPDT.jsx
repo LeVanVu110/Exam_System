@@ -15,7 +15,7 @@ function cn(...classes) {
 // 👇 CẤU HÌNH MENU & SCREEN CODE
 // Đã cập nhật về EXAM_MGT và PERMISSION_MGT để khớp với Database và Log của bạn
 const menuItems = [
-  { icon: Calendar, label: "Lịch dạy/Lịch thi", path: "/PDT/ExamManagement", screenCode: "EXAM_MGT" }, 
+  { icon: Calendar, label: "Quản lý kỳ thi", path: "/PDT/ExamManagement", screenCode: "EXAM_MGT" }, 
   { icon: ShieldCheck, label: "Quản lý quyền", path: "/permission", screenCode: "PERMISSION_MGT" }, 
 ];
 
