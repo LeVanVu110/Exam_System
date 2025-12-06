@@ -86,19 +86,15 @@ class User extends Authenticatable
         // ✅ Bắt buộc phải là tên cột mà bạn dùng để đăng nhập
         return 'user_email';
     }
+
     public function getAuthPasswordName()
     {
         // ✅ Bắt buộc phải là tên cột mật khẩu trong DB
         return 'user_password';
     }
-    public function getAuthIdentifierName()
+
+    public function setUserPasswordAttribute($value)
     {
-        // ✅ Bắt buộc phải là tên cột mà bạn dùng để đăng nhập
-        return 'user_email'; 
-    }
-    public function getAuthPasswordName()
-    {
-        // ✅ Bắt buộc phải là tên cột mật khẩu trong DB
-        return 'user_password'; 
+        $this->attributes['user_password'] = bcrypt($value);
     }
 }

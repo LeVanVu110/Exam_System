@@ -219,7 +219,7 @@ class ExamSessionController extends Controller
             'user_code' => $newUserCode,
             'user_name' => $finalUsername,
             'user_email' => $emailSlug,
-            'user_password' => Hash::make('123456'),
+            'user_password' =>'123456',
             'user_is_activated' => 1,
         ]);
 
