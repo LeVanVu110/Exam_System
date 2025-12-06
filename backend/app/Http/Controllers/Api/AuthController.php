@@ -49,8 +49,10 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Đăng nhập thành công',
             'token' => $token,
+            'access_token' => $token,
             'role' => $roleName, // <--- Frontend dùng cái này để switch case
-            'user' => $user
+            'user' => $user,
+            'profile' => $user->userProfile
         ]);
     }
 

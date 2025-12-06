@@ -1,86 +1,86 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import ProtectedRoute from "./component/ProtectedRoute";
-import ForbiddenPage from "./pages/403";
-
-// Layouts
-import Layout from "./component/Layout";
-import LayoutPDT from "./pages/PDT/LayoutPDT";
-
-// Pages
-import ExamDashboard from "./pages/Dashboard";
-import Schedule from "./pages/Schedule/Schedule";
-import Documents from "./pages/Documents";
-import ExamManagement from "./pages/PDT/ExamManagement";
-import LoginForm from "./pages/Login";
-import PermissionPage from "@/pages/Admin/permission";
-
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import Layout from "./component/Layout"
-import ExamSchedule from "./pages/ExamSchedule"
-import ClassSchedule from "./pages/ClassSchedule"
-import Documents from "./pages/Documents"
-import Userprofile from "./pages/UserProfile.jsx"
-import "./index.css"; // <--- quan trọng
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./index.css";
+
+// Components
+// Lưu ý: Đảm bảo đường dẫn import đúng với cấu trúc thư mục thực tế của bạn
+import ProtectedRoute from "./component/ProtectedRoute"; // Hoặc ./components/ProtectedRoute
+import ForbiddenPage from "./pages/403";
+import Layout from "./component/Layout"; // Hoặc ./components/Layout
+import LayoutPDT from "./pages/PDT/LayoutPDT";
+import ExamDashboard from "./pages/Dashboard";
+import Schedule from "./pages/Schedule/Schedule";
+import ExamManagement from "./pages/PDT/ExamManagement";
+import LoginForm from "./pages/Login"; // Đã sửa lại đường dẫn import này
+import PermissionPage from "./pages/Admin/permission";
+import UserPage from "./pages/Admin/User-manager"; // Kiểm tra lại đường dẫn này
+import Userprofile from "./pages/UserProfile.jsx";
 
 function App() {
   return (
     <Router>
       <Routes>
-
         {/* Public routes */}
-        
-          <Route path="/UserProfile" element={<Userprofile />} />
-          
-        </Route>
-      </Routes>
-      {/* đăng nhập */}
-      <Routes>
+        {/* Redirect root "/" về login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/403" element={<ForbiddenPage />} />
 
-        {/* ---------- PROTECTED ROUTES ---------- */}
-
-        {/* Dashboard → DASHBOARD */}
+        {/* Protected Routes */}
+        
+        {/* 1. Dashboard */}
         <Route element={<ProtectedRoute screenCode="DASHBOARD" />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<ExamDashboard />} />
           </Route>
         </Route>
 
-        {/* Exam Schedule → EXAM_SCHEDULE */}
+        {/* 2. Lịch thi */}
         <Route element={<ProtectedRoute screenCode="EXAM_SCHEDULE" />}>
           <Route element={<Layout />}>
             <Route path="/exam-schedule" element={<Schedule />} />
           </Route>
         </Route>
 
-        {/* Exam Management (Training Dept) → EXAM_MGT */}
+        {/* 3. Quản lý kỳ thi (PDT) */}
         <Route element={<ProtectedRoute screenCode="EXAM_MGT" />}>
           <Route element={<LayoutPDT />}>
+            {/* Đây chính là route bạn đang cần */}
             <Route path="/PDT/ExamManagement" element={<ExamManagement />} />
           </Route>
         </Route>
 
-        {/* Documents → DOC_MGT */}
-        <Route element={<ProtectedRoute screenCode="DOC_MGT" />}>
+      
+
+        {/* 5. Phân quyền (Admin) */}
+        <Route element={<ProtectedRoute screenCode="PERMISSION_MGT" />}>
+           <Route element={<Layout />}>
+             <Route path="/permission" element={<PermissionPage />} />
+           </Route>
+        </Route>
+
+        {/* 6. Quản profile */}
+        <Route element={<ProtectedRoute screenCode="USER_PRO" />}>
           <Route element={<Layout />}>
-            <Route path="/documents" element={<Documents />} />
+            {/* Đây chính là route bạn đang cần */}
+            <Route path="/UserProfile" element={<Userprofile />} />
           </Route>
         </Route>
 
-        {/* Permission Management → PERMISSION_MGT */}
-        <Route element={<ProtectedRoute screenCode="PERMISSION_MGT" />}>
-          <Route path="/permission" element={<PermissionPage />} />
+        {/* 6. Quản lý người dùng */}
+        <Route element={<ProtectedRoute screenCode="USER_MAN" />}>
+          <Route element={<Layout />}>
+            {/* Đây chính là route bạn đang cần */}
+            <Route path="/UserPage" element={<UserPage />} />
+          </Route>
         </Route>
 
-        {/* Default route */}
-        <Route path="/" element={<LoginForm />} />
+        {/* Catch all - 404 */}
+        <Route path="*" element={<div className="text-center mt-10">404 - Trang không tồn tại</div>} />
 
       </Routes>
-
       <ToastContainer position="top-right" autoClose={2000} />
     </Router>
   );

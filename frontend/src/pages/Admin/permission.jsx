@@ -2,7 +2,7 @@ import PermissionManager from "@/pages/Admin/permission-manager"
 // 👇 1. Import Sidebar (Hãy kiểm tra lại đường dẫn import sidebarPDT cho đúng với cấu trúc thư mục của bạn)
 // Ví dụ nếu file này nằm ở src/pages/Admin thì đường dẫn là: "../PDT/sidebarPDT"
 // Hoặc nếu dùng alias @: "@/pages/PDT/sidebarPDT"
-import Sidebar from "@/pages/PDT/sidebarPDT"; 
+// import Sidebar from "@/pages/PDT/sidebarPDT"; 
 
 export default function Page() {
   return (
@@ -10,7 +10,7 @@ export default function Page() {
     <div className="flex min-h-screen bg-gray-50">
       
       {/* 👇 3. Hiển thị Sidebar ở bên trái */}
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       {/* 👇 4. Nội dung chính: Thêm 'flex-1' để nó chiếm hết khoảng trống còn lại bên phải */}
       <div className="flex-1 p-4 md:p-8 overflow-auto h-screen">

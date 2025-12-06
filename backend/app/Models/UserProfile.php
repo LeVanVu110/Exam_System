@@ -16,7 +16,7 @@ class UserProfile extends Model
 
     protected $fillable = [
         'user_id',
-        'category_user_type_id',
+        'role_id',
         'user_firstname',
         'user_lastname',
         'user_phone',
@@ -38,10 +38,10 @@ class UserProfile extends Model
     {
         return $this->hasOne(Teacher::class, 'user_profile_id', 'user_profile_id');
     }
-    // Quan hệ với bảng Category_User_Type
-    public function categoryUserType()
+    // Quan hệ với bảng roles
+    public function roles()
     {
-        return $this->belongsTo(CategoryUserType::class, 'category_user_type_id');
+        return $this->belongsTo(Role::class, 'role_id');
     }
-    
+
 }
