@@ -80,4 +80,15 @@ class User extends Authenticatable
 
         return false;
     }
+
+    public function getAuthIdentifierName()
+    {
+        // ✅ Bắt buộc phải là tên cột mà bạn dùng để đăng nhập
+        return 'user_email';
+    }
+    public function getAuthPasswordName()
+    {
+        // ✅ Bắt buộc phải là tên cột mật khẩu trong DB
+        return 'user_password';
+    }
 }

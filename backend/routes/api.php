@@ -64,6 +64,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [ExamSessionController::class, 'destroy']);
     });
 
+    Route::prefix('exam-schedules')->group(function () {
+        Route::get('/', [ExamSessionController::class, 'index']); // Admin xem danh sách
+        Route::post('/import', [ExamSessionController::class, 'importExcel']);
+        Route::get('/export', [ExamSessionController::class, 'exportExcel']);
+        Route::get('/{id}/report', [ExamSessionController::class, 'exportReport']);
+        Route::delete('/{id}', [ExamSessionController::class, 'destroy']);
+        Route::post('/delete-bulk', [ExamSessionController::class, 'deleteBulk']);
+
+        // Route lẻ bạn muốn thêm (Save imported)
+        Route::post('/save', [ExamSessionController::class, 'saveImported']);
+    });
+
     // C. SYSTEM ROUTES (Màn hình & Phân quyền Matrix)
     Route::get('/screens', [ScreenController::class, 'index']);
     Route::post('/screens', [ScreenController::class, 'store']);
