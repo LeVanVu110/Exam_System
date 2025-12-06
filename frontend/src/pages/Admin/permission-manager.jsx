@@ -387,78 +387,103 @@ export default function PermissionApp() {
       console.error("Lỗi khi refresh quyền:", error);
     }
   };
+  // ==================================================================================
+  // 5. XỬ lý LOAD VÀ SAVE MATRIX (ĐÃ CẬP NHẬT POLLING)
+  // ==================================================================================
 
-  // ==================================================================================
-  // 5. XỬ lý LOAD VÀ SAVE MATRIX
-  // ==================================================================================
-  useEffect(() => {
+  // Hàm lấy dữ liệu (Tách ra để dùng được nhiều nơi)
+  const fetchMatrixData = async (isBackground = false) => {
     if (!selectedRoleId || screens.length === 0) return;
-    const fetchMatrix = async () => {
-      setLoading(true);
-      try {
-        // 👇 1. Lấy Token
-        const token = localStorage.getItem("ACCESS_TOKEN");
 
-        // 👇 2. Thêm headers vào fetch
-        const res = await fetch(`${API_URL}/roles/${selectedRoleId}/screens`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ✅ QUAN TRỌNG
-          },
-        });
+    // Chỉ hiện loading xoay vòng ở lần tải đầu, không hiện khi chạy ngầm
+    if (!isBackground) setLoading(true);
 
-        if (res.status === 401) {
-          showToast("Phiên đăng nhập hết hạn", "error");
-          return;
-        }
+    try {
+      const token = localStorage.getItem("ACCESS_TOKEN");
+      const res = await fetch(`${API_URL}/roles/${selectedRoleId}/screens`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        const savedPermissions = await res.json();
-
-        const newMatrix = {};
-        screens.forEach((screen) => {
-          const saved = savedPermissions.find(
-            (p) => p.screen_id === screen.screen_id
-          );
-          if (saved) {
-            const isAll =
-              saved.is_view === 1 &&
-              saved.is_add === 1 &&
-              saved.is_edit === 1 &&
-              saved.is_delete === 1 &&
-              saved.is_upload === 1 &&
-              saved.is_download === 1;
-            newMatrix[screen.screen_id] = {
-              screen_id: screen.screen_id,
-              is_view: saved.is_view === 1,
-              is_add: saved.is_add === 1,
-              is_edit: saved.is_edit === 1,
-              is_delete: saved.is_delete === 1,
-              is_upload: saved.is_upload === 1,
-              is_download: saved.is_download === 1,
-              is_all: isAll,
-            };
-          } else {
-            newMatrix[screen.screen_id] = {
-              screen_id: screen.screen_id,
-              is_view: false,
-              is_add: false,
-              is_edit: false,
-              is_delete: false,
-              is_upload: false,
-              is_download: false,
-              is_all: false,
-            };
-          }
-        });
-        setMatrix(newMatrix);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+      if (res.status === 401) {
+        // Nếu lỗi 401 thì thôi không thông báo liên tục để tránh spam toast
+        return;
       }
-    };
-    fetchMatrix();
-  }, [selectedRoleId, screens]);
+
+      const savedPermissions = await res.json();
+
+      const newMatrix = {};
+      screens.forEach((screen) => {
+        const saved = savedPermissions.find(
+          (p) => p.screen_id === screen.screen_id
+        );
+
+        if (saved) {
+          const isAll =
+            saved.is_view === 1 &&
+            saved.is_add === 1 &&
+            saved.is_edit === 1 &&
+            saved.is_delete === 1 &&
+            saved.is_upload === 1 &&
+            saved.is_download === 1;
+
+          newMatrix[screen.screen_id] = {
+            screen_id: screen.screen_id,
+            is_view: saved.is_view === 1,
+            is_add: saved.is_add === 1,
+            is_edit: saved.is_edit === 1,
+            is_delete: saved.is_delete === 1,
+            is_upload: saved.is_upload === 1,
+            is_download: saved.is_download === 1,
+            is_all: isAll,
+          };
+        } else {
+          newMatrix[screen.screen_id] = {
+            screen_id: screen.screen_id,
+            is_view: false,
+            is_add: false,
+            is_edit: false,
+            is_delete: false,
+            is_upload: false,
+            is_download: false,
+            is_all: false,
+          };
+        }
+      });
+      
+      // Cập nhật State
+      setMatrix((prev) => {
+        // Mẹo: So sánh stringify để tránh render lại nếu dữ liệu y hệt nhau
+        if (JSON.stringify(prev) === JSON.stringify(newMatrix)) return prev;
+        return newMatrix;
+      });
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (!isBackground) setLoading(false);
+    }
+  };
+
+  // useEffect kích hoạt Polling
+  useEffect(() => {
+    // 1. Gọi ngay lập tức khi chọn Role
+    fetchMatrixData(false);
+
+    // 2. Thiết lập chạy định kỳ mỗi 3 giây (3000ms)
+    const intervalId = setInterval(() => {
+      // Chỉ gọi cập nhật ngầm nếu user KHÔNG đang bấm nút Lưu (saving = false)
+      if (!saving) {
+         fetchMatrixData(true); 
+      }
+    }, 3000); 
+
+    // 3. Xóa interval khi component bị hủy hoặc đổi role khác
+    return () => clearInterval(intervalId);
+
+  }, [selectedRoleId, screens]); // Dependency array
 
   const handleCheckboxChange = (screenId, field) => {
     if (!canEdit) return;
