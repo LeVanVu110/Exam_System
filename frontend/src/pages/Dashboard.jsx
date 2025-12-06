@@ -81,7 +81,30 @@ const ExamDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/exam-schedule");
+        // 1. Lấy token từ localStorage
+        const token = localStorage.getItem("ACCESS_TOKEN");
+
+        // 2. Gửi request kèm Header
+        const res = await fetch("http://localhost:8000/api/exam-schedule", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`, // 👉 QUAN TRỌNG: Gửi token ở đây
+          },
+        });
+
+        // 3. Xử lý trường hợp hết hạn token (Lỗi 401)
+        if (res.status === 401) {
+          console.error("Phiên đăng nhập hết hạn");
+          // Tùy chọn: Chuyển hướng về trang login
+          // window.location.href = "/login"; 
+          return;
+        }
+
+        if (!res.ok) {
+           throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         const json = await res.json();
         setExamSessions(json.data || []);
       } catch (e) {

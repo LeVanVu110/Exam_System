@@ -34,7 +34,7 @@ use App\Http\Controllers\{
 */
 
 // --- 1. PUBLIC ROUTES (Không cần đăng nhập) ---
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 // Student routes (Tùy bạn, nếu cần bảo mật thì đưa vào group dưới)
 Route::get('/students', [StudentController::class, 'index']);
