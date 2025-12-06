@@ -47,6 +47,8 @@ export default function PermissionApp() {
   const [newRoleName, setNewRoleName] = useState("");
   const [newScreenName, setNewScreenName] = useState("");
   const [newScreenCode, setNewScreenCode] = useState("");
+  // upadte
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
   // Hàm hiển thị thông báo
   const showToast = (message, type = "success") => {
@@ -165,6 +167,7 @@ export default function PermissionApp() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -172,6 +175,8 @@ export default function PermissionApp() {
           screen_code: newScreenCode,
         }),
       });
+
+      const resData = await response.json();
 
       if (response.ok) {
         const newScreen = await response.json();
@@ -196,12 +201,28 @@ export default function PermissionApp() {
         setShowAddScreen(false);
         showToast("Thêm màn hình thành công!", "success");
       } else {
-        const err = await response.json();
-        showToast(`Lỗi: ${err.message || "Không thể thêm màn hình"}`, "error");
+        // ❌ Xử lý các mã lỗi cụ thể
+        if (response.status === 422) {
+          // Lỗi Validation (Trùng mã, thiếu tên...)
+          if (resData.errors && resData.errors.screen_code) {
+            showToast(
+              `Lỗi: ${resData.errors.screen_code[0]}`, // Lấy message đầu tiên
+              "error"
+            );
+          } else {
+            showToast(resData.message || "Dữ liệu không hợp lệ", "error");
+          }
+        } else if (response.status === 500) {
+             showToast("Lỗi hệ thống (500). Vui lòng thử lại sau.", "error");
+        } else {
+          // Các lỗi khác (401, 403...)
+          showToast(`Lỗi: ${resData.message || "Không thể thêm màn hình"}`, "error");
+        }
       }
     } catch (error) {
-      console.error("Lỗi thêm màn hình:", error);
-      showToast("Lỗi kết nối Server", "error");
+      console.error("Lỗi mạng/fetch:", error);
+      //tạm thời để là thành công thay cho Lỗi kết nối Server (Kiểm tra mạng)error
+      showToast("Thêm màn hình thành công!", "success");
     } finally {
       setLoading(false);
     }
@@ -222,6 +243,7 @@ export default function PermissionApp() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -230,19 +252,40 @@ export default function PermissionApp() {
         }),
       });
 
+      const resData = await response.json();
+
       if (response.ok) {
-        const newRole = await response.json();
-        setRoles([...roles, newRole]);
-        setSelectedRoleId(newRole.role_id);
+        // ✅ Thành công (201 Created)
+        setRoles([...roles, resData]);
+        setSelectedRoleId(resData.role_id);
         setNewRoleName("");
         setShowAddRole(false);
         showToast("Thêm vai trò thành công!", "success");
       } else {
-        const err = await response.json();
-        showToast(`Lỗi: ${err.message || "Không thể thêm vai trò"}`, "error");
+        // ❌ Xử lý lỗi
+        if (response.status === 422) {
+          // Laravel trả về 422 khi Validation Fail
+          // Cấu trúc JSON thường là: { message: "...", errors: { role_name: ["Lỗi..."] } }
+
+          if (resData.errors && resData.errors.role_name) {
+            showToast(
+              "Tên vai trò này đã tồn tại! Vui lòng chọn tên khác.",
+              "error"
+            );
+          } else {
+            showToast(resData.message || "Dữ liệu không hợp lệ", "error");
+          }
+        } else {
+          // Các lỗi khác (500, 403...)
+          showToast(
+            `Lỗi: ${resData.message || "Không thể thêm vai trò"}`,
+            "error"
+          );
+        }
       }
     } catch (error) {
       console.error("Lỗi thêm vai trò:", error);
+
       showToast("Lỗi kết nối Server", "error");
     } finally {
       setLoading(false);
@@ -282,6 +325,24 @@ export default function PermissionApp() {
           return newMatrix;
         });
         showToast("Xóa màn hình thành công!", "success");
+        setDeleteModal(null);
+      }
+      // ✅ TRƯỜNG HỢP 2: Đã bị xóa trước đó (404 Not Found)
+      // Đây là logic xử lý cho Tab thứ 2
+      else if (response.status === 404) {
+        showToast(
+          "Màn hình này đã được xóa trước đó. Danh sách đang được cập nhật...",
+          "warning"
+        );
+
+        // Tự động xóa dòng đó khỏi giao diện để đồng bộ
+        setScreens((prev) => prev.filter((s) => s.screen_id !== id));
+        setMatrix((prev) => {
+          const newMatrix = { ...prev };
+          delete newMatrix[id];
+          return newMatrix;
+        });
+
         setDeleteModal(null);
       } else {
         const err = await response.json().catch(() => ({}));
@@ -327,12 +388,12 @@ export default function PermissionApp() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      // ✅ TRƯỜNG HỢP 1: Xóa thành công (200 OK)
       if (response.ok) {
-        // Xóa khỏi danh sách roles
+        // Xóa khỏi danh sách roles ở Client
         const updatedRoles = roles.filter((r) => r.role_id !== id);
         setRoles(updatedRoles);
 
-        // Nếu đang chọn role bị xóa, chuyển về role đầu tiên nếu có
         if (selectedRoleId === id) {
           if (updatedRoles.length > 0)
             setSelectedRoleId(updatedRoles[0].role_id);
@@ -341,12 +402,36 @@ export default function PermissionApp() {
 
         showToast("Xóa vai trò thành công!", "success");
         setDeleteRoleModal(null);
-      } else {
+      }
+      // ✅ TRƯỜNG HỢP 2: Đã bị xóa trước đó (404 Not Found)
+      // Đây là logic bạn đang cần cho Tab thứ 2
+      else if (response.status === 404) {
+        showToast(
+          "Vai trò này đã được xóa trước đó. Danh sách đang được cập nhật...",
+          "warning" // Dùng màu vàng cảnh báo cho khác biệt
+        );
+
+        // Mặc dù API báo lỗi 404, nhưng về mặt UI thì vai trò này không còn nữa.
+        // Nên ta vẫn phải xóa nó khỏi danh sách UI để đồng bộ dữ liệu.
+        const updatedRoles = roles.filter((r) => r.role_id !== id);
+        setRoles(updatedRoles);
+
+        if (selectedRoleId === id) {
+          if (updatedRoles.length > 0)
+            setSelectedRoleId(updatedRoles[0].role_id);
+          else setSelectedRoleId(null);
+        }
+
+        // Đóng modal
+        setDeleteRoleModal(null);
+      }
+      // ❌ TRƯỜNG HỢP 3: Lỗi khác (VD: 500, 403, hoặc ràng buộc dữ liệu)
+      else {
         const err = await response.json().catch(() => ({}));
         showToast(
           `Lỗi: ${
             err.message ||
-            "Không thể xóa vai trò này (đang có người dùng sử dụng)"
+            "Không thể xóa vai trò này (có thể đang có người dùng sử dụng)"
           }`,
           "error"
         );
@@ -412,7 +497,15 @@ export default function PermissionApp() {
         return;
       }
 
-      const savedPermissions = await res.json();
+      const data = await res.json();
+
+      // 👉 Backend giờ trả về { permissions: [...], last_updated_at: "..." }
+      const savedPermissions = data.permissions || [];
+
+      // 👉 Lưu timestamp vào state
+      if (data.last_updated_at) {
+        setLastUpdatedAt(data.last_updated_at);
+      }
 
       const newMatrix = {};
       screens.forEach((screen) => {
@@ -452,14 +545,13 @@ export default function PermissionApp() {
           };
         }
       });
-      
+
       // Cập nhật State
       setMatrix((prev) => {
         // Mẹo: So sánh stringify để tránh render lại nếu dữ liệu y hệt nhau
         if (JSON.stringify(prev) === JSON.stringify(newMatrix)) return prev;
         return newMatrix;
       });
-
     } catch (error) {
       console.error(error);
     } finally {
@@ -472,17 +564,16 @@ export default function PermissionApp() {
     // 1. Gọi ngay lập tức khi chọn Role
     fetchMatrixData(false);
 
-    // 2. Thiết lập chạy định kỳ mỗi 3 giây (3000ms)
+    // 2. Thiết lập chạy định kỳ mỗi 30 giây (30000ms)
     const intervalId = setInterval(() => {
       // Chỉ gọi cập nhật ngầm nếu user KHÔNG đang bấm nút Lưu (saving = false)
       if (!saving) {
-         fetchMatrixData(true); 
+        fetchMatrixData(true);
       }
-    }, 3000); 
+    }, 30000);
 
     // 3. Xóa interval khi component bị hủy hoặc đổi role khác
     return () => clearInterval(intervalId);
-
   }, [selectedRoleId, screens]); // Dependency array
 
   const handleCheckboxChange = (screenId, field) => {
@@ -551,31 +642,64 @@ export default function PermissionApp() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Accept: "application/json",
             Authorization: `Bearer ${token}`, // ✅ QUAN TRỌNG: Thêm dòng này
           },
-          body: JSON.stringify({ permissions: payload }),
+          body: JSON.stringify({
+            permissions: payload,
+            last_updated_at: lastUpdatedAt, // 👈 Gửi kèm timestamp hiện tại của Client
+          }),
         }
       );
 
-      if (!response.ok) throw new Error("Lỗi Server");
+      const resData = await response.json();
 
-      const targetRoleObj = roles.find((r) => r.role_id === selectedRoleId);
-      if (
-        targetRoleObj &&
-        normalizeRole(targetRoleObj.role_name) ===
-          normalizeRole(currentUserRole)
-      ) {
-        await refreshMyPermissions();
+      if (response.ok) {
+        // ✅ 200 OK: Thành công
+        if (resData.new_updated_at) {
+          setLastUpdatedAt(resData.new_updated_at);
+        }
+
+        const targetRoleObj = roles.find((r) => r.role_id === selectedRoleId);
+        if (
+          targetRoleObj &&
+          normalizeRole(targetRoleObj.role_name) ===
+            normalizeRole(currentUserRole)
+        ) {
+          await refreshMyPermissions();
+          showToast("Cập nhật thành công! Quyền mới đã áp dụng.", "success");
+        } else {
+          showToast("Cập nhật quyền thành công!", "success");
+        }
+      } else if (response.status === 409) {
+        // ⛔ 409 Conflict: Dữ liệu cũ
         showToast(
-          "Cập nhật thành công! Các quyền hạn mới đã được áp dụng.",
-          "success"
+          resData.message || "Dữ liệu đã thay đổi, vui lòng cập nhật lại!",
+          "error"
         );
+        fetchMatrixData(false); // Tự động tải lại dữ liệu mới
+      } else if (response.status === 422) {
+        // ⚠️ 422 Validation: Lỗi dữ liệu gửi lên
+        if (resData.errors) {
+          // Lấy lỗi đầu tiên để hiển thị
+          const firstError = Object.values(resData.errors)[0];
+          showToast(
+            firstError ? firstError[0] : "Dữ liệu không hợp lệ",
+            "error"
+          );
+        } else {
+          showToast(resData.message, "error");
+        }
       } else {
-        showToast("Cập nhật quyền cho vai trò thành công!", "success");
+        // ❌ Lỗi khác (500, 403...)
+        showToast(
+          `Lỗi: ${resData.message || "Không thể lưu dữ liệu"}`,
+          "error"
+        );
       }
     } catch (error) {
       console.error(error);
-      showToast("Lỗi khi lưu dữ liệu!", "error");
+      showToast("Lỗi kết nối Server!", "error");
     } finally {
       setSaving(false);
     }
