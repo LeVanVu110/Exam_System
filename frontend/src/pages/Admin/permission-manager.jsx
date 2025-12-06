@@ -50,6 +50,9 @@ export default function PermissionApp() {
   // upadte
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
+  // 👉 State kiểm tra xem người dùng có đang sửa dở dang không
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // Hàm hiển thị thông báo
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -561,23 +564,27 @@ export default function PermissionApp() {
 
   // useEffect kích hoạt Polling
   useEffect(() => {
+    //Gọi ngay lập tức khi chọn Role (Luôn tải mới khi vừa vào)
+    setHasUnsavedChanges(false);
     // 1. Gọi ngay lập tức khi chọn Role
     fetchMatrixData(false);
 
-    // 2. Thiết lập chạy định kỳ mỗi 30 giây (30000ms)
+    // 2. Thiết lập chạy định kỳ mỗi 10 giây (30000ms)
     const intervalId = setInterval(() => {
-      // Chỉ gọi cập nhật ngầm nếu user KHÔNG đang bấm nút Lưu (saving = false)
-      if (!saving) {
+      // Chỉ gọi cập nhật ngầm nếu user KHÔNG đang bấm nút Lưu (saving = false) VÀ KHÔNG có thay đổi chưa lưu (hasUnsavedChanges)
+      if (!saving&& !hasUnsavedChanges) {
         fetchMatrixData(true);
       }
-    }, 30000);
+    }, 10000);
 
     // 3. Xóa interval khi component bị hủy hoặc đổi role khác
     return () => clearInterval(intervalId);
-  }, [selectedRoleId, screens]); // Dependency array
+  }, [selectedRoleId, screens, hasUnsavedChanges]); // Dependency array
 
   const handleCheckboxChange = (screenId, field) => {
     if (!canEdit) return;
+    // 👇 THÊM DÒNG NÀY: Đánh dấu là "Đang có thay đổi chưa lưu"
+    setHasUnsavedChanges(true);
     setMatrix((prev) => {
       const currentRow = {
         screen_id: screenId,
@@ -655,6 +662,8 @@ export default function PermissionApp() {
       const resData = await response.json();
 
       if (response.ok) {
+        //Ý nghĩa: Đã lưu xong, không còn thay đổi nào chưa lưu, cho phép Polling chạy lại
+        setHasUnsavedChanges(false);
         // ✅ 200 OK: Thành công
         if (resData.new_updated_at) {
           setLastUpdatedAt(resData.new_updated_at);
