@@ -20,6 +20,8 @@ class ScreenSeeder extends Seeder
             ['screen_code' => 'EXAM_MGT', 'screen_name' => 'Quản lý kỳ thi', 'screen_description' => 'Dành cho phòng đào tạo'],
             ['screen_code' => 'DOC_MGT', 'screen_name' => 'Quản lý tài liệu', 'screen_description' => 'Tài liệu kỳ thi'],
             ['screen_code' => 'PERMISSION_MGT', 'screen_name' => 'Quản lý quyền', 'screen_description' => 'Phân quyền hệ thống'],
+            ['screen_code' => 'USER_MAN', 'screen_name' => 'Quản lý người dùng', 'screen_description' => 'Quan lý người dùng hệ thống'],
+            ['screen_code' => 'USER_PRO', 'screen_name' => 'Quản lý hồ sơ cá nhân', 'screen_description' => 'Quản lý hồ sơ cá nhân người dùng'],
         ];
 
 

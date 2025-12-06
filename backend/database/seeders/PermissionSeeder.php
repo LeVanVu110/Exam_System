@@ -60,6 +60,22 @@ class PermissionSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
+            [
+                'permission_id' => 6,
+                'permission_name' => 'USER_MAN',
+                'permission_description' => 'Quản lý người dùng',
+                'permission_is_active' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'permission_id' => 7,
+                'permission_name' => 'USER_PRO',
+                'permission_description' => 'Quản lý hồ sơ người dùng',
+                'permission_is_active' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
         ];
 
         DB::table('permissions')->insert($permissions);

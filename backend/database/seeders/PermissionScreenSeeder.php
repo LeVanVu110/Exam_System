@@ -32,6 +32,12 @@ class PermissionScreenSeeder extends Seeder
             5 => [ // PERMISSION_MGT
                 5 => ['is_view' => 1, 'is_edit' => 1, 'is_add' => 1, 'is_delete' => 1, 'is_upload' => 0, 'is_download' => 0, 'is_all' => 1],
             ],
+            6 => [ // USER_MAN
+                6 => ['is_view' => 1, 'is_edit' => 1, 'is_add' => 1, 'is_delete' => 1, 'is_upload' => 1, 'is_download' => 1, 'is_all' => 1],
+            ],
+            7 => [ // USER_PRO
+                7 => ['is_view' => 1, 'is_edit' => 1, 'is_add' => 1, 'is_delete' => 1, 'is_upload' => 1, 'is_download' => 1, 'is_all' => 1],
+            ],
         ];
 
         foreach ($permissionScreens as $permissionId => $screens) {
