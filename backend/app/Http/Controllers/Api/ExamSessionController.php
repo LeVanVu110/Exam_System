@@ -223,6 +223,18 @@ class ExamSessionController extends Controller
             'user_is_activated' => 1,
         ]);
 
+        // ✅ 2. GÁN ROLE "TEACHER" CHO USER MỚI
+        // Tìm role_id của 'teacher' (hoặc fix cứng là 2 theo DB của bạn)
+        $teacherRole = DB::table('roles')->where('role_name', 'teacher')->first();
+        $roleId = $teacherRole ? $teacherRole->role_id : 2; // Mặc định là 2 nếu không tìm thấy
+
+        DB::table('users_roles')->insert([
+            'user_id' => $user->user_id,
+            'role_id' => $roleId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         $userProfile = UserProfile::forceCreate([
             'user_id' => $user->user_id,
             'user_firstname' => $this->safeSubstr($firstName, 50),

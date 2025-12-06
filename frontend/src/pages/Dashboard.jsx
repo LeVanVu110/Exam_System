@@ -85,7 +85,7 @@ const ExamDashboard = () => {
 
         // 2. Kiểm tra nếu không có token thì "đuổi" về login ngay (tránh gọi API lỗi)
         if (!token) {
-          window.location.href = "/";
+          window.location.href = "/login";
           return;
         }
 
