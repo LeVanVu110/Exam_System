@@ -59,9 +59,14 @@ class ExamSessionController extends Controller
                 // Cache Giáo viên
                 $existingTeachersMap = DB::table('user_profiles')
                     ->join('teachers', 'user_profiles.user_profile_id', '=', 'teachers.user_profile_id')
-                    ->select(DB::raw("LOWER(TRIM(CONCAT(COALESCE(user_lastname, ''), ' ', COALESCE(user_firstname, '')))) as full_name"), 'teachers.teacher_id')
+                    // Lấy tên thô, sau đó sẽ chuẩn hóa bằng PHP
+                    ->select(DB::raw("TRIM(CONCAT(COALESCE(user_lastname, ''), ' ', COALESCE(user_firstname, ''))) as full_name_raw"), 'teachers.teacher_id')
                     ->get()
-                    ->pluck('teacher_id', 'full_name')
+                    // Dùng hàm normalize để tạo khóa map thống nhất (không dấu, lowercase)
+                    ->mapWithKeys(function ($item) {
+                        $normalizedKey = $this->normalizeNameForComparison($item->full_name_raw);
+                        return [$normalizedKey => $item->teacher_id];
+                    })
                     ->toArray();
 
                 // Chuẩn bị mã User
@@ -80,6 +85,8 @@ class ExamSessionController extends Controller
                         $teacherNames = [];
 
                         if (!empty($rawTeachers)) {
+                            // Chú ý: Dữ liệu mẫu có tên là " Huỳnh Ngọc Anh  Thư, Nguyễn Ngọc Cẩm  Tú"
+                            // Cần explode, rồi trim từng phần tử
                             $teacherNames = array_map('trim', explode(',', $rawTeachers));
                         }
                         if (empty($teacherNames)) {
@@ -88,9 +95,11 @@ class ExamSessionController extends Controller
                         }
 
                         $t1Name = $teacherNames[0] ?? null;
+                        // Sửa: Truyền map đã chuẩn hóa vào hàm resolveTeacherId
                         $teacher1Id = $this->resolveTeacherId($t1Name, $existingTeachersMap, $nextUserCodeInt, $newTeachers);
 
                         $t2Name = $teacherNames[1] ?? null;
+                        // Sửa: Truyền map đã chuẩn hóa vào hàm resolveTeacherId
                         $teacher2Id = $this->resolveTeacherId($t2Name, $existingTeachersMap, $nextUserCodeInt, $newTeachers);
 
                         // --- XỬ LÝ THỜI GIAN ---
@@ -194,61 +203,101 @@ class ExamSessionController extends Controller
         return mb_substr($string, 0, $length, 'UTF-8');
     }
 
-    private function resolveTeacherId($fullName, &$map, &$nextCodeInt, &$newCount)
+    /**
+     * Helper: Chuẩn hóa tên (lowercase, bỏ dấu, bỏ khoảng trắng) 
+     * để dùng làm khóa so sánh, tránh lỗi do collation DB hoặc file import.
+     * Ví dụ: "Nguyễn Phong  Lan" -> "nguyenphonglan"
+     * @param string $fullName Tên đầy đủ cần chuẩn hóa
+     * @return string Khóa so sánh đã chuẩn hóa
+     */
+    private function normalizeNameForComparison($fullName)
     {
-        if (empty($fullName)) return null;
-        $key = mb_strtolower(trim($fullName), 'UTF-8');
-        if (isset($map[$key])) return $map[$key];
-
-        $parts = explode(' ', trim($fullName));
-        if (count($parts) < 2) {
-            $firstName = $fullName;
-            $lastName = '';
-        } else {
-            $firstName = array_pop($parts);
-            $lastName = implode(' ', $parts);
-        }
-
-        $newUserCode = 'U' . str_pad($nextCodeInt++, 4, '0', STR_PAD_LEFT);
-        $nameSlug = Str::slug($firstName . $lastName);
-        $usernameStub = substr($nameSlug, 0, 15);
-        $finalUsername = $usernameStub . rand(100, 999);
-        $emailSlug = substr($nameSlug, 0, 30) . rand(100, 999) . '@gmail.com';
-
-        $user = User::forceCreate([
-            'user_code' => $newUserCode,
-            'user_name' => $finalUsername,
-            'user_email' => $emailSlug,
-            'user_password' =>'123456',
-            'user_is_activated' => 1,
-        ]);
-
-        // ✅ 2. GÁN ROLE "TEACHER" CHO USER MỚI
-        // Tìm role_id của 'teacher' (hoặc fix cứng là 2 theo DB của bạn)
-        $teacherRole = DB::table('roles')->where('role_name', 'teacher')->first();
-        $roleId = $teacherRole ? $teacherRole->role_id : 2; // Mặc định là 2 nếu không tìm thấy
-
-        DB::table('users_roles')->insert([
-            'user_id' => $user->user_id,
-            'role_id' => $roleId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $userProfile = UserProfile::forceCreate([
-            'user_id' => $user->user_id,
-            'user_firstname' => $this->safeSubstr($firstName, 50),
-            'user_lastname' => $this->safeSubstr($lastName, 50),
-        ]);
-
-        $teacher = Teacher::forceCreate([
-            'user_profile_id' => $userProfile->user_profile_id,
-        ]);
-
-        $map[$key] = $teacher->teacher_id;
-        $newCount++;
-        return $teacher->teacher_id;
+        if (empty($fullName)) return '';
+        
+        $name = trim($fullName);
+        // 1. Chuyển về lowercase và tạo slug (bỏ dấu)
+        // Ví dụ: "Nguyễn Phong Lan" -> "nguyen-phong-lan"
+        $normalized = Str::slug(mb_strtolower($name, 'UTF-8'), '-');
+        
+        // 2. Loại bỏ dấu gạch ngang (giữ lại chỉ chữ và số)
+        // Ví dụ: "nguyen-phong-lan" -> "nguyenphonglan"
+        return str_replace('-', '', $normalized);
     }
+    
+    // Trong ExamSessionController.php
+
+private function resolveTeacherId($fullName, &$map, &$nextCodeInt, &$newCount)
+{
+    if (empty($fullName)) return null;
+    
+    // Tra cứu bằng key đã chuẩn hóa (bỏ dấu) để tìm teacher_id đã tồn tại
+    $key = $this->normalizeNameForComparison($fullName);
+    
+    if (isset($map[$key])) return $map[$key];
+
+    $parts = explode(' ', trim($fullName));
+    if (count($parts) < 2) {
+        $firstName = $fullName;
+        $lastName = '';
+    } else {
+        $firstName = array_pop($parts);
+        $lastName = implode(' ', $parts);
+    }
+    
+    // --- BẮT ĐẦU CẢI THIỆN TẠO USERNAME VÀ EMAIL ---
+    
+    // 1. Tạo Base Name (Không dấu, không khoảng trắng) cho Username/Email
+    // Ví dụ: "Hoàng Nguyễn Huy" -> "hoangnguyenhuy"
+    $baseNameForLogin = $this->normalizeNameForComparison($lastName . ' ' . $firstName); 
+    
+    // 2. Tạo User Code
+    $newUserCode = 'U' . str_pad($nextCodeInt++, 4, '0', STR_PAD_LEFT);
+    
+    // 3. Tạo Username (Dùng baseName + random number)
+    $usernameStub = substr($baseNameForLogin, 0, 15);
+    $finalUsername = $usernameStub . rand(100, 999);
+    
+    // 4. Tạo Email (Dùng baseName + random number + @gmail.com)
+    $emailSlug = $baseNameForLogin . rand(100, 999) . '@gmail.com';
+
+
+    // 5. INSERT USER (sử dụng tên người dùng mới)
+    $user = User::forceCreate([
+        'user_code' => $newUserCode,
+        'user_name' => $finalUsername, // SỬA ĐỔI
+        'user_email' => $emailSlug,    // SỬA ĐỔI
+        'user_password' =>'123456',
+        'user_is_activated' => 1,
+    ]);
+
+    // ✅ 2. GÁN ROLE "TEACHER" CHO USER MỚI
+    // ... (Giữ nguyên logic gán role) ...
+    $teacherRole = DB::table('roles')->where('role_name', 'teacher')->first();
+    $roleId = $teacherRole ? $teacherRole->role_id : 2; 
+
+    DB::table('users_roles')->insert([
+        'user_id' => $user->user_id,
+        'role_id' => $roleId,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    // 6. INSERT USER PROFILE (Vẫn dùng tên có dấu chuẩn)
+    $userProfile = UserProfile::forceCreate([
+        'user_id' => $user->user_id,
+        'user_firstname' => $this->safeSubstr($firstName, 50), 
+        'user_lastname' => $this->safeSubstr($lastName, 50),
+    ]);
+
+    $teacher = Teacher::forceCreate([
+        'user_profile_id' => $userProfile->user_profile_id,
+    ]);
+
+    // Thêm khóa đã chuẩn hóa vào map
+    $map[$key] = $teacher->teacher_id;
+    $newCount++;
+    return $teacher->teacher_id;
+}
 
     private function transformDate($value, $format = 'Y-m-d')
     {
@@ -475,6 +524,8 @@ class ExamSessionController extends Controller
 
         return $pdf->download('bao_cao_ky_thi_' . $exam->exam_code . '.pdf');
     }
+    
+    // Hàm Helper không dùng tới, có thể xóa hoặc giữ lại làm dự phòng
     private function resolveTeacherNameFromModel($teacher)
     {
         if ($teacher && $teacher->userProfile) {

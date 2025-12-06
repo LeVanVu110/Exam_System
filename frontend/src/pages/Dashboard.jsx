@@ -14,8 +14,6 @@ import {
 } from "recharts";
 import "./ExamDashboard.css";
 
-const USER_NAME = "Nguyễn Ngọc Ánh Mỹ";
-
 // === Modal cảnh báo chi tiết ===
 const WarningDetailModal = ({ onClose, emptyReportsSessions }) => (
   <div className="modal-overlay" onClick={onClose}>
@@ -54,13 +52,23 @@ const WarningDetailModal = ({ onClose, emptyReportsSessions }) => (
   </div>
 );
 
+// ⭐️ HÀM TIỆN ÍCH CHUẨN HÓA TÊN (KEY: Xử lý khoảng trắng thừa)
+const normalizeName = (name) => {
+    if (!name) return "";
+    // Loại bỏ khoảng trắng ở đầu/cuối và thay thế nhiều khoảng trắng thành 1
+    return name.trim().replace(/\s+/g, ' ');
+};
+
 const ExamDashboard = () => {
   const [examSessions, setExamSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState("2023-06-14");
+  const [selectedDate, setSelectedDate] = useState("2026-01-13"); 
   const [expandedSessionId, setExpandedSessionId] = useState(null);
   const [showWarningDetail, setShowWarningDetail] = useState(false);
-
+  
+  // ⭐️ STATE LƯU THÔNG TIN NGƯỜI DÙNG TỪ localStorage
+  const [currentUser, setCurrentUser] = useState(null);
+  
   const toggleDetails = useCallback(
     (id) => setExpandedSessionId((prev) => (prev === id ? null : id)),
     []
@@ -78,17 +86,28 @@ const ExamDashboard = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // 1. Lấy token từ localStorage
-        const token = localStorage.getItem("ACCESS_TOKEN");
+    const userInfoStr = localStorage.getItem("USER_INFO");
+    // Lấy Role từ localStorage
+    const userRole = localStorage.getItem("USER_ROLE"); 
+    let token = localStorage.getItem("ACCESS_TOKEN");
 
-        // 2. Kiểm tra nếu không có token thì "đuổi" về login ngay (tránh gọi API lỗi)
-        if (!token) {
-          window.location.href = "/login";
-          return;
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    if (userInfoStr) {
+        try {
+            const userInfo = JSON.parse(userInfoStr);
+            // Gộp thông tin Role vào currentUser
+            setCurrentUser({ ...userInfo, role: userRole }); 
+        } catch (error) {
+            console.error("Lỗi phân tích cú pháp USER_INFO:", error);
         }
-
+    }
+    
+    const fetchSchedules = async () => {
+      try {
         const res = await fetch("http://localhost:8000/api/exam-schedules", {
           method: "GET",
           headers: {
@@ -98,7 +117,6 @@ const ExamDashboard = () => {
           },
         });
 
-        // Xử lý khi token hết hạn (401)
         if (res.status === 401) {
           alert("Phiên đăng nhập hết hạn!");
           localStorage.clear();
@@ -107,7 +125,6 @@ const ExamDashboard = () => {
         }
 
         if (!res.ok) {
-          // Log text lỗi để debug nếu không phải JSON
           const text = await res.text();
           console.error("API Error:", text);
           return;
@@ -121,118 +138,103 @@ const ExamDashboard = () => {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchSchedules();
   }, []);
 
-  //1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
-  // const { summary, chartData, todaysSchedule, emptyReportsSessions } = useMemo(() => {
-  //   const teacherSessions = examSessions.filter(
-
-  //     (s) => s.exam_teacher && s.exam_teacher.includes(USER_NAME)
-  //   );
-  //   const today = new Date(selectedDate);
-  //   let completedCount = 0,
-  //     upcomingCount = 0;
-  //   const warningSessions = [];
-
-  //   teacherSessions.forEach((session) => {
-  //     const date = new Date(session.exam_date);
-  //     if (date < today) completedCount++;
-  //     else upcomingCount++;
-  //     if (!session.actual_teacher1_id && !session.actual_teacher2_id)
-  //       warningSessions.push(session);
-  //   });
-
-  //   const monthlyCounts = {};
-  //   teacherSessions.forEach((s) => {
-  //     if (s.exam_date) {
-  //       const m = s.exam_date.substring(5, 7);
-  //       monthlyCounts[m] = (monthlyCounts[m] || 0) + 1;
-  //     }
-  //   });
-
-  //   return {
-  //     summary: {
-  //       userName: USER_NAME,
-  //       totalAssigned: teacherSessions.length,
-  //       totalCompleted: completedCount,
-  //       totalUpcoming: upcomingCount,
-  //       emptyReports: warningSessions.length,
-  //     },
-  //     chartData: {
-  //       barChartData: Object.keys(monthlyCounts).map((m) => ({
-  //         name: `T${parseInt(m)}`,
-  //         "Số ca thi": monthlyCounts[m],
-  //       })),
-  //       pieChartData: [
-  //         { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
-  //         { name: "Sắp tới", value: upcomingCount, fill: "#ffc107" },
-  //       ],
-  //     },
-  //     todaysSchedule: teacherSessions.filter(
-  //       (i) => i.exam_date === selectedDate
-  //     ),
-  //     emptyReportsSessions: warningSessions,
-  //   };
-  // }, [examSessions, selectedDate]);
-  // end 1. --- Tổng hợp dữ liệu (useMemo để cache) Lọc 1 Giảng Viên CHỉ Định
-  // 2. --- Tổng hợp dữ liệu (useMemo để cache) Lọc tất Giảng Viên CHỉ Định
+  // ⭐️ Logic tính toán và lọc dữ liệu (Áp dụng phân quyền và chuẩn hóa tên)
   const { summary, chartData, todaysSchedule, emptyReportsSessions } =
     useMemo(() => {
-      // ❌ Không lọc theo USER_NAME nữa — thống kê toàn bộ dữ liệu
-      const allSessions = examSessions;
+      // Xác định vai trò quản trị viên
+      const isAdministrator = currentUser?.role === "Admin" || currentUser?.role === "Academic Affairs Office";
+      
+      const nameForFiltering = currentUser?.full_name_profile;
+      const normalizedCurrentUser = normalizeName(nameForFiltering);
+      
+      if (!currentUser || (!isAdministrator && !normalizedCurrentUser)) {
+          return {
+              summary: {
+                  full_name_profile: currentUser?.name || "Đang tải...",
+                  totalAssigned: 0, totalCompleted: 0, totalUpcoming: 0, emptyReports: 0,
+              },
+              chartData: { barChartData: [], pieChartData: [] },
+              todaysSchedule: [],
+              emptyReportsSessions: [],
+          };
+      }
 
-      const today = new Date(selectedDate);
+      let teacherSessions = examSessions;
+
+      // ÁP DỤNG LỌC DỮ LIỆU DỰA TRÊN VAI TRÒ
+      if (!isAdministrator) {
+          // Nếu là Teacher, chỉ lấy ca thi của mình
+          teacherSessions = examSessions.filter(
+              (s) => 
+                  normalizedCurrentUser === normalizeName(s.teacher1_name) ||
+                  normalizedCurrentUser === normalizeName(s.teacher2_name)
+          );
+      } else {
+          // Nếu là Admin/Academic Affairs Office, lấy TẤT CẢ ca thi
+          teacherSessions = examSessions; 
+      }
+      
       let completedCount = 0,
         upcomingCount = 0;
       const warningSessions = [];
 
-      allSessions.forEach((session) => {
-        const date = new Date(session.exam_date);
-        if (date < today) completedCount++;
-        else upcomingCount++;
+      teacherSessions.forEach((session) => {
+        const dateOnly = session.exam_date;
+        if (dateOnly < selectedDate) completedCount++;
+        else if (dateOnly >= selectedDate) upcomingCount++; 
+        
         if (!session.actual_teacher1_id && !session.actual_teacher2_id)
           warningSessions.push(session);
       });
 
       const monthlyCounts = {};
-      allSessions.forEach((s) => {
+      teacherSessions.forEach((s) => {
         if (s.exam_date) {
           const m = s.exam_date.substring(5, 7);
           monthlyCounts[m] = (monthlyCounts[m] || 0) + 1;
         }
       });
 
+      const sortedBarChartData = Object.keys(monthlyCounts)
+        .sort((a, b) => parseInt(a) - parseInt(b))
+        .map((m) => ({
+          name: `T${parseInt(m)}`,
+          "Số ca thi": monthlyCounts[m],
+        }));
+
       return {
         summary: {
-          userName: "Toàn hệ thống",
-          totalAssigned: allSessions.length,
+          full_name_profile: nameForFiltering || currentUser?.name, 
+          totalAssigned: teacherSessions.length,
           totalCompleted: completedCount,
           totalUpcoming: upcomingCount,
           emptyReports: warningSessions.length,
+          
         },
         chartData: {
-          barChartData: Object.keys(monthlyCounts).map((m) => ({
-            name: `T${parseInt(m)}`,
-            "Số ca thi": monthlyCounts[m],
-          })),
+          barChartData: sortedBarChartData,
           pieChartData: [
             { name: "Hoàn thành", value: completedCount, fill: "#28a745" },
             { name: "Sắp tới", value: upcomingCount, fill: "#ffc107" },
           ],
         },
-        todaysSchedule: allSessions.filter((i) => i.exam_date === selectedDate),
+        todaysSchedule: teacherSessions.filter(
+          (i) => i.exam_date === selectedDate
+        ),
         emptyReportsSessions: warningSessions,
       };
-    }, [examSessions, selectedDate]);
-  //end 2
+    }, [examSessions, selectedDate, currentUser]); 
 
-  if (loading)
+  if (loading || !currentUser)
     return (
       <div className="loading-skeleton">
         <div className="skeleton-box"></div>
         <div className="skeleton-box"></div>
         <div className="skeleton-box wide"></div>
+        <p style={{textAlign: 'center'}}>Đang tải dữ liệu ca thi...</p>
       </div>
     );
 
@@ -240,7 +242,7 @@ const ExamDashboard = () => {
     <div className="dashboard-container">
       {/* Header */}
       <div className="header-box">
-        <p className="greeting">👋 Xin chào, Thầy/Cô {summary.userName}</p>
+        <p className="greeting">👋 Xin chào, Thầy/Cô {summary.full_name_profile}</p>
       </div>
       <hr />
 
@@ -379,22 +381,7 @@ const ExamDashboard = () => {
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="warnings-container">
-          <h2>⚠️ Cảnh báo</h2>
-          {summary.emptyReports > 0 ? (
-            <div className="warning-box">
-              <p>{summary.emptyReports} ca thi có bài rỗng cần kiểm tra!</p>
-              <button
-                className="btn-warning"
-                onClick={() => setShowWarningDetail(true)}
-              >
-                Xem chi tiết
-              </button>
-            </div>
-          ) : (
-            <p>Không có cảnh báo nào hiện tại.</p>
-          )}
-        </div>
+        
       </section>
 
       {showWarningDetail && (
