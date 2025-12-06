@@ -135,11 +135,24 @@ const ExamDashboard = () => {
       } catch (e) {
         console.error("Lỗi khi tải dữ liệu API:", e);
       } finally {
-        setLoading(false);
+        // Chỉ đặt loading = false sau lần tải đầu tiên
+        // Nếu đã tải xong, không cần đặt lại ở mỗi lần polling
+        if (loading) setLoading(false);
       }
     };
+    
+    // ⭐️ THÊM LOGIC REAL-TIME POLLING
+    
+    // Tải dữ liệu lần đầu
     fetchSchedules();
-  }, []);
+    
+    // Thiết lập interval để tải lại dữ liệu mỗi 15 giây (15000ms)
+    const intervalId = setInterval(fetchSchedules, 15000); 
+
+    // Hàm cleanup: Xóa interval khi component unmount
+    return () => clearInterval(intervalId);
+    
+  }, []); // Chỉ chạy 1 lần khi mount component
 
   // ⭐️ Logic tính toán và lọc dữ liệu (Áp dụng phân quyền và chuẩn hóa tên)
   const { summary, chartData, todaysSchedule, emptyReportsSessions } =
@@ -319,7 +332,7 @@ const ExamDashboard = () => {
                         session.exam_duration
                       )}
                     </td>
-                    <td>{session.exam_teacher}</td>
+                    <td>{summary.full_name_profile}</td>
                   </tr>
                   {expandedSessionId === session.exam_session_id && (
                     <tr className="detail-row open">
