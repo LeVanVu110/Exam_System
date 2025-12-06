@@ -356,10 +356,14 @@ class ExamSessionController extends Controller
         if (!$hasAccess) {
             return response()->json(['message' => 'Bạn không có quyền xóa!'], 403);
         }
+
         $exam = ExamSession::find($id);
         if ($exam) {
+            // ✅ GỌI HÀM DỌN DẸP TRƯỚC KHI XÓA CA THI
+            $this->cleanupUnusedTeachers([$id]);
+
             $exam->delete();
-            return response()->json(['success' => true, 'message' => 'Đã xóa thành công']);
+            return response()->json(['success' => true, 'message' => 'Đã xóa thành công ca thi và người dùng liên quan (nếu không còn ràng buộc).']);
         }
         return response()->json(['success' => false, 'message' => 'Không tìm thấy'], 404);
     }
@@ -370,12 +374,20 @@ class ExamSessionController extends Controller
             $request->user()->hasAccess('EXAM_SCHEDULE', 'is_delete');
 
         if (!$hasAccess) {
-            return response()->json(['message' => 'Bạn không có quyền tải lên dữ liệu!'], 403);
+            return response()->json(['message' => 'Bạn không có quyền xóa dữ liệu!'], 403);
         }
 
         $ids = $request->input('ids', []);
 
+        if (empty($ids)) {
+            return response()->json(['message' => 'Chưa chọn mục để xóa'], 400);
+        }
+
+        // ✅ GỌI HÀM DỌN DẸP TRƯỚC KHI XÓA CÁC CA THI
+        $this->cleanupUnusedTeachers($ids);
+
         ExamSession::whereIn('exam_session_id', $ids)->delete();
+
         return response()->json(['success' => true, 'message' => 'Đã xóa hàng loạt thành công']);
     }
 
@@ -514,5 +526,57 @@ class ExamSessionController extends Controller
     public function saveImported(Request $request)
     {
         return response()->json(['message' => 'Logic đã được chuyển sang importExcel']);
+    }
+
+    // hàm kiểm tra trước khi xoá
+    // 🛠️ Helper: Xóa Giáo viên/User nếu không còn được sử dụng trong bất kỳ ca thi nào khác
+    private function cleanupUnusedTeachers(array $sessionIdsToDelete)
+    {
+        // 1. Lấy danh sách ID giáo viên trong các ca thi chuẩn bị xóa
+        $sessions = ExamSession::whereIn('exam_session_id', $sessionIdsToDelete)->get();
+        $teacherIdsToCheck = [];
+
+        foreach ($sessions as $session) {
+            if ($session->assigned_teacher1_id) $teacherIdsToCheck[] = $session->assigned_teacher1_id;
+            if ($session->assigned_teacher2_id) $teacherIdsToCheck[] = $session->assigned_teacher2_id;
+        }
+
+        // Loại bỏ trùng lặp
+        $teacherIdsToCheck = array_unique($teacherIdsToCheck);
+
+        foreach ($teacherIdsToCheck as $teacherId) {
+            // 2. Kiểm tra xem Giáo viên này có đang coi thi ở các ca KHÁC (không nằm trong danh sách xóa) hay không
+            $isUsedElsewhere = ExamSession::whereNotIn('exam_session_id', $sessionIdsToDelete)
+                ->where(function ($query) use ($teacherId) {
+                    $query->where('assigned_teacher1_id', $teacherId)
+                          ->orWhere('assigned_teacher2_id', $teacherId);
+                })
+                ->exists();
+
+            // 3. Nếu KHÔNG được dùng ở đâu nữa -> Xóa tận gốc
+            if (!$isUsedElsewhere) {
+                $teacher = Teacher::find($teacherId);
+                if ($teacher) {
+                    // Lấy profile để tìm User gốc
+                    $userProfile = UserProfile::find($teacher->user_profile_id);
+
+                    // Xóa Teacher (bảng teachers)
+                    $teacher->delete();
+
+                    if ($userProfile) {
+                        $userId = $userProfile->user_id;
+
+                        // Xóa Profile (bảng user_profiles)
+                        $userProfile->delete();
+
+                        // Xóa Quyền (bảng users_roles) - Dọn dẹp sạch sẽ
+                        DB::table('users_roles')->where('user_id', $userId)->delete();
+
+                        // Xóa User (bảng users)
+                        User::where('user_id', $userId)->delete();
+                    }
+                }
+            }
+        }
     }
 }
