@@ -14,8 +14,8 @@ class AuthLoginController extends Controller
     {
         // 1. Validate dữ liệu gửi lên
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+            'user_email' => 'required|email',
+            'user_password' => 'required',
         ]);
 
         // 2. Tìm user theo email

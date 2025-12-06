@@ -20,6 +20,7 @@ class UserController extends Controller
                 'users.user_code',
                 'users.user_name',
                 'users.user_email',
+                'users.user_password',
                 'users.user_is_activated',
                 'users.created_at',
                 'roles.role_id',

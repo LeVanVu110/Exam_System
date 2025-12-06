@@ -27,7 +27,10 @@ class ExamSessionController extends Controller
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        if (!$request->user()->hasAccess('EXAM_MGT', 'is_upload')) {
+        $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_upload') || 
+                 $request->user()->hasAccess('EXAM_SCHEDULE', 'is_upload');
+
+        if (!$hasAccess) {
             return response()->json(['message' => 'Bạn không có quyền tải lên dữ liệu!'], 403);
         }
 
@@ -210,7 +213,7 @@ class ExamSessionController extends Controller
         $nameSlug = Str::slug($firstName . $lastName);
         $usernameStub = substr($nameSlug, 0, 15);
         $finalUsername = $usernameStub . rand(100, 999);
-        $emailSlug = substr($nameSlug, 0, 30) . rand(100, 999) . '@fe.edu.vn';
+        $emailSlug = substr($nameSlug, 0, 30) . rand(100, 999) . '@gmail.com';
 
         $user = User::forceCreate([
             'user_code' => $newUserCode,
@@ -335,7 +338,10 @@ class ExamSessionController extends Controller
 
     public function destroy($id)
     {
-        if (!request()->user()->hasAccess('EXAM_MGT', 'is_delete')) {
+        $hasAccess = request()->user()->hasAccess('EXAM_MGT', 'is_delete') ||
+                 request()->user()->hasAccess('EXAM_SCHEDULE', 'is_delete');
+
+        if (!$hasAccess) {
             return response()->json(['message' => 'Bạn không có quyền xóa!'], 403);
         }
         $exam = ExamSession::find($id);
@@ -348,25 +354,40 @@ class ExamSessionController extends Controller
 
     public function deleteBulk(Request $request)
     {
-        if (!$request->user()->hasAccess('EXAM_MGT', 'is_delete')) {
-            return response()->json(['message' => 'Bạn không có quyền xóa!'], 403);
+        $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_delete') || 
+                 $request->user()->hasAccess('EXAM_SCHEDULE', 'is_delete');
+
+        if (!$hasAccess) {
+            return response()->json(['message' => 'Bạn không có quyền tải lên dữ liệu!'], 403);
         }
+        
         $ids = $request->input('ids', []);
+        
         ExamSession::whereIn('exam_session_id', $ids)->delete();
         return response()->json(['success' => true, 'message' => 'Đã xóa hàng loạt thành công']);
     }
 
     public function exportExcel(Request $request)
     {
-        if (!$request->user()->hasAccess('EXAM_MGT', 'is_download')) return response()->json(['message' => 'Không có quyền để tải!'], 403);
+       $hasAccess = $request->user()->hasAccess('EXAM_MGT', 'is_download') || 
+                 $request->user()->hasAccess('EXAM_SCHEDULE', 'is_download');
+
+        if (!$hasAccess) {
+            return response()->json(['message' => 'Không có quyền để tải!'], 403);
+        }
+    
         return Excel::download(new ExamScheduleExport($request->from, $request->to), 'lich_thi.xlsx');
     }
 
    // ✅ CẬP NHẬT: Xuất PDF sử dụng JOIN trực tiếp (Giống hàm index để đảm bảo có dữ liệu)
     public function exportReport($id)
     {
-        $user = request()->user() ?? Auth::user();
-        if (!$user || !$user->hasAccess('EXAM_MGT', 'is_download')) {
+        $hasAccess = $user && (
+            $user->hasAccess('EXAM_MGT', 'is_download') || 
+            $user->hasAccess('EXAM_SCHEDULE', 'is_download')
+        );
+
+        if (!$user || !$hasAccess) {
             return response()->json(['message' => 'Không có quyền để tải!'], 403);
         }
 
