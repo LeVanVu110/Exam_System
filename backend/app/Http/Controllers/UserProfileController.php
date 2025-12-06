@@ -9,26 +9,30 @@ use Illuminate\Support\Facades\Auth;
 
 class UserProfileController extends Controller
 {
-    // ✅ 1. XEM DANH SÁCH (Quyền: is_view)
     public function index(Request $request)
     {
-        // 🔒 Check quyền
+        // Danh sách tất cả thì BẮT BUỘC phải có quyền xem quản trị
         if (!$request->user()->hasAccess('USER_PRO', 'is_view')) {
             return response()->json(['message' => 'Bạn không có quyền xem danh sách hồ sơ!'], 403);
         }
-
         return response()->json(UserProfile::with(['user', 'roles'])->get());
     }
 
     // ✅ 2. XEM CHI TIẾT (Quyền: is_view)
+    // ✅ SỬA LOGIC: Admin xem được tất cả, User thường chỉ xem được của mình
     public function show($id)
     {
-        // 🔒 Check quyền
-        if (!request()->user()->hasAccess('USER_PRO', 'is_view')) {
+        $user = request()->user();
+        $profile = UserProfile::with(['user', 'roles'])->findOrFail($id);
+
+        // Logic: Nếu có quyền VIEW (Admin) HOẶC là chính chủ (Profile này thuộc về User đang login)
+        $isOwner = $profile->user_id === $user->user_id;
+        $hasPermission = $user->hasAccess('USER_PRO', 'is_view');
+
+        if (!$hasPermission && !$isOwner) {
             return response()->json(['message' => 'Bạn không có quyền xem hồ sơ này!'], 403);
         }
 
-        $profile = UserProfile::with(['user', 'roles'])->findOrFail($id);
         return response()->json($profile);
     }
 
@@ -60,28 +64,31 @@ class UserProfileController extends Controller
     }
 
     // ✅ 4. CẬP NHẬT (Quyền: is_edit)
+    // ✅ SỬA LOGIC: Admin sửa được tất cả, User thường chỉ sửa được của mình
     public function update(Request $request, $id)
     {
-        // 🔒 Check quyền
-        if (!$request->user()->hasAccess('USER_PRO', 'is_edit')) {
-            return response()->json(['message' => 'Bạn không có quyền cập nhật hồ sơ!'], 403);
-        }
-
+        $user = $request->user();
         $profile = UserProfile::findOrFail($id);
+
+        // Logic check quyền
+        $isOwner = $profile->user_id === $user->user_id;
+        $hasPermission = $user->hasAccess('USER_PRO', 'is_edit');
+
+        if (!$hasPermission && !$isOwner) {
+            return response()->json(['message' => 'Bạn không có quyền cập nhật hồ sơ này!'], 403);
+        }
 
         // 🛑 OPTIMISTIC LOCKING: Kiểm tra phiên bản dữ liệu
         if (!$request->has('updated_at')) {
-            return response()->json([
-                'message' => 'Thiếu dữ liệu phiên bản cập nhật (updated_at). Hãy tải lại trang và thử lại.'
-            ], 409);
+            return response()->json(['message' => 'Thiếu dữ liệu phiên bản cập nhật.'], 409);
         }
 
-        // So sánh thời gian client gửi lên và thời gian trong DB
-        // Lưu ý: Cần đảm bảo định dạng ngày tháng khớp nhau (string comparison)
-        if ($request->updated_at != $profile->updated_at) {
-            return response()->json([
-                'message' => 'Dữ liệu đã được thay đổi bởi người khác! Vui lòng tải lại trang để có dữ liệu mới nhất.'
-            ], 409);
+        // Fix lỗi so sánh ngày tháng (ép về string hoặc timestamp để so sánh chính xác)
+        $clientTime = \Carbon\Carbon::parse($request->updated_at)->timestamp;
+        $dbTime = \Carbon\Carbon::parse($profile->updated_at)->timestamp;
+
+        if ($clientTime != $dbTime) {
+             return response()->json(['message' => 'Dữ liệu đã thay đổi bởi người khác.'], 409);
         }
 
         // 🛡 Validate dữ liệu
