@@ -335,8 +335,8 @@ public class KiemTraCaThiController implements Initializable {
                 writer.append(String.format("%-15s: %s\n", "Cán bộ coi thi", session.getCanBoCoiThi()));
                 writer.append("\n----------------------------\n\n");
                 writer.append(String.format("%-15s: %s\n", "Trạng thái", session.getTrangThai()));
-                writer.append(String.format("%-15s: %d\n", "Số bài đã nộp", session.getSoBaiNop()));
-                writer.append(String.format("%-15s: %d\n", "Số máy trống", session.getSoMayTrong()));
+                writer.append(String.format("%-15s: %s\n", "Số bài đã nộp", session.getSoBaiNop()));
+                writer.append(String.format("%-15s: %s\n", "Số máy trống", session.getSoMayTrong()));
 
                 writer.append("\n\n\n");
                 writer.append("     Xác nhận của CBCT:\n\n\n");
@@ -392,7 +392,7 @@ public class KiemTraCaThiController implements Initializable {
     private void openUploadForm(ExamSession session) {
         try {
             // ĐÃ SỬA ĐƯỜNG DẪN ĐÚNG: /view/upload-view.fxml
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/upload-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/login/upload-view.fxml"));
             Parent root = loader.load();
 
             // Truyền thông tin Ca thi (session) vào UploadController
