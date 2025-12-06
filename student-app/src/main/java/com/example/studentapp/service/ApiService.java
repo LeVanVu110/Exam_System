@@ -6,7 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
-import java.util.List; // Tuấn Thêm import 
+import java.util.List;
 
 import com.example.studentapp.model.ExamSession;
 import com.example.studentapp.model.RoomDetailResponse;
@@ -27,8 +27,14 @@ import java.nio.file.Files;
 import java.util.concurrent.CompletableFuture;
 
 public class ApiService {
-    // Đảm bảo cổng 8000 khớp với server Laravel đang chạy
-    private static final String BASE_URL = "http://localhost:8006/api";
+    // Đảm bảo cổng khớp với server Laravel (8000 hoặc 8006)
+    private static final String BASE_URL = "http://127.0.0.1:8000/api";
+
+    // ========================================================================
+    // 🔴 [QUAN TRỌNG] DÁN TOKEN CỦA BẠN VÀO GIỮA DẤU NGOẶC KÉP DƯỚI ĐÂY
+    // ========================================================================
+    private static final String API_TOKEN = "Bearer 1|si3WyoJM0f2uHHFoyVyLmfsY3N3Hipe3FPN2Lkmw2e67bf45";
+    // Ví dụ: "1|laravel_sanctum_..."
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -39,7 +45,7 @@ public class ApiService {
     }
 
     // ========================================================================
-    // 1. NHÓM CHỨC NĂNG: UPLOAD BÀI THI (Cho UploadController)
+    // 1. NHÓM CHỨC NĂNG: UPLOAD BÀI THI
     // ========================================================================
     public CompletableFuture<Boolean> uploadExamCollection(
             File zipFile, int examSessionId, String roomName, String examTime,
@@ -54,6 +60,9 @@ public class ApiService {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
+                // Thêm Token vào Upload request
+                conn.setRequestProperty("Authorization", "Bearer " + API_TOKEN);
+                conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
                 try (DataOutputStream out = new DataOutputStream(conn.getOutputStream())) {
@@ -94,34 +103,47 @@ public class ApiService {
     }
 
     // ========================================================================
-    // 2. NHÓM CHỨC NĂNG: LẤY DỮ LIỆU (Cho Home, KiemTraCaThi)
+    // 2. NHÓM CHỨC NĂNG: LẤY DỮ LIỆU CŨ (Trả về RoomResponse)
     // ========================================================================
 
-    // Lấy tất cả ca thi hôm nay
     public CompletableFuture<RoomResponse> fetchAllExamsForToday() {
         String apiUri = BASE_URL + "/exam-sessions/today";
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
+        // Đã thêm Token
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUri))
+                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
         return sendRequestAndParseResponse(request);
     }
 
-    // Tìm kiếm ca thi theo phòng (cho KiemTraCaThiController)
     public CompletableFuture<RoomResponse> fetchExamsByRoomForToday(String roomName) {
-        // Cần mã hóa URL nếu tên phòng có dấu cách
         String encodedRoom = roomName.replace(" ", "%20");
         String apiUri = BASE_URL + "/exam-sessions/search?room=" + encodedRoom;
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
+        // Đã thêm Token
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUri))
+                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
         return sendRequestAndParseResponse(request);
     }
 
-    // Tìm kiếm (Alias cũ, giữ lại để tương thích ngược)
     public CompletableFuture<RoomResponse> searchExamsForRoom(String roomName) {
         return fetchExamsByRoomForToday(roomName);
     }
 
-    // Lấy chi tiết ca thi theo ID
     public CompletableFuture<RoomDetailResponse> fetchExamById(int examId) {
         String apiUri = BASE_URL + "/exam-sessions/" + examId;
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
+        // Đã thêm Token
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUri))
+                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
@@ -129,45 +151,84 @@ public class ApiService {
                     try {
                         return objectMapper.readValue(jsonBody, RoomDetailResponse.class);
                     } catch (Exception e) {
-                        return new RoomDetailResponse(); // Trả về rỗng để không crash
+                        return new RoomDetailResponse();
                     }
                 });
     }
 
     // ========================================================================
-    // 3. NHÓM CHỨC NĂNG: QUẢN LÝ (Cho QuanLyLichThi, LichThiPDT)
+    // 3. NHÓM CHỨC NĂNG: QUẢN LÝ (Giả lập)
     // ========================================================================
 
-    // Tạo mới ca thi
     public CompletableFuture<Boolean> createExamSession(ExamSession session) {
-        // TODO: Gửi POST request lên Laravel
         System.out.println("Đang tạo ca thi: " + session.getMaHP());
         return CompletableFuture.completedFuture(true);
     }
 
-    // Cập nhật ca thi
     public CompletableFuture<Boolean> updateExamSession(ExamSession session) {
-        // TODO: Gửi PUT request lên Laravel
         System.out.println("Đang cập nhật ca thi: " + session.getMaHP());
         return CompletableFuture.completedFuture(true);
     }
 
-    // Xóa ca thi
     public CompletableFuture<Boolean> deleteExamSession(String id) {
-        // TODO: Gửi DELETE request lên Laravel
         System.out.println("Đang xóa ca thi ID: " + id);
         return CompletableFuture.completedFuture(true);
     }
 
-    // Cập nhật giám thị
     public CompletableFuture<Boolean> updateProctor(String maCaThi, String tenGiamThi) {
         System.out.println("Đang cập nhật giám thị " + tenGiamThi + " cho ca " + maCaThi);
         return CompletableFuture.completedFuture(true);
     }
 
     // ========================================================================
-    // 4. HÀM HỖ TRỢ CHUNG
+    // 4. KHU VỰC BỔ SUNG (Dùng cho QuanLyLichThi & LichThiPDT - Trả về ApiResponse)
     // ========================================================================
+
+    /**
+     * Lấy danh sách ca thi trả về ApiResponse<List>
+     */
+    public CompletableFuture<ApiResponse<List<ExamSession>>> fetchAllExamsList() {
+        String apiUri = BASE_URL + "/exam-sessions";
+        // ✅ ĐÃ SỬA: Thêm Header Authorization
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUri))
+                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        return sendRequestAndParseList(request);
+    }
+
+    /**
+     * Tìm kiếm theo phòng trả về ApiResponse<List>
+     */
+    public CompletableFuture<ApiResponse<List<ExamSession>>> fetchExamsByRoomList(String roomName) {
+        String encodedRoom = roomName.replace(" ", "%20");
+        String apiUri = BASE_URL + "/exam-sessions/search?room=" + encodedRoom;
+        // ✅ ĐÃ SỬA: Thêm Header Authorization
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUri))
+                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        return sendRequestAndParseList(request);
+    }
+
+    public CompletableFuture<ApiResponse<ExamSession>> createExamSessionApi(ExamSession session) {
+        System.out.println("Mock API: Create Session " + session.getMaHP());
+        return CompletableFuture.completedFuture(new ApiResponse<>("OK", "OK", session));
+    }
+
+    public CompletableFuture<ApiResponse<ExamSession>> updateExamSessionApi(ExamSession session) {
+        System.out.println("Mock API: Update Session " + session.getMaHP());
+        return CompletableFuture.completedFuture(new ApiResponse<>("OK", "OK", session));
+    }
+
+    // ========================================================================
+    // HÀM HỖ TRỢ PARSE JSON
+    // ========================================================================
+
     private CompletableFuture<RoomResponse> sendRequestAndParseResponse(HttpRequest request) {
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
@@ -175,65 +236,25 @@ public class ApiService {
                     try {
                         return objectMapper.readValue(jsonBody, RoomResponse.class);
                     } catch (Exception e) {
-                        // Trả về đối tượng rỗng nếu lỗi parse JSON
                         return new RoomResponse();
                     }
                 });
     }
 
-    // ========================================================================
-    // KHU VỰC BỔ SUNG (Dùng cho QuanLyLichThi & LichThiPDT - Trả về ApiResponse)
-    // ========================================================================
-
-    /**
-     * Lấy danh sách ca thi trả về ApiResponse<List> (Thay thế fetchAllExamsForToday
-     * cũ)
-     */
-    public CompletableFuture<ApiResponse<List<ExamSession>>> fetchAllExamsList() {
-        String apiUri = BASE_URL + "/exam-sessions";
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
-        return sendRequestAndParseList(request);
-    }
-
-    /**
-     * Tìm kiếm theo phòng trả về ApiResponse<List> (Thay thế
-     * fetchExamsByRoomForToday cũ)
-     */
-    public CompletableFuture<ApiResponse<List<ExamSession>>> fetchExamsByRoomList(String roomName) {
-        String encodedRoom = roomName.replace(" ", "%20");
-        String apiUri = BASE_URL + "/exam-sessions/search?room=" + encodedRoom;
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(apiUri)).GET().build();
-        return sendRequestAndParseList(request);
-    }
-
-    /**
-     * Tạo mới ca thi (Trả về ApiResponse - Khác hàm cũ trả về Boolean)
-     */
-    public CompletableFuture<ApiResponse<ExamSession>> createExamSessionApi(ExamSession session) {
-        // TODO: Gửi POST request thực tế. Ở đây giả lập thành công.
-        System.out.println("Mock API: Create Session " + session.getMaHP());
-        return CompletableFuture.completedFuture(new ApiResponse<>("OK", "OK", session));
-    }
-
-    /**
-     * Cập nhật ca thi (Trả về ApiResponse - Khác hàm cũ trả về Boolean)
-     */
-    public CompletableFuture<ApiResponse<ExamSession>> updateExamSessionApi(ExamSession session) {
-        System.out.println("Mock API: Update Session " + session.getMaHP());
-        return CompletableFuture.completedFuture(new ApiResponse<>("OK", "OK", session));
-    }
-
-    // --- HÀM HỖ TRỢ PARSE JSON BẰNG GSON (ĐÃ SỬA MAPPING CHO KHỚP JSON) ---
     private CompletableFuture<ApiResponse<List<ExamSession>>> sendRequestAndParseList(HttpRequest request) {
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenApply(jsonBody -> {
+                    // In ra để debug xem server trả về cái gì
+                    System.out.println("SERVER TRẢ VỀ: " + jsonBody);
+
                     List<ExamSession> list = new ArrayList<>();
                     Gson gson = new Gson();
                     try {
                         JsonElement element = gson.fromJson(jsonBody, JsonElement.class);
                         JsonArray jsonArray = null;
 
+                        // Xử lý trường hợp trả về Object {data: [...]} hoặc Array [...]
                         if (element.isJsonObject() && element.getAsJsonObject().has("data")) {
                             jsonArray = element.getAsJsonObject().getAsJsonArray("data");
                         } else if (element.isJsonArray()) {
@@ -245,57 +266,43 @@ public class ApiService {
                                 JsonObject obj = item.getAsJsonObject();
                                 ExamSession s = new ExamSession();
 
-                                // === SỬA PHẦN NÀY ĐỂ KHỚP VỚI JSON BACKEND ===
+                                // Mapping dữ liệu
+                                s.setMaCaThi(getJsonString(obj, "exam_session_id"));
 
-                                // 1. ID Ca thi
-                                s.setMaCaThi(getJsonString(obj, "exam_session_id")); // JSON là exam_session_id
-
-                                // 2. Mã Học Phần (JSON thiếu subject_code, lấy tạm class_code hoặc exam_code)
                                 String maHP = getJsonString(obj, "class_code");
                                 if (maHP.isEmpty())
                                     maHP = getJsonString(obj, "exam_code");
                                 s.setMaHP(maHP);
 
-                                // 3. Tên Môn
                                 s.setTenHP(getJsonString(obj, "subject_name"));
                                 s.setTenMonHoc(getJsonString(obj, "subject_name"));
-
-                                // 4. Lớp & Phòng
                                 s.setLopSV(getJsonString(obj, "class_code"));
-                                s.setPhongThi(getJsonString(obj, "exam_room")); // JSON là exam_room
-
-                                // 5. Ngày thi
+                                s.setPhongThi(getJsonString(obj, "exam_room"));
                                 s.setNgayThi(getJsonString(obj, "exam_date"));
 
-                                // 6. Giờ thi (Ghép Start - End)
                                 String start = getJsonString(obj, "exam_start_time");
                                 String end = getJsonString(obj, "exam_end_time");
-                                // Cắt chuỗi HH:mm:ss thành HH:mm
                                 if (start.length() > 5)
                                     start = start.substring(0, 5);
                                 if (end.length() > 5)
                                     end = end.substring(0, 5);
                                 s.setGioThi(start + " - " + end);
 
-                                // 7. Số lượng & Hình thức
                                 s.setSoSV(getJsonString(obj, "total_students"));
 
-                                // Nếu không có exam_method, lấy tạm status
                                 String hinhThuc = getJsonString(obj, "exam_method");
                                 if (hinhThuc.isEmpty())
                                     hinhThuc = "Tự luận";
                                 s.setHinhThucThi(hinhThuc);
 
-                                // 8. Cán bộ coi thi (Ghép tên GV1 + GV2)
                                 String gv1 = getJsonString(obj, "teacher1_name");
                                 String gv2 = getJsonString(obj, "teacher2_name");
                                 String cbct = gv1 + (gv2.isEmpty() ? "" : ", " + gv2);
                                 s.setCanBoCoiThi(cbct);
 
-                                // 9. Trạng thái & Thống kê
                                 s.setTrangThai(getJsonString(obj, "status"));
-                                s.setSoBaiNop("0"); // Mặc định
-                                s.setSoMayTrong("0"); // Mặc định
+                                s.setSoBaiNop("0");
+                                s.setSoMayTrong("0");
 
                                 list.add(s);
                             }
@@ -303,7 +310,8 @@ public class ApiService {
                         return new ApiResponse<>("OK", "OK", list);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        return new ApiResponse<>("ERROR", e.getMessage(), new ArrayList<>());
+                        // Trả về list rỗng nếu lỗi parse để App không bị crash
+                        return new ApiResponse<>("ERROR", "Lỗi Parse JSON: " + e.getMessage(), new ArrayList<>());
                     }
                 });
     }
