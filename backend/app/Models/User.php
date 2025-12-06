@@ -97,4 +97,8 @@ class User extends Authenticatable
     {
         $this->attributes['user_password'] = bcrypt($value);
     }
+    public function userProfile()
+{
+    return $this->hasOne(UserProfile::class, 'user_id', 'user_id'); // Hoặc cột khóa ngoại tương ứng
+}
 }
