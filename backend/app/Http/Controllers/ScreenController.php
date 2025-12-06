@@ -22,6 +22,10 @@ class ScreenController extends Controller
         $request->validate([
             'screen_name' => 'required|string|max:255',
             'screen_code' => 'required|string|unique:screens,screen_code|max:50',
+        ], [
+            // 👇 Tùy chỉnh thông báo lỗi
+            'screen_code.unique' => 'Mã màn hình này đã tồn tại trên hệ thống.',
+            'screen_code.required' => 'Vui lòng nhập mã màn hình.',
         ]);
 
         DB::beginTransaction();
@@ -47,15 +51,19 @@ class ScreenController extends Controller
             DB::table('permissions_screens')->insert([
                 'permission_id' => $permissionId,
                 'screen_id'     => $screen->screen_id,
-                'is_view'       => 0, 'is_add' => 0, 'is_edit' => 0,
-                'is_delete'     => 0, 'is_upload' => 0, 'is_download' => 0, 'is_all' => 0,
+                'is_view'       => 0,
+                'is_add' => 0,
+                'is_edit' => 0,
+                'is_delete'     => 0,
+                'is_upload' => 0,
+                'is_download' => 0,
+                'is_all' => 0,
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
 
             DB::commit();
             return response()->json($screen, 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Lỗi tạo màn hình: ' . $e->getMessage()], 500);
@@ -88,7 +96,6 @@ class ScreenController extends Controller
 
             DB::commit();
             return response()->json(['message' => 'Xóa màn hình thành công!'], 200);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Lỗi xóa màn hình: ' . $e->getMessage()], 500);

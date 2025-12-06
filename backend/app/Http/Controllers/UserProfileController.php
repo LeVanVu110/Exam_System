@@ -88,7 +88,7 @@ class UserProfileController extends Controller
         $dbTime = \Carbon\Carbon::parse($profile->updated_at)->timestamp;
 
         if ($clientTime != $dbTime) {
-             return response()->json(['message' => 'Dữ liệu đã thay đổi bởi người khác.'], 409);
+            return response()->json(['message' => 'Dữ liệu đã thay đổi bởi người khác.'], 409);
         }
 
         // 🛡 Validate dữ liệu
@@ -106,9 +106,12 @@ class UserProfileController extends Controller
 
         // 📌 Xử lý upload avatar
         if ($request->hasFile('user_avatar_file')) {
-            // ❌ Xóa avatar cũ nếu là file trong storage (tránh rác server)
-            if ($profile->user_avatar && str_contains($profile->user_avatar, 'storage/')) {
+            // 1. Xóa avatar cũ nếu có
+            if ($profile->user_avatar) {
+                // Cắt bỏ đoạn 'storage/' để lấy đường dẫn thực trong ổ cứng
+                // DB lưu: storage/avatars/abc.jpg -> Cần xóa: public/avatars/abc.jpg (trong disk public)
                 $oldPath = str_replace('storage/', '', $profile->user_avatar);
+
                 if (Storage::disk('public')->exists($oldPath)) {
                     Storage::disk('public')->delete($oldPath);
                 }
