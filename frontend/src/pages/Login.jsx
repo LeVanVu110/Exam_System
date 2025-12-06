@@ -133,7 +133,7 @@ export default function LoginForm() {
         case "Student":
         case "student":
         case "3":
-          window.location.href = "/student-dashboard";
+          window.location.href = "/login";
           break;
 
         default:
