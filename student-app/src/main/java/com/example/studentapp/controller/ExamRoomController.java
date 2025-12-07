@@ -1,21 +1,26 @@
 package com.example.studentapp.controller;
 
-import com.example.studentapp.service.ApiService;
-import com.example.studentapp.model.RoomResponse;
-import com.example.studentapp.model.RoomModel;
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
-import javafx.scene.layout.AnchorPane;
-
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
+
+import com.example.studentapp.model.RoomModel;
+import com.example.studentapp.model.RoomResponse;
+import com.example.studentapp.service.ApiService;
+
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 
 public class ExamRoomController implements Initializable {
 
@@ -45,15 +50,27 @@ public class ExamRoomController implements Initializable {
         vbox.getChildren().clear();
 
         apiService.fetchAllExamsForToday().thenAccept(response -> {
+            // SỬA: Chữ String viết đúng, không phải SString
             String jsonDate = response.getDate();
-            LocalDate date = LocalDate.parse(jsonDate, DateTimeFormatter.ISO_LOCAL_DATE);
-            int day = date.getDayOfMonth();
-            int month = date.getMonthValue();
+            String dateDisplay;
 
-            Platform.runLater(() -> updateUiWithResponse(response, "ngày " + day + "/" + month));
+            // Logic kiểm tra null bạn đã viết đúng
+            if (jsonDate != null) {
+                LocalDate date = LocalDate.parse(jsonDate, DateTimeFormatter.ISO_LOCAL_DATE);
+                int day = date.getDayOfMonth();
+                int month = date.getMonthValue();
+                dateDisplay = "ngày " + day + "/" + month;
+            } else {
+                dateDisplay = "hôm nay";
+            }
+
+            final String finalDisplay = dateDisplay;
+            Platform.runLater(() -> updateUiWithResponse(response, finalDisplay));
+            
+            // LƯU Ý: Đã xóa dòng "return null;" ở đây vì không cần thiết
         }).exceptionally(e -> {
             Platform.runLater(() -> showError("Lỗi tải dữ liệu ban đầu: " + e.getMessage()));
-            return null;
+            return null; // Ở đây giữ nguyên return null là đúng
         });
     }
 

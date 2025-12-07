@@ -21,10 +21,10 @@ class RolePermissionSeeder extends Seeder
             1 => [1, 2, 3, 4, 5, 6, 7],
 
             // 2. Teacher: Chỉ xem dashboard và lịch thi
-            2 => [1, 2],
+            2 => [1, 2, 3, 4, 5, 6, 7],
 
             // 3. Student: Chỉ xem lịch thi
-            3 => [1, 2],
+            3 => [1, 2, 3, 4, 5, 6, 7],
 
             // 4. Academic Affairs Office (PDT): Có tất cả quyền
             4 => [1, 2, 3, 4, 5, 6, 7],
