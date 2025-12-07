@@ -1,18 +1,5 @@
 package com.example.studentapp.service;
 
-import com.example.studentapp.model.ApiResponse;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.example.studentapp.model.ExamSession;
-import com.example.studentapp.model.RoomDetailResponse;
-import com.example.studentapp.model.RoomResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +11,19 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import com.example.studentapp.model.ApiResponse;
+import com.example.studentapp.model.ExamSession;
+import com.example.studentapp.model.RoomDetailResponse;
+import com.example.studentapp.model.RoomResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 public class ApiService {
     // Đảm bảo cổng khớp với server Laravel (8000 hoặc 8006)
@@ -33,7 +32,7 @@ public class ApiService {
     // ========================================================================
     // 🔴 [QUAN TRỌNG] DÁN TOKEN CỦA BẠN VÀO GIỮA DẤU NGOẶC KÉP DƯỚI ĐÂY
     // ========================================================================
-    private static final String API_TOKEN = "Bearer 1|si3WyoJM0f2uHHFoyVyLmfsY3N3Hipe3FPN2Lkmw2e67bf45";
+    private static final String API_TOKEN = "Bearer 1|CuA5oSDf7PHtD2N3mOAtj1Lv0fQtwrh7lt10p9yM294f7f35";
     // Ví dụ: "1|laravel_sanctum_..."
 
     private final HttpClient httpClient;
