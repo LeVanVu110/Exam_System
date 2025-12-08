@@ -29,11 +29,9 @@ public class ApiService {
     // Đảm bảo cổng khớp với server Laravel (8000 hoặc 8006)
     private static final String BASE_URL = "http://127.0.0.1:8000/api";
 
-    // ========================================================================
-    // 🔴 [QUAN TRỌNG] DÁN TOKEN CỦA BẠN VÀO GIỮA DẤU NGOẶC KÉP DƯỚI ĐÂY
-    // ========================================================================
-    private static final String API_TOKEN = "Bearer 1|CuA5oSDf7PHtD2N3mOAtj1Lv0fQtwrh7lt10p9yM294f7f35";
-    // Ví dụ: "1|laravel_sanctum_..."
+    private String getToken() {
+        return TokenManager.getInstance().getBearerToken();
+    }
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -60,7 +58,7 @@ public class ApiService {
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
                 // Thêm Token vào Upload request
-                conn.setRequestProperty("Authorization", "Bearer " + API_TOKEN);
+                conn.setRequestProperty("Authorization",  getToken());
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
@@ -110,7 +108,7 @@ public class ApiService {
         // Đã thêm Token
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
-                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Authorization",  getToken())
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -123,7 +121,7 @@ public class ApiService {
         // Đã thêm Token
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
-                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Authorization",  getToken())
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -139,7 +137,7 @@ public class ApiService {
         // Đã thêm Token
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
-                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Authorization",  getToken())
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -191,7 +189,7 @@ public class ApiService {
         // ✅ ĐÃ SỬA: Thêm Header Authorization
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
-                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Authorization",  getToken())
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -207,7 +205,7 @@ public class ApiService {
         // ✅ ĐÃ SỬA: Thêm Header Authorization
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUri))
-                .header("Authorization", "Bearer " + API_TOKEN)
+                .header("Authorization",  getToken())
                 .header("Accept", "application/json")
                 .GET()
                 .build();

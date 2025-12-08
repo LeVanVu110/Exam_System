@@ -1,5 +1,11 @@
 package com.example.studentapp.controller;
 
+import com.example.studentapp.service.TokenManager;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -21,6 +27,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.scene.Node;
+
 import java.io.IOException;
 
 public class HeaderController implements Initializable {
@@ -68,28 +75,37 @@ public class HeaderController implements Initializable {
     }
 
     @FXML
-    private void handleLogout(ActionEvent event) {
+    private void handleLogout() {
         try {
-            // Load FXML login
+            // Gọi API logout
+            String apiUri = "http://localhost:8000/api/logout";
+            String token = TokenManager.getInstance().getBearerToken();
+
+            if (token != null) {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(apiUri))
+                        .header("Authorization", token)
+                        .header("Accept", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                        .build();
+
+                HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            }
+
+            // ✅ XÓA TOKEN
+            TokenManager.getInstance().clearToken();
+
+            // ✅ Quay về màn hình login
+            Stage currentStage = (Stage) btnLogout.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/login/login.fxml"));
-            Scene loginScene = new Scene(loader.load(), 480, 600); // Kích thước cố định
+            Scene scene = new Scene(loader.load());
+            currentStage.setScene(scene);
+            currentStage.setTitle("Exam Collection System - Login");
+            currentStage.centerOnScreen();
+            currentStage.show();
 
-            // Lấy stage hiện tại từ event
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-
-            // Set scene login với kích thước cố định
-            stage.setScene(loginScene);
-            stage.setTitle("Exam Collection System - Login");
-            stage.setResizable(false); // ⚡ Không cho resize
-            stage.setWidth(480);
-            stage.setHeight(600);
-            stage.centerOnScreen(); // Canh giữa màn hình
-            stage.show();
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("Không thể load login.fxml khi logout.");
         }
     }
-
 }
